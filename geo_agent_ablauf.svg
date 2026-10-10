@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 820" width="1400" height="820">
+  <defs>
+    <style>
+      text { font-family: 'Segoe UI', 'Inter', Arial, Helvetica, sans-serif; }
+    </style>
+    <marker id="arr" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <path d="M0,0 L10,3.5 L0,7" fill="#b0b8c4"/>
+    </marker>
+  </defs>
+
+  <!-- ============================================================ -->
+  <!-- TITLE                                                         -->
+  <!-- ============================================================ -->
+  <text x="50" y="52" font-size="28" font-weight="700" fill="#0c2340">
+    Geo_Agent — vom PDF zur Excel-Datei
+  </text>
+  <line x1="50" y1="68" x2="520" y2="68" stroke="#0c2340" stroke-width="2.5"/>
+
+  <!-- ============================================================ -->
+  <!-- ROW 1 — Main Flow: 3 boxes + arrows                          -->
+  <!-- ============================================================ -->
+
+  <!-- Box 1: Eingabe -->
+  <rect x="50" y="110" width="360" height="200" rx="4" fill="#f4f5f7" stroke="#d0d5dd" stroke-width="1.2"/>
+  <text x="78" y="146" font-size="18" font-weight="700" fill="#0c2340">Eingabe</text>
+  <text x="78" y="176" font-size="13.5" fill="#4a5568">Bohrprofil.pdf</text>
+  <text x="78" y="196" font-size="12" fill="#8896a6">Kernbohrungen nach DIN 4023</text>
+  <text x="78" y="216" font-size="12" fill="#8896a6">Tiefen · NHN · Bodenart-Legende</text>
+  <text x="78" y="248" font-size="13.5" fill="#4a5568">Längsschnitt.pdf</text>
+  <text x="78" y="268" font-size="12" fill="#8896a6">Tunnelgeometrie · Achsen-Labels</text>
+  <text x="78" y="288" font-size="12" fill="#8896a6">Geologische Farbpolygone</text>
+
+  <!-- Arrow 1→2 -->
+  <line x1="420" y1="210" x2="490" y2="210" stroke="#b0b8c4" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- Box 2: Verarbeitung -->
+  <rect x="500" y="110" width="380" height="200" rx="4" fill="#f4f5f7" stroke="#d0d5dd" stroke-width="1.2"/>
+  <text x="528" y="146" font-size="18" font-weight="700" fill="#0c2340">Verarbeitung</text>
+  <text x="528" y="176" font-size="13.5" fill="#4a5568">legend.py</text>
+  <text x="660" y="176" font-size="12" fill="#8896a6">Bodenarten + DIN-Sektionen</text>
+  <text x="528" y="202" font-size="13.5" fill="#4a5568">bohrprofil.py</text>
+  <text x="660" y="202" font-size="12" fill="#8896a6">Schichten konsolidieren</text>
+  <text x="528" y="228" font-size="13.5" fill="#4a5568">laengsschnitt.py</text>
+  <text x="660" y="228" font-size="12" fill="#8896a6">Tunnel + Abschnitte</text>
+  <text x="528" y="254" font-size="13.5" fill="#4a5568">soil.py</text>
+  <text x="660" y="254" font-size="12" fill="#8896a6">DIN-Klassifikation</text>
+  <text x="528" y="290" font-size="11.5" fill="#8896a6">Bohrprofil &lt; 1 s · Längsschnitt ~20 s (gecacht)</text>
+
+  <!-- Arrow 2→3 -->
+  <line x1="890" y1="210" x2="960" y2="210" stroke="#b0b8c4" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- Box 3: Ausgabe (accent box — filled dark) -->
+  <rect x="970" y="110" width="380" height="200" rx="4" fill="#0c2340"/>
+  <text x="998" y="146" font-size="18" font-weight="700" fill="#ffffff">Ausgabe</text>
+  <text x="998" y="176" font-size="13.5" fill="rgba(255,255,255,0.95)">Geo_Daten.xlsx · 4 Blätter</text>
+  <text x="998" y="206" font-size="12" fill="rgba(255,255,255,0.7)">Geomodul</text>
+  <text x="1120" y="206" font-size="12" fill="rgba(255,255,255,0.5)">je Kernbohrung</text>
+  <text x="998" y="228" font-size="12" fill="rgba(255,255,255,0.7)">Geomodul_Bodenschicht</text>
+  <text x="1185" y="228" font-size="12" fill="rgba(255,255,255,0.5)">konsolidiert</text>
+  <text x="998" y="250" font-size="12" fill="rgba(255,255,255,0.7)">Geo_Tunnel</text>
+  <text x="1120" y="250" font-size="12" fill="rgba(255,255,255,0.5)">je Abschnitt</text>
+  <text x="998" y="272" font-size="12" fill="rgba(255,255,255,0.7)">Geo_Spec</text>
+  <text x="1120" y="272" font-size="12" fill="rgba(255,255,255,0.5)">dynamische DIN-Spalten</text>
+  <rect x="998" y="290" width="10" height="10" rx="2" fill="#48bb78"/>
+  <text x="1016" y="299" font-size="11" fill="rgba(255,255,255,0.55)">sicher</text>
+  <rect x="1072" y="290" width="10" height="10" rx="2" fill="#ecc94b"/>
+  <text x="1090" y="299" font-size="11" fill="rgba(255,255,255,0.55)">unsicher</text>
+
+  <!-- ============================================================ -->
+  <!-- ROW 2 — Detail boxes                                          -->
+  <!-- ============================================================ -->
+
+  <!-- Box: Spalten-Auswahl -->
+  <rect x="50" y="360" width="440" height="140" rx="4" fill="#f4f5f7" stroke="#d0d5dd" stroke-width="1.2"/>
+  <text x="78" y="396" font-size="18" font-weight="700" fill="#0c2340">Spalten-Auswahl</text>
+  <text x="78" y="424" font-size="12" fill="#8896a6">Nutzer wählt im Browser, welche DIN-Spalten</text>
+  <text x="78" y="444" font-size="12" fill="#8896a6">in Blatt 4 erscheinen sollen:</text>
+  <text x="78" y="474" font-size="13" fill="#4a5568">Kornbereich · Nebenanteil · Kalkgehalt · Konsistenz</text>
+
+  <!-- Box: Validierung -->
+  <rect x="520" y="360" width="440" height="140" rx="4" fill="#f4f5f7" stroke="#d0d5dd" stroke-width="1.2"/>
+  <text x="548" y="396" font-size="18" font-weight="700" fill="#0c2340">Validierung</text>
+  <text x="548" y="424" font-size="12" fill="#8896a6">NHN-Arithmetik je Bohrung geprüft</text>
+  <text x="548" y="444" font-size="12" fill="#8896a6">Tunnel-Vorschau: OK (rot) · Sohle (blau)</text>
+  <text x="548" y="464" font-size="12" fill="#8896a6">Bohrungen und Abschnitte visuell überlagert</text>
+  <text x="548" y="484" font-size="12" fill="#8896a6">Log mit allen Erkennungsdetails</text>
+
+  <!-- Box: Abschnitte (accent) -->
+  <rect x="990" y="360" width="360" height="140" rx="4" fill="#0c2340"/>
+  <text x="1018" y="396" font-size="18" font-weight="700" fill="#ffffff">Abschnitte</text>
+  <text x="1018" y="424" font-size="12" fill="rgba(255,255,255,0.7)">Tunnel ÷ verortete Bohrungen</text>
+  <text x="1018" y="448" font-size="12" fill="rgba(255,255,255,0.55)">Grenze = Mitte zwischen Bohrungen</text>
+  <text x="1018" y="472" font-size="12" fill="rgba(255,255,255,0.55)">Bodenart aus Bohrprofil abgeleitet</text>
+  <text x="1018" y="492" font-size="12" fill="rgba(255,255,255,0.55)">(nicht aus Farbpolygonen)</text>
+
+  <!-- ============================================================ -->
+  <!-- FOOTER NOTE                                                    -->
+  <!-- ============================================================ -->
+  <rect x="50" y="560" width="1300" height="60" rx="4" fill="#ffffff" stroke="#d0d5dd" stroke-width="1.2"/>
+  <rect x="50" y="560" width="4" height="60" rx="0" fill="#0c2340"/>
+  <text x="80" y="596" font-size="14" fill="#4a5568">
+    Lokales Tool (nur localhost) — Streamlit + PyMuPDF + openpyxl · 
+  </text>
+  <text x="560" y="596" font-size="14" font-weight="700" fill="#0c2340">
+    Excel-Vorlage definiert die Struktur, die App füllt die Daten.
+  </text>
+
+</svg>

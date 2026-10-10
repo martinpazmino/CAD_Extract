@@ -1,0 +1,164 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 880" width="1400" height="880">
+  <defs>
+    <style>
+      text { font-family: 'Segoe UI', 'Inter', Arial, Helvetica, sans-serif; }
+    </style>
+    <marker id="arr" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <path d="M0,0 L10,3.5 L0,7" fill="#b0b8c4"/>
+    </marker>
+  </defs>
+
+  <!-- ============================================================ -->
+  <!-- TITLE                                                         -->
+  <!-- ============================================================ -->
+  <text x="50" y="48" font-size="26" font-weight="700" fill="#0c2340">
+    Geo_Agent — Ansatz, Zuverlässigkeit &amp; PDF-Anforderungen
+  </text>
+  <line x1="50" y1="62" x2="680" y2="62" stroke="#0c2340" stroke-width="2.5"/>
+
+  <!-- ============================================================ -->
+  <!-- SECTION A — Ansatz (Approach)                                 -->
+  <!-- ============================================================ -->
+  <text x="50" y="104" font-size="18" font-weight="700" fill="#0c2340">A</text>
+  <text x="72" y="104" font-size="18" font-weight="700" fill="#0c2340">Ansatz</text>
+  <text x="72" y="122" font-size="12" fill="#8896a6">Wie leitet die App geologische Daten aus den PDFs ab?</text>
+
+  <!-- A1: Legende -->
+  <rect x="50" y="140" width="310" height="130" rx="4" fill="#f4f5f7" stroke="#d0d5dd" stroke-width="1"/>
+  <text x="74" y="166" font-size="14" font-weight="700" fill="#0c2340">Legende zuerst</text>
+  <text x="74" y="188" font-size="12" fill="#4a5568">Das Bodenarten-Vokabular wird</text>
+  <text x="74" y="206" font-size="12" fill="#4a5568">aus der PDF-Legende gelesen —</text>
+  <text x="74" y="224" font-size="12" font-weight="600" fill="#0c2340">nichts ist hartkodiert.</text>
+  <text x="74" y="250" font-size="11" fill="#8896a6">→ Gilt auch für DIN-Sektionen</text>
+
+  <line x1="365" y1="205" x2="395" y2="205" stroke="#b0b8c4" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- A2: Bohrprofil -->
+  <rect x="400" y="140" width="310" height="130" rx="4" fill="#f4f5f7" stroke="#d0d5dd" stroke-width="1"/>
+  <text x="424" y="166" font-size="14" font-weight="700" fill="#0c2340">Bohrprofil → Schichten</text>
+  <text x="424" y="188" font-size="12" fill="#4a5568">Tiefenpaare (NHN, Meter) und</text>
+  <text x="424" y="206" font-size="12" fill="#4a5568">Bodenart-Text werden je Bohrung</text>
+  <text x="424" y="224" font-size="12" fill="#4a5568">direkt aus den Vektordaten gelesen.</text>
+  <text x="424" y="250" font-size="11" fill="#8896a6">→ Konsolidierung: gleiche Schichten zusammenfassen</text>
+
+  <line x1="715" y1="205" x2="745" y2="205" stroke="#b0b8c4" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- A3: Längsschnitt -->
+  <rect x="750" y="140" width="310" height="130" rx="4" fill="#f4f5f7" stroke="#d0d5dd" stroke-width="1"/>
+  <text x="774" y="166" font-size="14" font-weight="700" fill="#0c2340">Längsschnitt → Tunnel</text>
+  <text x="774" y="188" font-size="12" fill="#4a5568">Graue Polygone = Tunnelröhre.</text>
+  <text x="774" y="206" font-size="12" fill="#4a5568">Achsen-Labels → lineare Regression</text>
+  <text x="774" y="224" font-size="12" fill="#4a5568">für X↔Tunnelmeter und Y↔NHN.</text>
+  <text x="774" y="250" font-size="11" fill="#8896a6">→ Bohrungen werden verortet → Abschnitte</text>
+
+  <line x1="1065" y1="205" x2="1095" y2="205" stroke="#b0b8c4" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- A4: Bodenart auf Tunnel (accent box) -->
+  <rect x="1100" y="140" width="270" height="130" rx="4" fill="#0c2340"/>
+  <text x="1124" y="166" font-size="14" font-weight="700" fill="#ffffff">Bodenart auf Tunnel</text>
+  <text x="1124" y="190" font-size="12" fill="rgba(255,255,255,0.8)">Wird aus dem Bohrprofil</text>
+  <text x="1124" y="208" font-size="12" fill="rgba(255,255,255,0.8)">abgeleitet (nicht aus den</text>
+  <text x="1124" y="226" font-size="12" fill="rgba(255,255,255,0.8)">Farbpolygonen des Plans).</text>
+  <text x="1124" y="252" font-size="11" fill="rgba(255,255,255,0.5)">→ Farben dienen nur der Sichtprüfung</text>
+
+  <!-- ============================================================ -->
+  <!-- SECTION B — Zuverlässigkeit (Reliability)                     -->
+  <!-- ============================================================ -->
+  <text x="50" y="320" font-size="18" font-weight="700" fill="#0c2340">B</text>
+  <text x="72" y="320" font-size="18" font-weight="700" fill="#0c2340">Warum ist die Ausgabe zuverlässig?</text>
+
+  <!-- B1 -->
+  <rect x="50" y="340" width="320" height="130" rx="4" fill="#f4f5f7" stroke="#d0d5dd" stroke-width="1"/>
+  <text x="74" y="366" font-size="14" font-weight="700" fill="#0c2340">NHN-Arithmetik geprüft</text>
+  <text x="74" y="390" font-size="12" fill="#4a5568">GOK − Endtiefe = Sohlen-NHN</text>
+  <text x="74" y="408" font-size="12" fill="#4a5568">wird je Bohrung nachgerechnet.</text>
+  <text x="74" y="430" font-size="12" fill="#8896a6">Abweichung > 6 cm → Warnung.</text>
+  <text x="74" y="452" font-size="11" fill="#8896a6">→ Ergebnis sichtbar im Browser (✅ / ❌)</text>
+
+  <!-- B2 -->
+  <rect x="390" y="340" width="320" height="130" rx="4" fill="#f4f5f7" stroke="#d0d5dd" stroke-width="1"/>
+  <text x="414" y="366" font-size="14" font-weight="700" fill="#0c2340">Tunnel-Vorschau</text>
+  <text x="414" y="390" font-size="12" fill="#4a5568">Erkannte OK- und Sohle-Linie</text>
+  <text x="414" y="408" font-size="12" fill="#4a5568">wird über den Originalplan gelegt.</text>
+  <text x="414" y="430" font-size="12" fill="#8896a6">TS-Beschriftungen validieren</text>
+  <text x="414" y="448" font-size="12" fill="#8896a6">die Sohle auf den Zentimeter.</text>
+
+  <!-- B3 -->
+  <rect x="730" y="340" width="320" height="130" rx="4" fill="#f4f5f7" stroke="#d0d5dd" stroke-width="1"/>
+  <text x="754" y="366" font-size="14" font-weight="700" fill="#0c2340">Grün / Gelb-Markierung</text>
+  <text x="754" y="390" font-size="12" fill="#4a5568">Jede Zelle in der Excel-Datei</text>
+  <text x="754" y="408" font-size="12" fill="#4a5568">bekommt eine Konfidenz-Farbe:</text>
+  <rect x="754" y="424" width="10" height="10" rx="2" fill="#48bb78"/>
+  <text x="772" y="434" font-size="12" fill="#4a5568">sicher erkannt</text>
+  <rect x="754" y="442" width="10" height="10" rx="2" fill="#ecc94b"/>
+  <text x="772" y="452" font-size="12" fill="#4a5568">manuell prüfen</text>
+
+  <!-- B4 (accent) -->
+  <rect x="1070" y="340" width="300" height="130" rx="4" fill="#0c2340"/>
+  <text x="1094" y="366" font-size="14" font-weight="700" fill="#ffffff">Kein Raten</text>
+  <text x="1094" y="392" font-size="12" fill="rgba(255,255,255,0.8)">Vektordaten direkt gelesen,</text>
+  <text x="1094" y="410" font-size="12" fill="rgba(255,255,255,0.8)">kein OCR, keine KI-Erkennung.</text>
+  <text x="1094" y="434" font-size="12" fill="rgba(255,255,255,0.5)">Unsichere Stellen werden</text>
+  <text x="1094" y="452" font-size="12" fill="rgba(255,255,255,0.5)">transparent markiert.</text>
+
+  <!-- ============================================================ -->
+  <!-- SECTION C — PDF-Anforderungen                                 -->
+  <!-- ============================================================ -->
+  <text x="50" y="530" font-size="18" font-weight="700" fill="#0c2340">C</text>
+  <text x="72" y="530" font-size="18" font-weight="700" fill="#0c2340">PDF-Anforderungen</text>
+
+  <!-- C1: Bohrprofil -->
+  <rect x="50" y="550" width="640" height="180" rx="4" fill="#f4f5f7" stroke="#d0d5dd" stroke-width="1"/>
+  <text x="74" y="578" font-size="15" font-weight="700" fill="#0c2340">Bohrprofil.pdf</text>
+
+  <text x="74" y="604" font-size="13" font-weight="600" fill="#4a5568">Format</text>
+  <text x="200" y="604" font-size="12" fill="#4a5568">Vektor-CAD (keine gescannten Bilder)</text>
+
+  <text x="74" y="626" font-size="13" font-weight="600" fill="#4a5568">Norm</text>
+  <text x="200" y="626" font-size="12" fill="#4a5568">DIN 4023 mit Kopfzeilen „B nn/jj"</text>
+
+  <text x="74" y="648" font-size="13" font-weight="600" fill="#4a5568">Tiefen</text>
+  <text x="200" y="648" font-size="12" fill="#4a5568">Paare „(NHN) Tiefe" in der Tiefenspalte</text>
+
+  <text x="74" y="670" font-size="13" font-weight="600" fill="#4a5568">Legende</text>
+  <text x="200" y="670" font-size="12" fill="#4a5568">Sektion BODENARTEN + DIN-Sektionen (Kornbereich …)</text>
+
+  <text x="74" y="696" font-size="13" font-weight="600" fill="#4a5568">GOK</text>
+  <text x="200" y="696" font-size="12" fill="#4a5568">Marker „NHN ±x,xx m" im Kopfbereich jeder Bohrung</text>
+
+  <text x="74" y="718" font-size="11" fill="#8896a6">Sonden (DS) und Messstellen (GWM) werden erkannt, aber nicht ausgewertet.</text>
+
+  <!-- C2: Längsschnitt (accent) -->
+  <rect x="720" y="550" width="650" height="180" rx="4" fill="#0c2340"/>
+  <text x="744" y="578" font-size="15" font-weight="700" fill="#ffffff">Längsschnitt.pdf</text>
+
+  <text x="744" y="604" font-size="13" font-weight="600" fill="rgba(255,255,255,0.7)">Tunnel</text>
+  <text x="870" y="604" font-size="12" fill="rgba(255,255,255,0.85)">Graue Füllpolygone (RGB ≈ 0,73)</text>
+
+  <text x="744" y="626" font-size="13" font-weight="600" fill="rgba(255,255,255,0.7)">X-Achse</text>
+  <text x="870" y="626" font-size="12" fill="rgba(255,255,255,0.85)">Stations-Labels „n+nnn.000" (Tunnelmeter)</text>
+
+  <text x="744" y="648" font-size="13" font-weight="600" fill="rgba(255,255,255,0.7)">Y-Achse</text>
+  <text x="870" y="648" font-size="12" fill="rgba(255,255,255,0.85)">NHN-Labels „−nn.nn" in der Achsspalte</text>
+
+  <text x="744" y="670" font-size="13" font-weight="600" fill="rgba(255,255,255,0.7)">Bohrungen</text>
+  <text x="870" y="670" font-size="12" fill="rgba(255,255,255,0.85)">Gleiche IDs wie im Bohrprofil (B nn/jj)</text>
+
+  <text x="744" y="696" font-size="13" font-weight="600" fill="rgba(255,255,255,0.7)">Validierung</text>
+  <text x="870" y="696" font-size="12" fill="rgba(255,255,255,0.85)">TS=…m-Beschriftungen (Tunnelsohle)</text>
+
+  <text x="744" y="718" font-size="11" fill="rgba(255,255,255,0.4)">Farbpolygone (Geologie) optional — nur zur visuellen Kontrolle.</text>
+
+  <!-- ============================================================ -->
+  <!-- FOOTER                                                        -->
+  <!-- ============================================================ -->
+  <rect x="50" y="780" width="1320" height="50" rx="4" fill="#ffffff" stroke="#d0d5dd" stroke-width="1"/>
+  <rect x="50" y="780" width="4" height="50" fill="#0c2340"/>
+  <text x="80" y="810" font-size="13" fill="#4a5568">
+    Erfüllt das PDF diese Struktur, liefert Geo_Agent eine vollständige Excel-Datei — 
+  </text>
+  <text x="628" y="810" font-size="13" font-weight="700" fill="#0c2340">
+    jede unsichere Stelle ist farblich gekennzeichnet.
+  </text>
+
+</svg>

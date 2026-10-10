@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.claude/settings.local.json
+
+# Projektdaten (reale Baugrunddaten / Ergebnisse) - nicht öffentlich versionieren
+data/*.pdf
+data/Geo_Daten.xlsx
