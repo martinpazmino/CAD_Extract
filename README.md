@@ -97,6 +97,12 @@ geo_agent/
 data/                       Eingabe-PDFs + Geo_Template.xlsx
 ```
 
+## Weiterentwicklung (Baugrundmodell)
+
+Evaluierung, Tool-Vergleich und Zielarchitektur (Supabase, IFC 4.3, That Open Engine,
+Extraktion v2) stehen in [`docs/ARQUITECTURA_BAUGRUNDMODELL.md`](docs/ARQUITECTURA_BAUGRUNDMODELL.md);
+der zugehörige IFC/That-Open-Spike in `spikes/ifc_thatopen/`.
+
 ## Performance
 
 Das Bohrprofil wird in < 1 s ausgewertet. Der Längsschnitt dauert ~20 s, weil

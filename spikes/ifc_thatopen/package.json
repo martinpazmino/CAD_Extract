@@ -1,0 +1,14 @@
+{
+  "name": "ifc-thatopen-spike",
+  "private": true,
+  "type": "module",
+  "description": "Spike: IFC4X3-Baugrundmodell -> That Open Fragments",
+  "scripts": {
+    "spike": "node thatopen_import_spike.mjs baugrund_spike.ifc default && node thatopen_import_spike.mjs baugrund_spike.ifc add"
+  },
+  "dependencies": {
+    "@thatopen/fragments": "3.6.0",
+    "three": "0.186.1",
+    "web-ifc": "0.0.78"
+  }
+}
