@@ -1,0 +1,63 @@
+---
+title: "Documentación Geo_Agent: índice"
+date: 2026-10-23
+tags: [indice, geo_agent]
+aliases: [Índice, Mapa de documentos]
+---
+
+# Documentación Geo_Agent: índice
+
+Punto de entrada. Objetivo del conjunto: pasar de "PDF → Excel para un plano concreto" a una
+extracción **independiente del layout**, que recupere todos los datos del Bodengutachten y
+alimente un **Baugrundmodell** (Supabase → IFC 4.3 → That Open).
+
+> [!NOTE]
+> Resumen en una frase: la extracción actual depende de posiciones y colores fijos; un
+> enfoque geométrico/estadístico (probado en PDFs sintéticos), los algoritmos ya maduros de
+> swissgeol para la estratigrafía textual y un banco de pruebas con error silencioso como KPI lo
+> resuelven. Ver [11 Decisiones](11_decisiones.md).
+
+## Visión general
+
+- [Arquitectura y Baugrundmodell](ARQUITECTURA_BAUGRUNDMODELL.md): evaluación, benchmark de herramientas, arquitectura Supabase + workers + That Open, IFC 4.3; leer primero si se busca el panorama completo.
+- [11 Decisiones y conclusiones](11_decisiones.md): todas las conclusiones en una tabla, con evidencia y estado; leer si sólo hay 5 minutos.
+
+## Extracción: problema y solución
+
+- [01 Diagnóstico: supuestos de layout fijos](01_diagnostico_layout_fijo.md): inventario con líneas de código y fallos medidos; leer para entender por qué falla con otra oficina.
+- [02 Bohrprofil independiente del layout](02_bohrprofil_generalizacion.md): columnas por geometría, escala por regresión, descripción, fusión; el núcleo de la solución.
+- [03 Längsschnitt sin constantes](03_laengsschnitt_generalizacion.md): ejes, túnel, geología vectorial; diseño para el segundo PDF.
+
+## Datos que hoy se pierden
+
+- [04 Schraffur DIN 4023](04_schraffur_din4023.md): la columna gráfica como segunda señal, clasificada con la leyenda.
+- [05 Sondierungen DPH/CPT](05_sondierungen.md): digitalizar curvas con ejes calibrados.
+- [06 Grundwasser](06_grundwasser.md): símbolo, palabras clave, color y líneas de agua.
+- [07 Coordenadas y georreferencia](07_coordenadas.md): tablas, Lageplan, eje; CRS alemanes; desbloquea el 3D.
+
+## Reutilización, medición y plan
+
+- [08 swissgeol: qué reutilizar](08_swissgeol_reutilizacion.md): mapa de módulos, prueba sobre nuestros PDFs, estrategias y licencia.
+- [09 Validación y benchmark](09_validacion_benchmark.md): resultados v1 / v2 / swissgeol, formato de verdad, corpus y métricas.
+- [10 Plan de implementación](10_plan_implementacion.md): pasos 0–8 con archivos, criterios y esfuerzo.
+- [Glosario alemán–español](glosario.md): términos geotécnicos y de swissgeol.
+
+## Código de apoyo
+
+- [Spike extracción v2](../spikes/extraktion_v2/README.md): generador de PDFs sintéticos, prototipo v2, comparativa v1/v2/swissgeol.
+- [Spike IFC + That Open](../spikes/ifc_thatopen/README.md): IFC 4.3 geotécnico con IfcOpenShell y su importación en That Open.
+
+## Cómo leer
+
+```
+Arquitectura ─► 11 Decisiones
+      │
+      ▼
+01 Diagnóstico ─► 02 Bohrprofil ─► 04 Schraffur
+      │               │   └──────► 05 Sondierungen · 06 Grundwasser · 07 Coordenadas
+      │               ▼
+      └──────────► 03 Längsschnitt
+08 swissgeol ─► 09 Validación ─► 10 Plan
+```
+
+Up: [README del repositorio](../README.md)

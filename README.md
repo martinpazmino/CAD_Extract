@@ -99,9 +99,15 @@ data/                       Eingabe-PDFs + Geo_Template.xlsx
 
 ## Weiterentwicklung (Baugrundmodell)
 
-Evaluierung, Tool-Vergleich und Zielarchitektur (Supabase, IFC 4.3, That Open Engine,
-Extraktion v2) stehen in [`docs/ARQUITECTURA_BAUGRUNDMODELL.md`](docs/ARQUITECTURA_BAUGRUNDMODELL.md);
-der zugehörige IFC/That-Open-Spike in `spikes/ifc_thatopen/`.
+Einstieg: [`docs/README.md`](docs/README.md) (Index der verknüpften Notizen, Spanisch).
+
+* [Architektur & Tool-Vergleich](docs/ARQUITECTURA_BAUGRUNDMODELL.md): Supabase, IFC 4.3, That Open Engine
+* [Diagnose der festen Layout-Annahmen](docs/01_diagnostico_layout_fijo.md) und
+  [layout-unabhängige Bohrprofil-Extraktion](docs/02_bohrprofil_generalizacion.md)
+* [Wiederverwendung von swissgeol](docs/08_swissgeol_reutilizacion.md),
+  [Validierung/Benchmark](docs/09_validacion_benchmark.md), [Umsetzungsplan](docs/10_plan_implementacion.md)
+* Spikes: [`spikes/extraktion_v2/`](spikes/extraktion_v2/README.md) (synthetische PDFs, Prototyp v2,
+  Vergleich v1/v2/swissgeol) und [`spikes/ifc_thatopen/`](spikes/ifc_thatopen/README.md)
 
 ## Performance
 

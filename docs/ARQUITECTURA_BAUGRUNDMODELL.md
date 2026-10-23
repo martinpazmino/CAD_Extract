@@ -1,3 +1,10 @@
+---
+title: "Geo_Agent → Baugrundmodell: evaluación, benchmark y arquitectura"
+date: 2026-10-23
+tags: [arquitectura, baugrundmodell, supabase, ifc, thatopen]
+aliases: [Arquitectura, Arquitectura Baugrundmodell]
+---
+
 # Geo_Agent → Baugrundmodell: evaluación, benchmark y arquitectura propuesta
 
 > Estado: propuesta técnica (octubre 2026). Documento de contexto para implementar la
@@ -5,8 +12,11 @@
 > en Supabase → Baugrundmodell 3D → IFC 4.3 / That Open Engine**.
 >
 > Las afirmaciones marcadas con **[verificado]** se comprobaron con un spike en este repo
-> (`spikes/ifc_thatopen/`). Lo marcado con **[a verificar]** son supuestos razonables que
-> deben confirmarse en la implementación.
+> ([`spikes/ifc_thatopen/`](../spikes/ifc_thatopen/README.md)). Lo marcado con **[a verificar]** son
+> supuestos razonables que deben confirmarse en la implementación.
+>
+> Notas de detalle (diagnóstico, generalización, Schraffur, Sondierungen, Grundwasser,
+> coordenadas, swissgeol, validación, plan): [índice de documentación](README.md).
 
 ---
 
@@ -91,7 +101,7 @@ Längsschnitt.pdf ─► laengsschnitt.py (Achsen-Regression, Tunnelmaske, Zonen
 
 | Herramienta | Tipo | Qué hace | Qué tomar de ella |
 |---|---|---|---|
-| **swisstopo `swissgeol-boreholes-dataextraction`** | Open source (Python, PyMuPDF, AGPL-3.0, beta, v1.1.0 mayo 2026) | Pipeline PDF → JSON: nombre, coordenadas (LV95/LV03), cota, profundidades por capa, descripciones, Grundwasser (palabras clave + detección del símbolo por líneas). Optimizado para perfiles suizos en alemán. API + modo benchmark contra ground truth. | Es **lo más parecido** a Geo_Agent. Copiar: (1) la descomposición *sidebar* (columna de profundidades) / *interval* / *depth-description alignment* / variante sin sidebar; (2) el **harness de benchmark** con ground truth JSON; (3) la detección de símbolos por geometría. |
+| **swisstopo `swissgeol-boreholes-dataextraction`** (análisis completo y prueba: [08](08_swissgeol_reutilizacion.md)) | Open source (Python, PyMuPDF, AGPL-3.0, beta, v1.1.0 mayo 2026) | Pipeline PDF → JSON: nombre, coordenadas (LV95/LV03), cota, profundidades por capa, descripciones, Grundwasser (palabras clave + detección del símbolo por líneas). Optimizado para perfiles suizos en alemán. API + modo benchmark contra ground truth. | Es **lo más parecido** a Geo_Agent. Copiar: (1) la descomposición *sidebar* (columna de profundidades) / *interval* / *depth-description alignment* / variante sin sidebar; (2) el **harness de benchmark** con ground truth JSON; (3) la detección de símbolos por geometría. |
 | **swisstopo `swissgeol-boreholes-suite` (BDMS)** | Open source, app web | Gestión de datos de sondeos (captura, revisión, publicación). | Referencia de modelo de datos y flujo de revisión. |
 | **Civils.ai – Borehole Digitiser** | SaaS comercial | PDF (también escaneado) → AGS 4.1 / Excel, georreferenciado para OpenGround/Leapfrog. | Salida AGS4 como formato de intercambio; flujo de revisión humana. |
 | **GeoLayer** | SaaS comercial | Logs escaneados/manuscritos → Excel/AGS4/gINT/OpenGround/CAD, con *confidence flags* y revisión en pantalla. | UI de revisión con banderas de confianza. |
@@ -493,6 +503,8 @@ reglas no deciden. Clases: `bohrprofil`, `laengsschnitt`, `lageplan`, `legende`,
 
 ### 6.4 Bohrprofil: de offsets fijos a detección geométrica
 
+> Detalle y resultados del prototipo: [01 Diagnóstico](01_diagnostico_layout_fijo.md), [02 Bohrprofil](02_bohrprofil_generalizacion.md), [04 Schraffur](04_schraffur_din4023.md), [05 Sondierungen](05_sondierungen.md), [06 Grundwasser](06_grundwasser.md).
+
 **a) Columnas (Säulen).** Una columna DIN 4023 es una secuencia vertical de rectángulos del
 mismo ancho, apilados sin huecos, cada uno con relleno/Schraffur. Se detectan agrupando paths
 rectangulares por `x0/x1` (±0,5 pt) y continuidad vertical. El ID se asigna por el texto
@@ -598,6 +610,8 @@ Ejemplo de salida estructurada:
 
 ### 6.6 Längsschnitt v2
 
+> Detalle: [03 Längsschnitt](03_laengsschnitt_generalizacion.md).
+
 - **Ejes**: detectar etiquetas de estación con varias notaciones (`0+100`, `km 1+250,000`,
   `1+250.000`) en cualquier posición, agrupar por fila (clustering en y) y ajustar; idem para el
   eje NHN (columna de números equiespaciados). La relación de escalas da la **Überhöhung**
@@ -628,6 +642,8 @@ def section_polygons(page, layer_or_colours, x2tm, y2nhn):
   Bohrprofil (GOK, límites) → regla de validación adicional.
 
 ### 6.7 Coordenadas (desbloquean el 3D)
+
+> Detalle y prueba de lectura de tablas: [07 Coordenadas](07_coordenadas.md).
 
 Por orden de preferencia:
 1. **Tabla del Gutachten** ("Lage- und Höhenverzeichnis der Aufschlüsse"): `page.find_tables()`
@@ -698,6 +714,8 @@ laengsschnitt:
 ```
 
 ### 6.11 Banco de pruebas (imprescindible)
+
+> Detalle, resultados v1/v2/swissgeol y métricas: [09 Validación](09_validacion_benchmark.md).
 
 - **Ground truth JSON** por PDF de referencia (formato = modelo canónico), como el harness de
   swisstopo. Métricas: precisión/recall de límites (tolerancia 1–2 cm), exactitud de
@@ -941,3 +959,9 @@ Estimaciones orientativas para una persona; dependen sobre todo de la variedad d
 - LLMs en geotecnia (revisión, GEOBERTje): <https://arxiv.org/pdf/2507.05613> · StratumGPT: <https://scholars.cityu.edu.hk/en/publications/locally-tuned-large-language-model-llm-to-empower-digitalization-/>
 - Supabase extensiones: <https://supabase.com/docs/guides/database/extensions>
 - PostGIS PolyhedralSurface / SFCGAL: <https://postgis.net/docs/postgis_cheatsheet-en.html>
+
+---
+
+Up: [Índice](README.md)
+
+Related: [11 Decisiones](11_decisiones.md) · [01 Diagnóstico](01_diagnostico_layout_fijo.md) · [08 swissgeol](08_swissgeol_reutilizacion.md) · [09 Validación](09_validacion_benchmark.md) · [10 Plan](10_plan_implementacion.md)
