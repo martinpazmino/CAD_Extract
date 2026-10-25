@@ -94,6 +94,18 @@ Lecturas:
 - Nuestro prototipo v2 acierta además Schraffur, agua, GOK, coordenadas y DPH en los mismos PDFs
   ([09](09_validacion_benchmark.md)).
 
+### Con PDFs reales
+
+Detalle en [15](15_resultados_pdfs_reales.md):
+- **Wachenroth**: 6/6 sondeos, 18/18 límites y 6/6 cotas en las páginas individuales, pero
+  **5 sondeos falsos** (el corte en altura repetido y un informe de laboratorio) y 1 nivel
+  freático falso.
+- **Talheim** (páginas giradas, representación en altura): 0/10.
+- **Halle** (sin perfiles): **4 sondeos falsos** sacados de tablas.
+
+Confirma la lectura de arriba: su núcleo encuentra bien profundidades y descripciones, pero
+falta saber qué es un sondeo y qué no.
+
 ## 5. Estrategias de reutilización
 
 | Estrategia | Pros | Contras | Uso recomendado |

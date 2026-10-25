@@ -16,8 +16,15 @@ derecha de la columna. Así el mismo código sirve para cualquier oficina y esca
 [`spikes/extraktion_v2/prototyp_v2.py`](../spikes/extraktion_v2/prototyp_v2.py) sobre los 6
 layouts sintéticos (17 sondeos, 102 capas): **102/102 capas** con límite, Bodenart y texto
 correctos, también en A3, A4 y B, donde v1 falla, y la contradicción deliberada de A5 se reporta
-como issue ([01](01_diagnostico_layout_fijo.md)). Los PDFs los generó el mismo equipo que el
-prototipo: falta validar con PDFs reales ([09](09_validacion_benchmark.md)).
+como issue ([01](01_diagnostico_layout_fijo.md)).
+
+**Con PDFs reales** (Wachenroth, Talheim) hicieron falta siete cambios: geometría reducida a
+segmentos, normalización de la rotación, escala elegida por confirmación de etiquetas, filtros de
+tablas y escalas normalizadas, entre otros. El resultado es
+[`prototyp_v3.py`](../spikes/extraktion_v2/prototyp_v3.py): **16/16 sondeos y 83/83 límites**,
+sin regresión en los sintéticos. Detalle y límites en
+[15 Resultados reales](15_resultados_pdfs_reales.md). El método descrito abajo sigue siendo el
+mismo; las variantes de v3 se indican con **(v3)**.
 
 ## Pipeline
 
@@ -38,6 +45,12 @@ words + drawings ─► 1 columnas ─► 2 cabecera (ID, GOK) ─► 3 escala y
   (`find_columns` en el prototipo.)
 - Las muestras de la leyenda no forman cadenas (hay huecos entre ellas) y los marcos de
   diagramas no tienen relleno: se excluyen solos.
+- **(v3)** Más general: reducir todo (líneas, rectángulos, quads) a **segmentos**, unir los
+  colineales, y definir la columna como **par de verticales con trazo** (8–80 pt, alto ≥ 2,5 ×
+  ancho). Los límites son horizontales continuas que tocan **ambos** bordes (±0,6 pt), así que
+  la Schraffur queda fuera. De los candidatos anidados se queda el de bordes más gruesos. Funciona
+  igual con rectángulos (sintéticos), segmentos sueltos (Wachenroth) y bordes por tramos con
+  máscaras blancas (Talheim).
 - **Fallbacks** para planos donde la columna no está hecha de rectángulos:
   1. líneas horizontales que cruzan un mismo intervalo `x` (los límites de capa);
   2. raster: el detector de *strip logs* de swissgeol (`swissgeol_doc_processing/utils/strip_log_detection.py`)
@@ -62,7 +75,15 @@ words + drawings ─► 1 columnas ─► 2 cabecera (ID, GOK) ─► 3 escala y
    (exactamente el criterio de `AAboveBSidebarValidator` de swissgeol).
 3. Ajuste `Tiefe = a·y + b`. De `a` sale la escala real: `M = a / 0,000352778` (1 pt = 0,3528 mm).
    El prototipo recupera **1:100 y 1:50** sin configuración; se contrasta con el texto `M 1:…`.
-4. Robustez adicional de swissgeol que conviene portar:
+4. **(v3)** Con planos reales las etiquetas pueden estar **desplazadas** (líneas de referencia) y
+   rotular el **techo** (con 0,00) o la **base**. Por eso v3 genera candidatos de escala:
+   - directa, con la etiqueta sobre la línea;
+   - por orden, con la k-ésima etiqueta en el k-ésimo límite;
+   - el texto `M 1:xx` / `Höhenmaßstab 1 : 75`.
+
+   Se elige el candidato con más **etiquetas confirmadas** por algún límite (±3 cm) y sólo se
+   aceptan **escalas normalizadas** (±4 %). La confirmación etiqueta↔límite es 1:1.
+5. Robustez adicional de swissgeol que conviene portar:
    - quitar iterativamente la entrada que más empeora el ajuste (`remove_entry_by_correlation_gradient`);
    - descartar **reglas/escalas** (`0, 1, 2, 3 m…`): progresiones aritméticas que contienen 0
      (`_arithmetic_progression_entries`);

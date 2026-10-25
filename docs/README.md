@@ -43,6 +43,7 @@ alimente un **Baugrundmodell** (Supabase → IFC 4.3 → That Open).
 - [12 Corpus real con Gutachten públicos](12_corpus_publico.md): de dónde sacar 5–10 PDFs reales, cómo evaluarlos sin verdad, uso legal.
 - [13 Colaboración con swisstopo](13_colaboracion_swisstopo.md): qué nos dan y qué les damos, primeros pasos, borradores de issues y correo.
 - [14 Licencias: interno hoy, terceros mañana](14_licencias_terceros.md): AGPL, opciones, prueba de pypdfium2, capa de primitivas.
+- [15 Resultados con PDFs reales](15_resultados_pdfs_reales.md): v1 / v3 / swissgeol con 3 Gutachten públicos, siete lecciones, lo que aún falla.
 - [Glosario alemán–español](glosario.md): términos geotécnicos y de swissgeol.
 
 ## Código de apoyo
@@ -64,7 +65,7 @@ Arquitectura ─► 11 Decisiones
 08 swissgeol ─► 13 Colaboración swisstopo
       │              14 Licencias
       ▼
-09 Validación ◄─ 12 Corpus público
+09 Validación ◄─ 12 Corpus público ─► 15 Resultados reales
       ▼
 10 Plan
 ```

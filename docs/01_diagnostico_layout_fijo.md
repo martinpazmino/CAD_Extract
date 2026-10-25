@@ -32,6 +32,13 @@ ejemplo `Kies, sandig, …` pierde la primera palabra (queda fuera de la banda `
 `sandig` contiene `sand` y se clasifica como *Sand* con certeza. Ese es el peor modo de fallo:
 el Excel parece correcto.
 
+### Con PDFs reales
+
+En los tres primeros Gutachten públicos v1 extrae **0 de 16 sondeos** (no reconoce `B 1`,
+`BK1`, `GWM1` sin año, ni esos layouts). Además, con textos reales `soil.classify` da como
+**seguros** `Sandstein` → *Sand*, `Tonstein` → *Steine* y `Beton` → *Ton*
+([15](15_resultados_pdfs_reales.md)).
+
 ## 2. Inventario de supuestos fijos
 
 Modo de fallo: **T** = total (no se extrae nada, visible) · **S** = silencioso (dato erróneo
@@ -51,7 +58,7 @@ con aspecto válido) · **P** = pérdida de información.
 | 8 | `geo_agent/bohrprofil.py:32` + README | `DS`, `GWM` excluidos; "CPT-/Sonden-Spalten bewusst weggelassen" | P | → [05](05_sondierungen.md) |
 | 9 | — | Nivel freático no se extrae | P | → [06](06_grundwasser.md) |
 | 10 | `geo_agent/bohrprofil.py:186-190` | Si un segmento no tiene Bodenart segura, se asume "continuación de la capa anterior" | S | Tratar como issue de revisión, no como dato |
-| 11 | `geo_agent/soil.py:22`, `:51` | Reglas por subcadena (`"sand" in palabra`) → adjetivos (`sandig`, `tonig`) cuentan como Bodenart; vocabulario regional (Lauenburger Ton, Glimmerton, Klei) | S | Gramática: sustantivo principal vs. adjetivo `-ig` → [02](02_bohrprofil_generalizacion.md#5-clasificación-del-texto-sustantivo-no-adjetivo) |
+| 11 | `geo_agent/soil.py:22`, `:51` | Reglas por subcadena (`"sand" in palabra`) → adjetivos (`sandig`, `tonig`) cuentan como Bodenart, y rocas/antrópicos también (`Sandstein` → Sand, `Beton` → Ton, verificado con PDFs reales); vocabulario regional (Lauenburger Ton, Glimmerton, Klei) | S | Gramática: sustantivo principal vs. adjetivo `-ig` → [02](02_bohrprofil_generalizacion.md#5-clasificación-del-texto-sustantivo-no-adjetivo) |
 | 12 | `geo_agent/legend.py:73-75` | La leyenda sólo se reconoce si contiene secciones DIN (`KORNGR…`, `KONSISTENZ`…) | T (sin vocabulario) | Buscar `ZEICHENERKLÄRUNG`/`LEGENDE`/`BODENARTEN` y muestras de Schraffur |
 | 13 | `geo_agent/legend.py:88-90`, `:102` | Ventana `y` y corte de columna `ax+85` fijos | S | Filas = muestra (rectángulo) + texto a su derecha |
 

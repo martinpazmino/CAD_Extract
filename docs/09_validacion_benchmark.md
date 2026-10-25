@@ -12,6 +12,11 @@ cosas: un **formato de verdad** (adoptado de swissgeol con extensiones), un **co
 para CI + real para calibrar) y **métricas** donde la principal sea la **tasa de error
 silencioso**: datos erróneos que la app marca como seguros.
 
+> [!NOTE]
+> Hay una primera ronda con **PDFs reales** (3 Gutachten públicos, verdad transcrita):
+> v1 0/16 sondeos; v3 16/16 sondeos, 83/83 límites, 0 falsos; swissgeol 6/16 y 12 falsos.
+> Ver [15 Resultados reales](15_resultados_pdfs_reales.md).
+
 ## 1. Resultados actuales (spike, PDFs sintéticos)
 
 Reproducir: [`spikes/extraktion_v2/README.md`](../spikes/extraktion_v2/README.md).

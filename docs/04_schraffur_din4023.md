@@ -19,6 +19,12 @@ sintéticos clasificadas correctamente sólo por Schraffur; la restante es la ca
 a propósito con el patrón equivocado, y el prototipo la reporta como `Text 'Sand' != Schraffur
 'Kies'` (v1 no la nota). Con planos reales hay que calibrar (ver §5).
 
+> [!NOTE]
+> Con PDFs reales todavía **no** está evaluado. En Wachenroth el patrón y las muestras de la
+> leyenda son segmentos sueltos (sin rellenos); en Talheim se combinan color, letra (`A`, `Mu`) y
+> símbolos. El detector de muestras del prototipo sólo acepta rectángulos rellenos: hay que
+> construirlas desde segmentos, como la columna en v3 ([15](15_resultados_pdfs_reales.md)).
+
 ## 1. Por qué la leyenda es el conjunto de entrenamiento
 
 Cada Zeichenerklärung DIN 4023 dibuja una muestra del patrón junto al nombre de la Bodenart.

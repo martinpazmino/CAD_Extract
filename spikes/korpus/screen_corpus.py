@@ -9,8 +9,9 @@ committen (siehe docs/12_corpus_publico.md). Der Zielordner sollte ausserhalb de
 Sichtung je Seite: Textzeichen, Vektorpfade, Bilder (Bildflaeche > 80 % und kaum Text = Scan),
 Schlagworte (Bohrprofil-Indizien). Auswertung ohne Wahrheit = Selbstkonsistenz:
   v1  Bohrungen, NHN-Arithmetik ok
-  v2  Bohrungen, Schichten, aus der Regression abgeleiteter Massstab vs. Text 'M 1:xx',
-      Anteil durch Tiefenlabels bestaetigter Grenzen, Text = Schraffur, Issues, GW, Koordinaten
+  v3  Bohrungen, Schichten, abgeleiteter Massstab vs. Text 'M 1:xx', Anteil durch Tiefenlabels
+      bestaetigter Grenzen, Issues, GW / 'kein Grundwasser', Koordinaten
+Mit Wahrheit (groundtruth/*.json): eval_real.py
 Dazu ein Vorschaubild je Bohrprofil-Seite fuer die Sichtpruefung.
 """
 from __future__ import annotations
@@ -32,7 +33,7 @@ sys.path.insert(0, str(HERE.parent / "extraktion_v2"))          # Prototyp v2
 
 KEYWORDS = ["bohrprofil", "din 4023", "zeichenerkl", "legende", "rammsondierung", "schichtenverzeichnis",
             "kleinrammbohrung", "rammkernsondierung", "bohrung", "dph", "grundwasser", "nhn", "m nn"]
-SCALE_RE = re.compile(r"M(?:a(?:ss|ß)stab)?\.?\s*1\s*:\s*(\d{2,4})", re.I)
+SCALE_RE = re.compile(r"M(?:a(?:ss|ß)stab)?\s*[.:]?\s*1\s*:\s*(\d{2,4})", re.I)
 
 
 def sha256(p: Path) -> str:
@@ -69,7 +70,7 @@ def screen_page(page: pymupdf.Page) -> dict:
 def evaluate(pdf: Path, out: Path) -> dict:
     from geo_agent.bohrprofil import parse_bohrprofil
     from geo_agent.legend import parse_legend
-    from prototyp_v2 import extract
+    from prototyp_v3 import extract
 
     doc = pymupdf.open(pdf)
     pages = [screen_page(p) for p in doc]
@@ -88,19 +89,18 @@ def evaluate(pdf: Path, out: Path) -> dict:
     try:
         bhs, dph = extract(pdf)
         layers = [ly for b in bhs for ly in b.layers]
-        both = [ly for ly in layers if ly.soil_text and ly.soil_hatch]
-        res["v2"] = {
+        res["v3"] = {
             "boreholes": len(bhs), "layers": len(layers),
             "scales": sorted({b.scale for b in bhs}),
             "labels_confirm": round(sum(ly.label_confirmed for ly in layers) / len(layers), 2) if layers else None,
-            "text_eq_hatch": round(sum(ly.soil_text == ly.soil_hatch for ly in both) / len(both), 2) if both else None,
             "issues": sum(len(ly.issues) for ly in layers),
-            "gw": sum(b.gw_depth is not None for b in bhs),
+            "gw": sum(bool(b.gw_depths) for b in bhs),
+            "no_gw": sum(b.gw_status == "kein Grundwasser" for b in bhs),
             "coords": sum(b.east is not None for b in bhs),
             "soundings": len(dph),
         }
     except Exception as e:                                       # noqa: BLE001
-        res["v2"] = {"error": repr(e)[:120]}
+        res["v3"] = {"error": repr(e)[:120]}
     for i in cand[:3]:
         doc[i].get_pixmap(dpi=40).save(out / f"{pdf.stem}_p{i + 1}.png")
     return res
@@ -108,17 +108,17 @@ def evaluate(pdf: Path, out: Path) -> dict:
 
 def report(rows: list[dict], out: Path) -> None:
     lines = ["| PDF | Seiten | Vektor/Scan | Bohrprofil-Seiten | M (Text) | v1 Bohrungen (NHN ok) | "
-             "v2 Bohrungen / Schichten | v2 M | Labels bestaetigt | Text = Schraffur | Issues | GW | Koord. |",
-             "|" + "---|" * 13]
+             "v3 Bohrungen / Schichten | v3 M | Labels bestaetigt | Issues | GW / kein GW | Koord. |",
+             "|" + "---|" * 12]
     for r in rows:
-        v1, v2 = r.get("v1", {}), r.get("v2", {})
+        v1, v3 = r.get("v1", {}), r.get("v3", {})
         lines.append(
             f"| {r['file']} | {r['pages']} | {r['vector_pages']}/{r['scan_pages']} | "
             f"{','.join(map(str, r['bohrprofil_pages'][:8]))} | {r['scale_text']} | "
             f"{v1.get('boreholes', v1.get('error'))} ({v1.get('nhn_ok', '-')}) | "
-            f"{v2.get('boreholes', v2.get('error'))} / {v2.get('layers', '-')} | {v2.get('scales', '-')} | "
-            f"{v2.get('labels_confirm', '-')} | {v2.get('text_eq_hatch', '-')} | {v2.get('issues', '-')} | "
-            f"{v2.get('gw', '-')} | {v2.get('coords', '-')} |")
+            f"{v3.get('boreholes', v3.get('error'))} / {v3.get('layers', '-')} | {v3.get('scales', '-')} | "
+            f"{v3.get('labels_confirm', '-')} | {v3.get('issues', '-')} | "
+            f"{v3.get('gw', '-')} / {v3.get('no_gw', '-')} | {v3.get('coords', '-')} |")
     (out / "report.md").write_text("\n".join(lines) + "\n")
     (out / "report.json").write_text(json.dumps(rows, indent=1, default=str))
     print("\n".join(lines))

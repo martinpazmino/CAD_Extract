@@ -17,6 +17,11 @@ las listas de palabras clave y la detección por color de swissgeol.
 profundidad a ±5 cm y fecha. swissgeol sin cambios encontró **0/14** en los 5 layouts en que se
 probó (su detector busca el símbolo suizo de dos líneas; [08](08_swissgeol_reutilizacion.md#4-prueba-swissgeol-sin-cambios-sobre-nuestros-pdfs)).
 
+**Con PDFs reales** ([15](15_resultados_pdfs_reales.md)): Talheim **3/4**. El triángulo puede
+estar junto a la columna vecina y lo que decide el sondeo es el extremo de la **línea de agua**.
+El símbolo de "angebohrt" (dos trazos + línea) aún no se lee. Wachenroth: "kein Grundwasser"
+detectado en **6/6** y guardado como dato. swissgeol: 1 nivel freático falso.
+
 ## 1. Formas de aparición
 
 | Forma | Dónde | Cómo se lee |

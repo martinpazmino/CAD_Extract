@@ -1,10 +1,10 @@
 name	land	verfahren	url	hinweis
-wachenroth	BY	B-Plan Angerleite	https://wachenroth.de/wp-content/uploads/01.5_222918_WRO_BPL_BG-Angerleite_Bodengutachten_20230517.pdf	Bohrprofile B1-B6 nach DIN 4023 (Anlage 3)
+wachenroth	BY	B-Plan Angerleite	https://wachenroth.de/wp-content/uploads/01.5_222918_WRO_BPL_BG-Angerleite_Bodengutachten_20230517.pdf	GEPRUEFT: 6 Bohrprofile vektoriell (S.39-44, M 1:25) + Schnitt (S.45); Berichtstext gescannt; Wahrheit in groundtruth/
 dresden	SN	vB-Plan 6061	https://www.dresden.de/media/pdf/stadtplanung/offenlagen/01_vb-6061_Baugrundgutachten.pdf	Bohrprofile DIN 4023, Baugrundschnitt, Rammsondierungen
 ditzingen	BW	B-Plan Schoeckinger Grund	https://www.ditzingen.de/fileadmin/Dateien/Dateien/Bebauungsplaene/Gewerbegebiet_Schoeckinger_Grund/Schoeckinger_Grund_Baugrunduntersuchung.pdf	Bohrprofile DIN 4023, Schichtenverzeichnisse EN ISO 14688-1
 marktoberdorf88	BY	B-Plan 88	https://www.marktoberdorf.de/rathaus/bauleitplanung/BPL%2088/A15_Baugrundgutachten.pdf	Kleinrammbohrungen + DPH-Diagramme, Lageplan
 hausham	BY	B-Plan 44	https://www.hausham.de/fileadmin/Dateien/Dateien/Rathaus/Bauleitplanung/Bekanntmachungen/BPL44/Baugrundgutachten_12.05.2020.pdf	Bohrprofile, RKS-Profile, Rammdiagramme, Lageplan
-halle	ST	B-Plan 152	https://halle.de/fileadmin/Binaries/Bauen_Wohnen/Bauleitplanung/Foermliche_Beteiligung/B_152_Entwurf_Baugrundgutachten.pdf	Schichtenverzeichnisse, Bohrprofile, Rammsondierungen, Homogenbereiche
+halle	ST	B-Plan 152	https://halle.de/fileadmin/Binaries/Bauen_Wohnen/Bauleitplanung/Foermliche_Beteiligung/B_152_Entwurf_Baugrundgutachten.pdf	GEPRUEFT: nur Berichtstext, KEINE Anlagen/Bohrprofile; GW-Tabelle (26 KRB); Wahrheit in groundtruth/
 luebeck	SH	B-Plan 32.59.00	https://www.luebeck.de/files/stadtentwicklung/Bebauungsplaene/aktuelle%20Oeffentlichkeitsbeteiligung/Bebauungsplan%2032.59.00%20%E2%80%93%20Howingsbrook%20%20R%C3%B6dsaal/32-59-00_Baugrunduntersuchung.pdf	Rammsondierungsprotokolle
 rednitzhembach	BY	B-Plan GE Nord	https://www.rednitzhembach.de/fileadmin/Dateien/Dateien/Bauamt/Rechtsverbindliche_Bebauungsplaene/Gewerbegebiet_Nord_im_Bereich_Berliner_Strasse/GE_Nord_im_Bereich_Berliner_Strasse_und_St2409_Baugrunduntersuchung_und_Baugrundgutachten.pdf	Bohrprofile Anlagen 3.1-3.4, Lageplan
 hh_gropiusring	HH	Transparenzportal (SAGA)	https://daten.transparenz.hamburg.de/Dataport.HmbTG.ZS.Webservice.GetRessource100/GetRessource100.svc/5e98a1f3-db2a-4474-96a9-f8c06553be65/Akte__000.00-04.pdf	Geotechnischer Bericht mit Bohrprofilen (Hamburg)
@@ -12,6 +12,6 @@ hh_borchertring	HH	Transparenzportal (SAGA)	https://daten.transparenz.hamburg.de
 hh_nf76	HH	B-Plan Neugraben-Fischbek 76	https://bauleitplanung.hamburg.de/file/55e982dd-5184-11eb-a7b2-00505697774f/f7371941-fc40-4fcc-a704-ce5794a243da	Baugrund- und Gruendungsgutachten (Hamburg)
 bremen	HB	Umweltbehoerde	https://umwelt.bremen.de/sixcms/media.php/13/3.2%20Baugrundgutachten.pdf	Baugrundgutachten (Bremen)
 freising	BY	B-Plan 163	https://www.freising.de/media/user_upload/61_Stadtplanung_Umwelt/Bauleitplanung/Aktuelle-Auslegungen/08-bebauungsplan-163-grundschule-sued-lerchenfeld-geotechnisches-gutachten.pdf	Geotechnisches Gutachten
-talheim	BW	UVP-Verbund	https://uvp-verbund.de/documents-ige-ng/igc_bw/9b935c78-6f28-4f37-9f29-2ce860316ece/230405_Geotech%20Kaiser_7867_Bericht%20Sickerwasserleitung%20Talheim.pdf	Geotechnischer Bericht (anderes Buero)
+talheim	BW	UVP-Verbund	https://uvp-verbund.de/documents-ige-ng/igc_bw/9b935c78-6f28-4f37-9f29-2ce860316ece/230405_Geotech%20Kaiser_7867_Bericht%20Sickerwasserleitung%20Talheim.pdf	GEPRUEFT: 8 BK + 2 GWM, Seiten 90 Grad gedreht, Hoehenmassstab 1:75; Wahrheit in groundtruth/
 berlin_poelnitz	BE	UVP-Verbund	https://www.uvp-verbund.de/documents-ige-ng/igc_be/c74ef56a-5927-4daa-ab5a-0f82ce09d0e9/2022-0071_P%C3%B6lnitzweg_UVP%2FUL14_1_9_Geotechnischer_Bericht_GA_BW_05_070605.pdf	Geotechnischer Bericht (Berlin)
 offenstetten	BY	Staatl. Bauamt (Strasse, Einhausung)	https://www.stbala.bayern.de/mam/strassenbau/projekte/B21S.ALSA0028.00/baugrundgutachten_offenstetten.pdf	Tunnel/Einhausung, 6 Anlagen

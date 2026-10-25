@@ -15,6 +15,7 @@ producción**: los umbrales están elegidos para los PDFs sintéticos.
 |---|---|
 | [`synth_bohrprofil.py`](synth_bohrprofil.py) | Genera 6 layouts DIN 4023 simplificados (A, A2, A3, A4, A5, B) + JSON con la verdad |
 | [`prototyp_v2.py`](prototyp_v2.py) | Extractor v2: columnas, cabecera/GOK, escala por regresión, descripción, Schraffur, agua, DPH, coordenadas |
+| [`prototyp_v3.py`](prototyp_v3.py) | Iteración tras los primeros PDFs reales: segmentos, rotación, escala por confirmación de etiquetas, convención techo/base, filtros de tabla, clasificación roca/antrópico ([15](../../docs/15_resultados_pdfs_reales.md)); sigue acertando los sintéticos |
 | [`run_geo_agent_v1.py`](run_geo_agent_v1.py) | Ejecuta el parser actual (`geo_agent`) sobre los layouts |
 | [`run_prototyp_v2.py`](run_prototyp_v2.py) | Ejecuta el prototipo v2 y lo compara con la verdad |
 | [`score_swissgeol.py`](score_swissgeol.py) | Puntúa las predicciones de swissgeol con la misma métrica |

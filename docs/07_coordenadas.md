@@ -15,6 +15,9 @@ esta es la extracción que desbloquea el Baugrundmodell.
 **Estado:** tabla probada en el prototipo (`coordinate_table` en
 [`prototyp_v2.py`](../spikes/extraktion_v2/prototyp_v2.py)): **17/17** sondeos con Ost-/Nordwert
 exactos. Lageplan y eje: diseño. swissgeol sin cambios: **0/14** (sólo valida CRS suizos).
+**Con un PDF real** (Halle): la tabla de niveles freáticos se lee **26/26** con el mismo método
+de celdas. Ninguno de los tres Gutachten reales trae tabla de coordenadas
+([15](15_resultados_pdfs_reales.md)).
 
 ## 1. Fuentes, por orden de preferencia
 

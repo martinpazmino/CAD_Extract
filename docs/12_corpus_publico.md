@@ -14,10 +14,12 @@ de **transparencia** (p. ej. Hamburgo). Hay 16 candidatos de 8 Länder en
 [`spikes/korpus/manifest.tsv`](../spikes/korpus/manifest.tsv) y un script que los descarga, filtra y
 evalúa.
 
-**Estado (2026-10-25):** bloqueado por la red. La política de red del entorno de Claude devuelve
-403 en esos dominios (`www.dresden.de`, `daten.transparenz.hamburg.de`, `www.ditzingen.de`,
-`www.hausham.de`, `www.straubing.de`, …). El script está probado con los PDFs sintéticos; con los
-reales no se ha ejecutado.
+**Estado (2026-10-25):** la descarga automática está bloqueada por la red del entorno de Claude
+(403 en `www.dresden.de`, `daten.transparenz.hamburg.de`, `www.ditzingen.de`, …). El equipo subió
+a mano **3 PDFs** (Wachenroth, Talheim, Halle), con verdad transcrita en
+[`spikes/korpus/groundtruth/`](../spikes/korpus/groundtruth/talheim.json). Resultados:
+[15](15_resultados_pdfs_reales.md). Faltan **5–7 más, no vistos**, para medir la generalidad de
+verdad.
 
 ## 1. Cómo desbloquearlo (elige una)
 

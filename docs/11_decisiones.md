@@ -31,11 +31,16 @@ equipo; "Verificado" = respaldado por una prueba en este repo.
 | D17 | **Uso interno primero**; para terceros, decidir entre AGPL / licencia Artifex / pypdfium2 cuando haya caso de negocio | Evitar costes y decisiones prematuras | [14](14_licencias_terceros.md) | Decidido (2026-10-25) |
 | D18 | **Todo PyMuPDF detrás de una capa de primitivas** propia | Hace barato cambiar a pypdfium2 (BSD/Apache) | pypdfium2 da los mismos 30 paths con estilo ([14 §3](14_licencias_terceros.md#3-prueba-se-puede-sustituir-pymupdf)) | Verificado (sintético) |
 | D19 | **Colaborar con swisstopo** empezando por issues con reproductores sintéticos y un correo; contribuir piezas pequeñas | Beneficio mutuo, bajo riesgo | Borradores en [13](13_colaboracion_swisstopo.md) | Propuesta (envía el equipo) |
+| D20 | **Geometría reducida a segmentos** y columna = par de verticales con trazo | Los PDFs regenerados (Ghostscript/PDF24) no tienen rectángulos ni rellenos | Wachenroth 18/18 sólo así ([15](15_resultados_pdfs_reales.md)) | Verificado (real) |
+| D21 | **Normalizar la rotación** de página antes de todo | Páginas `/Rotate 90` dan coordenadas sin rotar | Talheim ([15](15_resultados_pdfs_reales.md)) | Verificado (real) |
+| D22 | **Escala = candidato que más etiquetas confirma**, sólo escalas normalizadas; etiquetas pueden estar desplazadas y marcar techo o base | Posición de la etiqueta no es fiable entre oficinas | Talheim 65/65; tabla "B 6" descartada ([15](15_resultados_pdfs_reales.md)) | Verificado (real) |
+| D23 | **Verdad real en el repo como JSON factual** (con URL y `sha256`), PDFs fuera | Medir sin redistribuir obras ajenas | `spikes/korpus/groundtruth/` | Decidido |
+| D24 | Cifras de v3 = conjunto de entrenamiento; **la siguiente ronda se mide sin tocar el código** | Evitar autoengaño | [15](15_resultados_pdfs_reales.md) | Decidido |
 
 ## Preguntas abiertas
 
-1. ~~¿Quién aporta muestras?~~ → corpus público ([12](12_corpus_publico.md), D16). Pendiente:
-   permitir los dominios en la red del entorno o descargar los PDFs a mano.
+1. ~~¿Quién aporta muestras?~~ → corpus público ([12](12_corpus_publico.md), D16). 3 recibidos
+   ([15](15_resultados_pdfs_reales.md)); faltan 5–7 no vistos (subirlos o permitir los dominios).
 2. ~~¿Uso interno o terceros?~~ → interno primero, terceros más adelante (D17, D18, [14](14_licencias_terceros.md)).
 3. ¿Hay Lageplan, tabla de coordenadas o LandXML del eje en los proyectos? ([07](07_coordenadas.md))
 4. ¿Quién envía los issues y el correo a swisstopo, y en nombre de qué organización? ([13](13_colaboracion_swisstopo.md))

@@ -1,0 +1,158 @@
+{
+ "file": "01.5_222918_WRO_BPL_BG-Angerleite_Bodengutachten_20230517.pdf",
+ "sha256": "97e7e596a8f9b001417ac627633c55c0ef68c86213ef7db96b9e91359b18e140",
+ "source": "https://wachenroth.de/wp-content/uploads/01.5_222918_WRO_BPL_BG-Angerleite_Bodengutachten_20230517.pdf",
+ "notes": "Bohrprofile je Seite (S. 39-44, M 1:25) + Schnitt in hoehenmaessiger Darstellung (S. 45, M 1:75) mit denselben Bohrungen. Labels = Schicht-UNTERKANTE. Alle: 'kein Grundwasser'.",
+ "boreholes": [
+  {
+   "code": "B 1",
+   "kind": "bohrung",
+   "page": 39,
+   "gok": 290.86,
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 0.3,
+     "soil": "Mutterboden"
+    },
+    {
+     "top": 0.3,
+     "bottom": 1.5,
+     "soil": "Sand"
+    },
+    {
+     "top": 1.5,
+     "bottom": 1.6,
+     "soil": "Fels (Sandstein)"
+    }
+   ],
+   "gw_depths": [],
+   "gw_status": "kein Grundwasser"
+  },
+  {
+   "code": "B 2",
+   "kind": "bohrung",
+   "page": 40,
+   "gok": 296.16,
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 0.4,
+     "soil": "Mutterboden"
+    },
+    {
+     "top": 0.4,
+     "bottom": 2.2,
+     "soil": "Sand"
+    },
+    {
+     "top": 2.2,
+     "bottom": 2.3,
+     "soil": "Fels (Sandstein)"
+    }
+   ],
+   "gw_depths": [],
+   "gw_status": "kein Grundwasser"
+  },
+  {
+   "code": "B 3",
+   "kind": "bohrung",
+   "page": 41,
+   "gok": 299.63,
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 0.1,
+     "soil": "Mutterboden"
+    },
+    {
+     "top": 0.1,
+     "bottom": 0.7,
+     "soil": "Sand"
+    },
+    {
+     "top": 0.7,
+     "bottom": 0.8,
+     "soil": "Fels (Sandstein)"
+    }
+   ],
+   "gw_depths": [],
+   "gw_status": "kein Grundwasser"
+  },
+  {
+   "code": "B 4",
+   "kind": "bohrung",
+   "page": 42,
+   "gok": 299.26,
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 0.1,
+     "soil": "Mutterboden"
+    },
+    {
+     "top": 0.1,
+     "bottom": 0.7,
+     "soil": "Sand"
+    },
+    {
+     "top": 0.7,
+     "bottom": 0.8,
+     "soil": "Fels (Sandstein)"
+    }
+   ],
+   "gw_depths": [],
+   "gw_status": "kein Grundwasser"
+  },
+  {
+   "code": "B 5",
+   "kind": "bohrung",
+   "page": 43,
+   "gok": 296.05,
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 0.3,
+     "soil": "Mutterboden"
+    },
+    {
+     "top": 0.3,
+     "bottom": 2.5,
+     "soil": "Sand"
+    },
+    {
+     "top": 2.5,
+     "bottom": 2.6,
+     "soil": "Fels (Sandstein)"
+    }
+   ],
+   "gw_depths": [],
+   "gw_status": "kein Grundwasser"
+  },
+  {
+   "code": "B 6",
+   "kind": "bohrung",
+   "page": 44,
+   "gok": 290.11,
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 0.4,
+     "soil": "Mutterboden"
+    },
+    {
+     "top": 0.4,
+     "bottom": 1.8,
+     "soil": "Sand"
+    },
+    {
+     "top": 1.8,
+     "bottom": 1.9,
+     "soil": "Fels (Sandstein)"
+    }
+   ],
+   "gw_depths": [],
+   "gw_status": "kein Grundwasser"
+  }
+ ]
+}
