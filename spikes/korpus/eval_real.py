@@ -33,7 +33,7 @@ def score(gt: dict, found: dict) -> dict:
     bhs = gt["boreholes"]
     n_b = sum(len(b["layers"]) for b in bhs)
     hit = {"bh": 0, "bound": 0, "soil": 0, "soil_n": 0, "gok": 0, "gok_n": 0, "gw": 0, "gw_n": 0,
-           "bound_false": 0, "gw_false": 0, "xy": 0, "xy_n": 0, "st": 0, "st_n": 0}
+           "bound_false": 0, "gw_false": 0, "xy": 0, "xy_n": 0, "st": 0, "st_n": 0, "exact": 0}
     for b in bhs:
         f = found.get(norm(b["code"]))
         if b.get("gok") is not None:
@@ -49,6 +49,7 @@ def score(gt: dict, found: dict) -> dict:
             m = min(free, key=lambda x: abs(x - ly["bottom"]), default=None)
             if m is not None and abs(m - ly["bottom"]) <= TOL:
                 hit["bound"] += 1
+                hit["exact"] += abs(m - ly["bottom"]) < 0.005      # auf den Zentimeter wie gedruckt
                 free.remove(m)
             if "soil" in ly:
                 hit["soil_n"] += 1
@@ -71,6 +72,7 @@ def score(gt: dict, found: dict) -> dict:
     extra = len(set(found) - {norm(b["code"]) for b in bhs})
     has_soil = any("soils" in f for f in found.values())
     return {"Bohrungen": f"{hit['bh']}/{len(bhs)}", "Grenzen": f"{hit['bound']}/{n_b}",
+            "Grenzen exakt": f"{hit['exact']}/{n_b}",
             "Bodenart": f"{hit['soil']}/{hit['soil_n']}" if hit["soil_n"] and has_soil else "-",
             "GOK": f"{hit['gok']}/{hit['gok_n']}", "GW": f"{hit['gw']}/{hit['gw_n']}",
             "falsche Bohrungen": extra, "falsche Grenzen": hit["bound_false"], "falsches GW": hit["gw_false"],

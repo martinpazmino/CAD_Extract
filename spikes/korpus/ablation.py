@@ -10,9 +10,11 @@ from __future__ import annotations
 
 import argparse
 import multiprocessing as mp
+import sys
 from pathlib import Path
 
-import regression as R
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import regression as R  # noqa: E402
 
 
 def run(job):

@@ -22,7 +22,7 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "extraktion_v2"))
 from eval_real import norm, score  # noqa: E402
 
-GOOD = ("Bohrungen", "Grenzen", "Bodenart", "GOK", "GW", "XY", "GW-Status")
+GOOD = ("Bohrungen", "Grenzen", "Grenzen exakt", "Bodenart", "GOK", "GW", "XY", "GW-Status")
 BAD = ("falsche Bohrungen", "falsche Grenzen", "falsches GW")
 
 

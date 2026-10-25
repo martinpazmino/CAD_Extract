@@ -75,6 +75,7 @@ RULES = {
     "ocr": True,                 # L17/L18 OCR fuer Seiten ohne Textlage
     "coords_text": True,         # S5   Rechts-/Hochwert im Text
     "hatch_continuity": True,    # L6   Doppellinie innerhalb einer Schicht
+    "label_snap": True,          # T2   bestaetigte Grenze = gedruckter Labelwert
 }
 
 CODE_TOKEN = r"[A-Z0-9][A-Za-z0-9]*(?:[-/.][A-Za-z0-9]+)*"
@@ -506,6 +507,7 @@ class Borehole:
     coord_source: str = ""
     page_class: str = ""
     bbox: tuple = ()
+    fit: tuple = ()                  # Tiefe = a * y + b (Ansichtskoordinaten der Seite)
     issues: list[str] = field(default_factory=list)
     support: float = 0.0
     single_sheet: bool = False
@@ -713,6 +715,7 @@ def extract(pdf: Path):
             bh = Borehole(code, pno + 1, round(a / PT_TO_M_AT_1_1), f"{mode} ({support}/{n_labels} Labels)", gok)
             bh.page_class = pclass
             bh.bbox = tuple(round(v, 1) for v in col.rect)
+            bh.fit = (float(a), float(b))
             bh.support = support / n_labels if n_labels else 0.0
             bh.single_sheet = len(anchored) == 1                  # Einzelblatt schlaegt Schnitt/Uebersicht
             bh.titled = any(re.search(rf"(Bohrung|Bohrprofil|Profil|Sondierung)\s+{re.escape(code)}\b", t)
@@ -720,10 +723,12 @@ def extract(pdf: Path):
             bounds = list(col.bounds)
             depths = [round(float(a * y + b), 2) for y in bounds[1:]]
             confirmed = set()                                   # 1:1 - jedes Label bestaetigt nur die naechste Grenze
+            label_by_y = {}                                     # Linie (y) -> gedruckter Wert
             for v in {round(v, 2) for _, v in pairs}:
                 i = min(range(len(depths)), key=lambda k: abs(depths[k] - v), default=None)
                 if i is not None and abs(depths[i] - v) <= 0.03:
                     confirmed.add(i)
+                    label_by_y[bounds[i + 1]] = v
             dropped = []
             if RULES["hatch_continuity"] and bh.support >= 0.6:   # E5: Schraffurlinien statt Grenzen (L6)
                 drop = set()
@@ -742,13 +747,13 @@ def extract(pdf: Path):
                         drop |= {i, j}
                 if drop:
                     dropped = [depths[i - 1] for i in sorted(drop)]
-                    conf_d = {depths[i] for i in confirmed}
                     bounds = [y for i, y in enumerate(bounds) if i not in drop]
                     depths = [round(float(a * y + b), 2) for y in bounds[1:]]
-                    confirmed = {i for i, d in enumerate(depths) if d in conf_d}
+                    confirmed = {i for i, y in enumerate(bounds[1:]) if y in label_by_y}
             prev = 0.0
             for i, y in enumerate(bounds[1:]):
-                d = depths[i]
+                # bestaetigte Grenze: gedruckter Wert statt Geometrie (Zeichengenauigkeit +-1 pt)
+                d = label_by_y.get(y, depths[i]) if RULES["label_snap"] else depths[i]
                 ly = Layer(prev, d, label_confirmed=i in confirmed)
                 if not ly.label_confirmed:
                     ly.issues.append("Grenze ohne bestaetigendes Label")
@@ -879,3 +884,60 @@ def _assign_text(bh: Borehole, col: Column, lines, words, fit, mode, pairs, righ
         if txt:
             ly.soil = classify_v3(txt.split(",")[0]) or classify_v3(txt)
             ly.text = txt
+
+
+# ---------------------------------------------------------------------------
+# E9: kanonisches JSON (docs/ARQUITECTURA_BAUGRUNDMODELL.md §5.1) - Eingang fuer Supabase und IFC
+# ---------------------------------------------------------------------------
+KIND = (("GWM", "gwm"), ("RKS", "rks"), ("KRB", "rks"), ("BS", "rks"), ("SCH", "schurf"),
+        ("BK", "kernbohrung"), ("KB", "kernbohrung"), ("B", "kernbohrung"))
+METHOD = {"vektor": "vector", "vektor_ohne_text": "vector+ocr", "raster": "raster+ocr", "raster_ocr": "raster+ocr_layer"}
+
+
+def _kind(code: str) -> str:
+    head = re.match(r"[A-Z]+", code)
+    for prefix, kind in KIND:
+        if head and head.group(0) == prefix:
+            return kind
+    return "kernbohrung"                                  # Fremdcodes ('422C-460', 'S 2a'): Bohrung
+
+
+def to_canonical(pdf: Path, boreholes: list, dph: dict | None = None, version: str = "v4") -> dict:
+    data = Path(pdf).read_bytes()
+    out = {"document": {"file": Path(pdf).name, "sha256": hashlib.sha256(data).hexdigest(),
+                        "parser_version": f"prototyp_{version}", "pages": pymupdf.open(pdf).page_count},
+           "boreholes": [], "soundings": {k: [list(map(float, st)) for st in v] for k, v in (dph or {}).items()}}
+    for bh in boreholes:
+        method = "schichtenverzeichnis" if bh.mode == "schichtenverzeichnis" else METHOD.get(bh.page_class, "vector")
+        layers = []
+        for ly in bh.layers:
+            prov = {"page": bh.page - 1, "method": method}
+            if bh.fit and bh.bbox:
+                a, b = bh.fit
+                prov["bbox"] = [bh.bbox[0], round((ly.top - b) / a, 1), bh.bbox[2], round((ly.bottom - b) / a, 1)]
+            layers.append({"top_depth": ly.top, "bottom_depth": ly.bottom, "description_raw": ly.text,
+                           "soil_class": ly.soil or None, "hatch_class": ly.soil_hatch or None,
+                           "confidence": ly.confidence, "label_confirmed": ly.label_confirmed,
+                           "issues": ly.issues, "provenance": [prov]})
+        gw = [{"depth": d, "nhn": round(bh.gok - d, 2) if bh.gok is not None else None, "kind": "gemessen"}
+              for d in bh.gw_depths]
+        out["boreholes"].append({
+            "code": bh.code, "kind": _kind(bh.code), "gok_nhn": bh.gok,
+            "end_depth": bh.layers[-1].bottom if bh.layers else None,
+            "x": bh.east, "y": bh.north, "crs_epsg": bh.crs, "coord_source": bh.coord_source or None,
+            "layers": layers, "groundwater": gw, "groundwater_status": bh.gw_status,
+            "checks": {"label_support": round(bh.support, 2), "scale": bh.scale, "mode": bh.mode,
+                       "schichtenverzeichnis": bh.cross_check or None, "duplicates": bh.duplicates},
+            "issues": bh.issues,
+            "provenance": [{"page": bh.page - 1, "bbox": list(bh.bbox) if bh.bbox else None, "method": method}]})
+    return out
+
+
+if __name__ == "__main__":                                # python prototyp_v4.py <pdf> [<out.json>]
+    src = Path(sys.argv[1])
+    bhs, dph = extract(src)
+    js = json.dumps(to_canonical(src, bhs, dph), indent=1, ensure_ascii=False)
+    if len(sys.argv) > 2:
+        Path(sys.argv[2]).write_text(js)
+    else:
+        print(js)
