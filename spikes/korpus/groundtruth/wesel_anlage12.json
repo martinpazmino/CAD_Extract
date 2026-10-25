@@ -1,0 +1,138 @@
+{
+ "file": "anlage12_bohrprofil.pdf",
+ "sha256": "bf703bd6ce1d64e53307a14d00fe1a540d1e06ec646fdaccfb407b03aa0390e5",
+ "source": "https://kreis-wesel.de/sites/default/files/C1258314003A4604/documents/anlage12_bohrprofil.pdf",
+ "notes": "Blindtest Runde 3 (v3 Stand 36e3554). Asmus + Prabucki Ingenieure, Bohrung B 1 (38,20 m, nur Auffuellung), Verfuellung Muehlenberg. S.1 Uebersichtsplan (Bild), S.2-11 Kernkistenfotos (Bilder), S.12 Kopfblatt, S.13-16 Schichtenverzeichnis als Text-Tabelle (alle 24 Tiefen lesbar), S.17 Schichtenprofil 1:200 (gedreht 270 Grad) aus AutoCAD: Beschriftung als Linien (SHX), kein Textlayer -> Tiefen nur per OCR/Glyphen lesbar. GOK nur relativ 'NHN+0,00m'. 'kein Wassereintritt von 0,00 m bis 38,20 m'.",
+ "boreholes": [
+  {
+   "code": "B 1",
+   "kind": "bohrung",
+   "page": 17,
+   "gok": null,
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 0.1,
+     "soil": "Auffuellung"
+    },
+    {
+     "top": 0.1,
+     "bottom": 1.2,
+     "soil": "Auffuellung"
+    },
+    {
+     "top": 1.2,
+     "bottom": 1.4,
+     "soil": "Auffuellung"
+    },
+    {
+     "top": 1.4,
+     "bottom": 1.8,
+     "soil": "Auffuellung"
+    },
+    {
+     "top": 1.8,
+     "bottom": 1.9,
+     "soil": "Auffuellung"
+    },
+    {
+     "top": 1.9,
+     "bottom": 2.2,
+     "soil": "Auffuellung"
+    },
+    {
+     "top": 2.2,
+     "bottom": 3.2,
+     "soil": "Auffuellung"
+    },
+    {
+     "top": 3.2,
+     "bottom": 4.5,
+     "soil": "Auffuellung"
+    },
+    {
+     "top": 4.5,
+     "bottom": 5.4,
+     "soil": "Auffuellung"
+    },
+    {
+     "top": 5.4,
+     "bottom": 10.2,
+     "soil": "Auffuellung"
+    },
+    {
+     "top": 10.2,
+     "bottom": 11.0,
+     "soil": "Auffuellung"
+    },
+    {
+     "top": 11.0,
+     "bottom": 13.6,
+     "soil": "Auffuellung"
+    },
+    {
+     "top": 13.6,
+     "bottom": 14.7,
+     "soil": "Auffuellung"
+    },
+    {
+     "top": 14.7,
+     "bottom": 20.0,
+     "soil": "Auffuellung"
+    },
+    {
+     "top": 20.0,
+     "bottom": 21.5,
+     "soil": "Auffuellung"
+    },
+    {
+     "top": 21.5,
+     "bottom": 25.1,
+     "soil": "Auffuellung"
+    },
+    {
+     "top": 25.1,
+     "bottom": 25.6,
+     "soil": "Auffuellung"
+    },
+    {
+     "top": 25.6,
+     "bottom": 26.0,
+     "soil": "Auffuellung"
+    },
+    {
+     "top": 26.0,
+     "bottom": 28.6,
+     "soil": "Auffuellung"
+    },
+    {
+     "top": 28.6,
+     "bottom": 28.9,
+     "soil": "Auffuellung"
+    },
+    {
+     "top": 28.9,
+     "bottom": 33.5,
+     "soil": "Auffuellung"
+    },
+    {
+     "top": 33.5,
+     "bottom": 35.2,
+     "soil": "Auffuellung"
+    },
+    {
+     "top": 35.2,
+     "bottom": 37.5,
+     "soil": "Auffuellung"
+    },
+    {
+     "top": 37.5,
+     "bottom": 38.2,
+     "soil": "Auffuellung"
+    }
+   ],
+   "gw_depths": [],
+   "gw_status": "kein Grundwasser"
+  }
+ ]
+}
