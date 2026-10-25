@@ -3,5 +3,12 @@
  "pdf_sha256": "659713acda108330cc99b7c60146b017f78908fce376ab277d2ce126790027c4",
  "v1": {},
  "v3": {},
- "v3_detail": []
+ "v3_detail": [],
+ "sg": {
+  "?0": {
+   "gok": null,
+   "bottoms": [],
+   "gw": []
+  }
+ }
 }
