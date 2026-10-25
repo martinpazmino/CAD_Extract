@@ -917,7 +917,7 @@ Estimaciones orientativas para una persona; dependen sobre todo de la variedad d
 | **Variedad de plantillas** desconocida | Conseguir un corpus de 5–10 Gutachten de oficinas distintas antes de F2 |
 | That Open descarta entidades geotécnicas por defecto **[verificado]** | Añadir clases al importer; fijar versiones; test en CI con el spike |
 | Cambios IFC 4.4 (`IfcGeotechnicalStratum` → `IfcGeoScienceFeature` en borrador) | Escritor IFC como adaptador |
-| **Licencia AGPL de PyMuPDF** (y del código de swisstopo) | Uso interno: sin problema. Si se ofrece como servicio a terceros, la AGPL aplica también al uso por red → publicar el código o licencia comercial de Artifex. IfcOpenShell (LGPL-3.0), That Open (MIT) y web-ifc (MPL-2.0) no plantean ese problema. |
+| **Licencia AGPL de PyMuPDF** (y del código de swisstopo) | Uso interno: sin problema. Si se ofrece como servicio a terceros, la AGPL aplica también al uso por red → publicar el código o licencia comercial de Artifex. IfcOpenShell (LGPL-3.0), That Open (MIT) y web-ifc (MPL-2.0) no plantean ese problema. Detalle y alternativa permisiva (pypdfium2): [14 Licencias](14_licencias_terceros.md). |
 | Confidencialidad / RGPD | Región UE o self-hosted, buckets privados, URLs firmadas; LLM sólo con acuerdo de no-retención o desactivable por proyecto |
 | Responsabilidad sobre la interpretación | Separación hechos/modelo, estado de aprobación, el modelo se marca "no aprobado" hasta firma del Gutachter (DGGT Empf. Nr. 4) |
 | Rendimiento (Längsschnitt > 150 000 paths) | Caché de primitivas, paralelismo por página, `get_cdrawings` |

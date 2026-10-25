@@ -128,7 +128,8 @@ exactas, sin renderizar. Es la contribución upstream más pequeña y útil para
 4. Correr swissgeol como oráculo en el benchmark (Docker o venv aislado).
 5. Reusar listas de palabras clave (`matching_params.yml`, `de`) para agua, coordenadas y cota.
 6. Contactar a swisstopo: adaptador vectorial, CRS alemanes, símbolo DIN de agua, Schraffur.
+   Qué ganamos cada uno y borradores de issues/correo: [13 Colaboración](13_colaboracion_swisstopo.md).
 
 Up: [Índice](README.md)
 
-Related: [02 Bohrprofil](02_bohrprofil_generalizacion.md) · [04 Schraffur](04_schraffur_din4023.md) · [06 Grundwasser](06_grundwasser.md) · [07 Coordenadas](07_coordenadas.md) · [09 Validación](09_validacion_benchmark.md) · [11 Decisiones](11_decisiones.md)
+Related: [13 Colaboración](13_colaboracion_swisstopo.md) · [14 Licencias](14_licencias_terceros.md) · [02 Bohrprofil](02_bohrprofil_generalizacion.md) · [04 Schraffur](04_schraffur_din4023.md) · [06 Grundwasser](06_grundwasser.md) · [07 Coordenadas](07_coordenadas.md) · [09 Validación](09_validacion_benchmark.md) · [11 Decisiones](11_decisiones.md)

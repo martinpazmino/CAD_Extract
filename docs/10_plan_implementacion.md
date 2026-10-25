@@ -15,14 +15,14 @@ de extracción. Estimaciones orientativas para una persona.
 | Paso | Contenido | Archivos | Criterio de aceptación | Esfuerzo |
 |---|---|---|---|---|
 | 0 | **Banco de pruebas**: mover generador sintético y métricas de `spikes/extraktion_v2` a `tests/`; añadir KPI de error silencioso; test de no-regresión del Excel con los PDFs de referencia | `tests/synth/`, `tests/test_extraction.py` | CI verde con v1 en A/A2; fallos documentados de v1 en A3/A4/B | 2–3 días |
-| 1 | **Modelo canónico con procedencia** (Pydantic) + adaptador v1 → modelo → Excel | `geo_agent/model.py`, `exporters/excel_writer.py` | Excel idéntico al actual | 2–3 días |
+| 1 | **Modelo canónico con procedencia** (Pydantic) + adaptador v1 → modelo → Excel; **capa de primitivas** (única importación de PyMuPDF, [14 §4](14_licencias_terceros.md#4-capa-de-primitivas-hacer-ya)) | `geo_agent/model.py`, `geo_agent/primitives/`, `exporters/excel_writer.py` | Excel idéntico al actual; `import pymupdf` sólo en `primitives/` | 3–4 días |
 | 2 | **Bohrprofil v2 núcleo**: columnas, cabecera/GOK genéricos, escala por regresión (portar AAboveB de swissgeol), límites geométricos, bloque de descripción | `geo_agent/bohrprofil/{columns,header,scale,text_assign}.py` | A–A5 y B al 100 % en CI; Excel de referencia sin regresión | 1 semana |
 | 3 | **Clasificación**: sustantivo vs. adjetivo, eliminar "continuación" silenciosa, Schraffur + fusión + confianza | `geo_agent/soil.py`, `geo_agent/bohrprofil/hatch.py`, `validate/` | Error silencioso = 0 en el corpus; A5 genera su issue | 3–4 días |
 | 4 | **Grundwasser y Sondierungen** | `bohrprofil/symbols.py`, `bohrprofil/soundings.py` | Agua ±5 cm; DPH ≤ 1 N10; nuevas hojas/tablas en la salida | 4–5 días |
 | 5 | **Coordenadas**: tablas (lectura por celda), cabecera, CRS alemanes; Lageplan después | `lageplan/coord_tables.py`, `lageplan/georef.py` | Rechts-/Hochwert rellenos y verificados contra GOK | 3–4 días (+1 semana Lageplan) |
 | 6 | **Längsschnitt v2**: ejes genéricos, colores desde la leyenda, OCG, polígonos vectoriales, mini-columnas | `geo_agent/laengsschnitt/{axes,tunnel,geoslice}.py` | Mismo resultado que v1 en el plano de referencia + un segundo plano distinto | 1–1,5 semanas |
-| 7 | **swissgeol**: oráculo en el benchmark, listas de palabras clave, contacto upstream | `tests/oracle_swissgeol.py` | Informe comparativo automático | 2 días |
-| 8 | **Corpus real**: 5–10 Gutachten, verdad semi-automática, calibrar umbrales y pesos | bucket privado + `tests/thresholds.yml` | Métricas reales publicadas en [09](09_validacion_benchmark.md) | continuo |
+| 7 | **swissgeol**: oráculo en el benchmark, listas de palabras clave, contacto upstream ([13](13_colaboracion_swisstopo.md)) | `tests/oracle_swissgeol.py` | Informe comparativo automático | 2 días |
+| 8 | **Corpus real**: 5–10 Gutachten públicos ([12](12_corpus_publico.md), `spikes/korpus/`), verdad semi-automática, calibrar umbrales y pesos | `spikes/korpus/manifest.tsv` → `tests/corpus/`, bucket privado, `tests/thresholds.yml` | Métricas reales publicadas en [09](09_validacion_benchmark.md) | continuo; se puede empezar ya (sólo depende de la red) |
 
 ## Orden y dependencias
 
@@ -30,7 +30,7 @@ de extracción. Estimaciones orientativas para una persona.
 0 ─► 1 ─► 2 ─► 3 ─► 4
           │         └─► 5
           └─────────────► 6
-0 ─► 7 (en paralelo)          8 empieza en cuanto 2 esté listo
+0 ─► 7 (en paralelo)          8: reunir y filtrar el corpus ya; calibrar cuando 2 esté listo
 ```
 
 ## Reglas para la migración

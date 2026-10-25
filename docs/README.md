@@ -40,12 +40,16 @@ alimente un **Baugrundmodell** (Supabase → IFC 4.3 → That Open).
 - [08 swissgeol: qué reutilizar](08_swissgeol_reutilizacion.md): mapa de módulos, prueba sobre nuestros PDFs, estrategias y licencia.
 - [09 Validación y benchmark](09_validacion_benchmark.md): resultados v1 / v2 / swissgeol, formato de verdad, corpus y métricas.
 - [10 Plan de implementación](10_plan_implementacion.md): pasos 0–8 con archivos, criterios y esfuerzo.
+- [12 Corpus real con Gutachten públicos](12_corpus_publico.md): de dónde sacar 5–10 PDFs reales, cómo evaluarlos sin verdad, uso legal.
+- [13 Colaboración con swisstopo](13_colaboracion_swisstopo.md): qué nos dan y qué les damos, primeros pasos, borradores de issues y correo.
+- [14 Licencias: interno hoy, terceros mañana](14_licencias_terceros.md): AGPL, opciones, prueba de pypdfium2, capa de primitivas.
 - [Glosario alemán–español](glosario.md): términos geotécnicos y de swissgeol.
 
 ## Código de apoyo
 
 - [Spike extracción v2](../spikes/extraktion_v2/README.md): generador de PDFs sintéticos, prototipo v2, comparativa v1/v2/swissgeol.
 - [Spike IFC + That Open](../spikes/ifc_thatopen/README.md): IFC 4.3 geotécnico con IfcOpenShell y su importación en That Open.
+- [Corpus público](../spikes/korpus/README.md): manifest de Gutachten publicados y script de descarga/evaluación.
 
 ## Cómo leer
 
@@ -57,7 +61,12 @@ Arquitectura ─► 11 Decisiones
       │               │   └──────► 05 Sondierungen · 06 Grundwasser · 07 Coordenadas
       │               ▼
       └──────────► 03 Längsschnitt
-08 swissgeol ─► 09 Validación ─► 10 Plan
+08 swissgeol ─► 13 Colaboración swisstopo
+      │              14 Licencias
+      ▼
+09 Validación ◄─ 12 Corpus público
+      ▼
+10 Plan
 ```
 
 Up: [README del repositorio](../README.md)

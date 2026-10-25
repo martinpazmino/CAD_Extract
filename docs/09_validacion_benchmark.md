@@ -71,7 +71,7 @@ Ventaja: el mismo archivo sirve para puntuar Geo_Agent **y** swissgeol (`borehol
 |---|---|---|
 | Sintético | Generador `synth_bohrprofil.py`, ampliable: rotación de página, varias filas de sondeos, sondeos multipágina, rectángulos de 4 líneas, rellenos `/Pattern`, capas delgadas con líneas de referencia, CPT, escaneo simulado (render + OCR) | CI en cada commit |
 | Referencia actual | Los PDFs del proyecto actual (no versionados) con su Excel validado | No-regresión de v1 → v2 |
-| Real multi-oficina | 5–10 Gutachten de oficinas/software distintos (GGU-STRATIG, DC-BOHR, WinBohr, AutoCAD), anonimizados, en un bucket privado | Calibrar umbrales y pesos; medir de verdad |
+| Real multi-oficina | 5–10 Gutachten **públicos** de oficinas/software distintos (GGU-STRATIG, DC-BOHR, WinBohr, AutoCAD), en un bucket privado; fuentes y criterios en [12](12_corpus_publico.md) | Calibrar umbrales y pesos; medir de verdad |
 
 La verdad real se construye de forma **semi-automática**: correr v2 → corregir en la UI de
 revisión → exportar como ground truth (la revisión humana ya es parte del flujo, ver
