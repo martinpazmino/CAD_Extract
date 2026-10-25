@@ -9,7 +9,7 @@ aliases: [Spike corpus]
 
 | Archivo | Qué hace |
 |---|---|
-| [`manifest.tsv`](manifest.tsv) | 16 candidatos públicos (B-Pläne, UVP-Verbund, Transparenzportal Hamburg) de 8 Länder: nombre, Land, procedimiento, URL, contenido esperado. Revisados: `wachenroth`, `talheim`, `halle`, `hausham`, `rednitzhembach` (marcados `GEPRUEFT`); el resto, encontrados por búsqueda y sin abrir |
+| [`manifest.tsv`](manifest.tsv) | 24 candidatos públicos (B-Pläne, UVP-Verbund, NLWKN, Transparenzportal Hamburg) de 9 Länder: nombre, Land, procedimiento, URL, contenido esperado. Revisados: `wachenroth`, `talheim`, `halle`, `hausham`, `rednitzhembach` (marcados `GEPRUEFT`); los marcados `Runde 3 (blind)` son la próxima ronda ciega; el resto, encontrados por búsqueda y sin abrir |
 | [`screen_corpus.py`](screen_corpus.py) | `--download` descarga el manifest; `--screen` filtra páginas (vector/escaneo/Bohrprofil), corre v1 y v3 y escribe `report.md` + miniaturas (sin verdad) |
 | [`eval_real.py`](eval_real.py) | Compara v1, v3 y (opcional) swissgeol con la verdad de `groundtruth/` |
 | [`blind_test.py`](blind_test.py) | Prueba ciega: `freeze` congela predicciones antes de mirar los PDFs nuevos, `score` las puntúa después |
