@@ -33,12 +33,14 @@ def score(gt: dict, found: dict) -> dict:
     bhs = gt["boreholes"]
     n_b = sum(len(b["layers"]) for b in bhs)
     hit = {"bh": 0, "bound": 0, "soil": 0, "soil_n": 0, "gok": 0, "gok_n": 0, "gw": 0, "gw_n": 0,
-           "bound_false": 0, "gw_false": 0}
+           "bound_false": 0, "gw_false": 0, "xy": 0, "xy_n": 0, "st": 0, "st_n": 0}
     for b in bhs:
         f = found.get(norm(b["code"]))
         if b.get("gok") is not None:
             hit["gok_n"] += 1
         hit["gw_n"] += len(b["gw_depths"])
+        hit["xy_n"] += "xy" in b
+        hit["st_n"] += bool(b.get("gw_status"))
         if not f:
             continue
         hit["bh"] += 1
@@ -57,14 +59,24 @@ def score(gt: dict, found: dict) -> dict:
         if b.get("gok") is not None and f.get("gok") is not None and abs(f["gok"] - b["gok"]) < 0.01:
             hit["gok"] += 1
         hit["gw"] += sum(any(abs(g - x) <= TOL for x in f.get("gw", [])) for g in b["gw_depths"])
-        hit["bound_false"] += len(free)
+        if "xy" in b and f.get("xy") and abs(f["xy"][0] - b["xy"][0]) < 0.5 and abs(f["xy"][1] - b["xy"][1]) < 0.5:
+            hit["xy"] += 1
+        if b.get("gw_status") and f.get("gw_status"):
+            hit["st"] += 1
+        if b.get("layers_transcribed", True):
+            hit["bound_false"] += len(free)
+        else:                                              # Wahrheit ohne Schichten: nicht falsch, nur ungeprueft
+            hit["unverified"] = hit.get("unverified", 0) + len(free)
         hit["gw_false"] += sum(not any(abs(x - g) <= TOL for g in b["gw_depths"]) for x in f.get("gw", []))
     extra = len(set(found) - {norm(b["code"]) for b in bhs})
     has_soil = any("soils" in f for f in found.values())
     return {"Bohrungen": f"{hit['bh']}/{len(bhs)}", "Grenzen": f"{hit['bound']}/{n_b}",
             "Bodenart": f"{hit['soil']}/{hit['soil_n']}" if hit["soil_n"] and has_soil else "-",
             "GOK": f"{hit['gok']}/{hit['gok_n']}", "GW": f"{hit['gw']}/{hit['gw_n']}",
-            "falsche Bohrungen": extra, "falsche Grenzen": hit["bound_false"], "falsches GW": hit["gw_false"]}
+            "falsche Bohrungen": extra, "falsche Grenzen": hit["bound_false"], "falsches GW": hit["gw_false"],
+            **({"XY": f"{hit['xy']}/{hit['xy_n']}"} if hit["xy_n"] else {}),
+            **({"GW-Status": f"{hit['st']}/{hit['st_n']}"} if hit["st_n"] else {}),
+            **({"ungepruefte Grenzen": hit["unverified"]} if hit.get("unverified") else {})}
 
 
 def run_v1(pdf: Path) -> dict:
