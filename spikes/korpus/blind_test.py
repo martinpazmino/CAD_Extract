@@ -8,6 +8,7 @@ Die eingefrorenen JSON-Dateien enthalten den Code-Stand (git rev) und koennen pe
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
 import sys
@@ -24,10 +25,14 @@ def freeze(src: Path, out: Path) -> None:
     for pdf in sorted(src.glob("*.pdf")):
         v3, bhs = run_v3(pdf)
         detail = [{"code": b.code, "page": b.page, "scale": b.scale, "mode": b.mode, "gok": b.gok,
-                   "bottoms": [ly.bottom for ly in b.layers], "gw": b.gw_depths, "gw_status": b.gw_status}
+                   "bottoms": [ly.bottom for ly in b.layers], "soils": [ly.soil for ly in b.layers],
+                   "unconfirmed": sum(not ly.label_confirmed for ly in b.layers),
+                   "gw": b.gw_depths, "gw_status": b.gw_status, "dups": b.duplicates}
                   for b in bhs]
+        sha = hashlib.sha256(pdf.read_bytes()).hexdigest()
         (out / f"{pdf.stem}.json").write_text(json.dumps(
-            {"code_rev": rev, "v1": run_v1(pdf), "v3": v3, "v3_detail": detail}, indent=1, default=float))
+            {"code_rev": rev, "pdf_sha256": sha, "v1": run_v1(pdf), "v3": v3, "v3_detail": detail},
+            indent=1, default=float))
         print(pdf.stem, "v3 Bohrungen:", len(v3))
 
 
