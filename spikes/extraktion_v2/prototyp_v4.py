@@ -46,7 +46,7 @@ ROCK_SUFFIX = ("stein", "fels")
 ANTHROPOGEN = {"beton": "Beton", "asphalt": "Asphalt", "schwarzdecke": "Schwarzdecke",
                "pflaster": "Pflaster", "anschuettung": "Auffuellung", "anschüttung": "Auffuellung",
                "auffuellung": "Auffuellung", "auffüllung": "Auffuellung", "schotter": "Auffuellung"}
-TOPSOIL = {"oberboden", "mutterboden"}
+TOPSOIL = {"oberboden", "mutterboden", "humus"}
 # Hauptbodenart als Kuerzel am Anfang der Beschreibung (DIN 4023 bzw. EN ISO 14688)
 ABBR_RE = re.compile(r"^\s*(Mu|Mg|Gr|Sa|Si|Cl|Co|A|[fmg]?S|[fmg]?G|U|T|X|H|F)(?=[\s,(?´'*]|$)")
 ABBR = {"Mu": "Mutterboden", "Mg": "Auffuellung", "A": "Auffuellung", "Gr": "Kies", "G": "Kies",
@@ -76,11 +76,21 @@ RULES = {
     "coords_text": True,         # S5   Rechts-/Hochwert im Text
     "hatch_continuity": True,    # L6   Doppellinie innerhalb einer Schicht
     "label_snap": True,          # T2   bestaetigte Grenze = gedruckter Labelwert
+    "scan_with_vectors": True,   # E2   Scan mit OCR-Textlage trotz Vektorrauschen
+    "single_sheet_anchor": True, # T3   ein Kopf + ein Profil auf der Seite gehoeren zusammen
+    "depth_table": True,         # S6   Schichtenliste als Texttabelle (Tiefe | Beschreibung)
+    "ocr_supplement": True,      # L18b eigene OCR ergaenzt eine luckenhafte OCR-Textlage
+    "label_first": True,         # T4   Labels bilden eine saubere Gerade, Linien nicht: Labels sind die Daten
 }
 
 CODE_TOKEN = r"[A-Z0-9][A-Za-z0-9]*(?:[-/.][A-Za-z0-9]+)*"
-GENERIC_HEAD_RE = re.compile(rf"^(?:Bohrung|Bohrprofil|Aufschluss|Kleinrammbohrung|Rammkernsondierung|Kernbohrung)"
-                             rf"\s*(?:Nr\.?:?\s*)?({CODE_TOKEN})?\s*$")
+GENERIC_HEAD_RE = re.compile(r"^(?:[A-ZÄÖÜ][a-zäöü]*bohrung|Bohrprofil|Aufschluss|Rammkernsondierung)"
+                             r"\s*(?:Nr\.?)?\s*:?\s*(.{0,20}?)\s*$")
+FREE_CODE_RE = re.compile(r"[A-Z0-9][A-Z0-9 ./\-]{0,14}?[a-z]?")             # 'SST KB 5', 'RB 2 / I', '422C-460'
+GOK_EXTRA_RE = re.compile(r"(?:H(?:ö|oe)he|Kote|Ansatzh(?:ö|oe)he|Gel(?:ä|ae)ndeh(?:ö|oe)he|Bezugspunkt)[^\d\n]{0,30}?"
+                          r"([+-]?\d{1,4}[.,]\d{1,2})|(\d{1,4}[.,]\d{1,2})\s*m\s*(?:ü|ue)\.?\s*(?:M\.|NN|NHN)", re.I)
+LV_COORD_RE = re.compile(r"Koordinaten\D{0,5}?(\d['’ ]?\d{3}\s?\d{3}(?:[.,]\d+)?|\d{3}\s?\d{3}(?:[.,]\d+)?)\s*/\s*"
+                         r"(\d['’ ]?\d{3}\s?\d{3}(?:[.,]\d+)?|\d{3}\s?\d{3}(?:[.,]\d+)?)")
 ARCHIVE_HEAD_RE = re.compile(r"^(S\s*\d+[a-z]?)$")            # Archivbohrungen 'S 1', 'S2a'
 WATER_DESC_RE = re.compile(r"Wasser(?:anschnitt|stand|spiegel|zutritt)\s*(?:bei|in|:)?\s*(\d{1,2}[.,]\d{1,2})", re.I)
 COORD_E_RE = re.compile(r"(?:Rechtswert|Ostwert|Easting|\bRW\b)(?:\D|UTM\d{2}N?){0,30}?(\d{6,8}(?:[.,]\d+)?)", re.I)
@@ -159,7 +169,7 @@ def raster_segments(page: pymupdf.Page, dpi: int = 200) -> list[Seg]:
 _OCR = None
 
 
-def ocr_words(page: pymupdf.Page, dpi: int = 200, min_conf: float = 0.5) -> list[tuple]:
+def ocr_words(page: pymupdf.Page, dpi: int | None = None, min_conf: float = 0.5) -> list[tuple]:
     """Text aus dem Seitenbild (RapidOCR/ONNX, Apache-2.0), als Woerter in Ansichtskoordinaten.
 
     Ein OCR-Kasten ist eine Zeile; die Woerter darin bekommen anteilige x-Bereiche.
@@ -173,6 +183,8 @@ def ocr_words(page: pymupdf.Page, dpi: int = 200, min_conf: float = 0.5) -> list
             _OCR = False
     if not _OCR:
         return []
+    if dpi is None:                                      # ~3300 px lange Seite: kleine Seiten (verkleinert) schaerfer
+        dpi = int(min(300, max(200, 3300 / (max(page.rect.width, page.rect.height) / 72))))
     pix = page.get_pixmap(dpi=dpi)
     cache = None
     if os.environ.get("GEO_OCR_CACHE"):                  # Cache je Seitenbild (Tests laufen oft)
@@ -211,8 +223,8 @@ def page_class(page: pymupdf.Page, words, drawings) -> str:
     inside = sum(1 for r, *_ in words if any(i.contains((r.tl + r.br) / 2) for i in imgs))
     if cov > 0.45 and inside < 10:
         return "raster"                                  # Bild ohne Textlage (Portal-Screenshot, Archivscan)
-    if cov > 0.8 and len(drawings) < 5:
-        return "raster_ocr"                              # Scan mit OCR-Textlage
+    if cov > 0.8 and (len(drawings) < 5 or RULES["scan_with_vectors"]):
+        return "raster_ocr"                              # Scan mit OCR-Textlage (auch mit Vektorrauschen)
     if len(drawings) >= 150 and len(words) < 25:
         return "vektor_ohne_text"                        # AutoCAD mit SHX-Schrift: Text sind Linien
     return "vektor"
@@ -227,10 +239,10 @@ def primitives(page: pymupdf.Page):
     scanned = pclass in ("raster", "raster_ocr")
     if scanned:                                          # Linien aus dem Bild
         segs = raster_segments(page)
-    if pclass in ("raster", "vektor_ohne_text") and RULES["ocr"]:
+    if (pclass in ("raster", "vektor_ohne_text") and RULES["ocr"]) or (pclass == "raster_ocr" and RULES["ocr_supplement"]):
         native = [r for r, *_ in words]
         words += [w for w in ocr_words(page) if not any((w[0] & r).get_area() > 0.3 * w[0].get_area() for r in native)]
-    for d in ([] if scanned else drawings):
+    for d in ([] if scanned and len(drawings) < 5 else drawings):   # Vektoren neben dem Bild behalten
         stroked = d.get("color") is not None and "s" in d.get("type", "")
         fill = d.get("fill")
         coloured_fill = fill is not None and min(fill) < 0.97          # weisse Masken ignorieren
@@ -434,6 +446,31 @@ def choose_scale(col: Column, groups, scale_txt: list[int]):
     return best[2], best[3], best[1], best[4], best[0], len(best[5])
 
 
+def label_line(groups, min_n: int = 5, max_res: float = 0.2):
+    """T4: Labelwerte linear ueber ihre Lage (y-Mitte) - unabhaengig von den Linien.
+
+    Liefert (a, b, gruppe) mit Tiefe = a*y + b, wenn >= min_n Labels mit max. Restfehler max_res m passen.
+    """
+    best = None
+    for g in groups:
+        if len(g) < min_n:
+            continue
+        keep = list(range(len(g)))
+        while True:                                       # gestapelte Labels (Fuehrungslinien) als Ausreisser
+            ys = np.array([(g[i][0].y0 + g[i][0].y1) / 2 for i in keep])
+            vs = np.array([g[i][1] for i in keep])
+            a, b = np.polyfit(ys, vs, 1)
+            res = np.abs(np.polyval([a, b], ys) - vs)
+            if res.max() <= max_res or len(keep) - 1 < max(min_n, 0.75 * len(g)):
+                break
+            keep.pop(int(res.argmax()))
+        # Massstab muss ein Normmassstab sein: sonst koennte jede Zahlenreihe eine 'Gerade' bilden
+        if a > 0 and res.max() <= max_res and plausible_scale(a / PT_TO_M_AT_1_1) \
+                and (best is None or len(g) > len(best[2])):
+            best = (float(a), float(b), g)
+    return best
+
+
 def fit_depths(col: Column, labels):
     """Liefert (a, b, modus, paare): Tiefe = a*y + b."""
     B = col.bounds
@@ -571,7 +608,8 @@ def schichtenverzeichnis(doc) -> dict[str, dict]:
         txt = page.get_text()
         if "schichtenverzeichnis" not in re.sub(r"\s", "", txt).lower() or "Ansatz" not in txt:   # 'S c h i c h t e n ...' 
             continue
-        ws = {(round(w[0]), round(w[1]), w[4]): w for w in page.get_text("words")}.values()   # doppelter Text
+        pw, plines = primitives(page)[:2]                # Ansichtskoordinaten (gedrehte Seiten!)
+        ws = {(round(r.x0), round(r.y0), t): (r.x0, r.y0, r.x1, r.y1, t) for r, t, *_ in pw}.values()   # doppelter Text
         hdr = [w for w in ws if w[4].startswith("Ansatz")]
         marks = sorted((w for w in ws if w[4] == "a)"), key=lambda w: w[1])
         if not hdr or not marks:
@@ -582,7 +620,7 @@ def schichtenverzeichnis(doc) -> dict[str, dict]:
                      + [page.rect.width * 0.6])                                  # Spalte 3
         blocks = [w for w in marks if w[1] > y_hdr]
         code = None                                         # 'B 1 Bohrung Nr.', 'Nr.: B 1 / Blatt 1', 'RKS 1 - Weg'
-        for r, t in sorted(primitives(page)[1], key=lambda e: (e[0].y0, e[0].x0)):
+        for r, t in sorted(plines, key=lambda e: (e[0].y0, e[0].x0)):
             if r.y1 <= y_hdr and (m := SV_CODE_RE.search(re.sub(r"\s+", " ", t))):
                 code = m.group(1)
                 break
@@ -623,15 +661,70 @@ def find_heads(lines) -> list[tuple[pymupdf.Rect, str]]:
             heads.append((r, m.group(1)))
         elif (m := GENERIC_HEAD_RE.match(t)):
             code = m.group(1)
-            if code is None:                              # 'Bohrung' / naechste Zeile '422C-460'
-                below = [(q, u.strip()) for q, u in lines if 0 < q.y0 - r.y1 < 14 and abs(q.x0 - r.x0) < 30
-                         and re.fullmatch(CODE_TOKEN, u.strip())]
+            if not code:                                  # 'Bohrung' / naechste Zeile '422C-460' (OCR: 'RB' + '2 / I')
+                below = sorted([(q, u.strip()) for q, u in lines if -4 < q.y0 - r.y1 < 14
+                                and q.x0 < r.x1 + 40 and q.x1 > r.x0 - 40], key=lambda e: (e[0].y0, e[0].x0))
                 if below:
-                    q, code = min(below, key=lambda e: e[0].y0)
-                    r = r | q
-            if code and re.search(r"\d", code) and not DEPTH_RE.match(code):
-                heads.append((r, code))
+                    row = [e for e in below if abs(e[0].y0 - below[0][0].y0) < 3]
+                    cand = re.sub(r"\s+", " ", " ".join(u for _, u in sorted(row, key=lambda e: e[0].x0)))
+                    if FREE_CODE_RE.fullmatch(cand):
+                        code = cand
+                        for q, _ in row:
+                            r = r | q
+            if code and FREE_CODE_RE.fullmatch(code) and re.search(r"\d", code) and not DEPTH_RE.match(code) \
+                    and not DATE_RE.search(code):
+                heads.append((r, re.sub(r"\s*/\s*", "/", code)))
     return heads
+
+
+def rows(lines, dy: float = 3.0) -> list[tuple]:
+    """Zeilen derselben Hoehe zusammenfuegen (Schriftfeld: 'Hoehe in m ue.M.:' und '668.99' sind getrennte Bloecke)."""
+    out: list[list] = []
+    for r, t in sorted(lines, key=lambda e: (e[0].y0, e[0].x0)):
+        if out and abs(out[-1][0].y0 - r.y0) < dy:
+            out[-1][0] = out[-1][0] | r
+            out[-1][1].append((r.x0, t))
+        else:
+            out.append([pymupdf.Rect(r), [(r.x0, t)]])
+    return [(r, " ".join(t for _, t in sorted(parts))) for r, parts in out]
+
+
+def page_gok(lines, y_max: float) -> float | None:
+    """Ansatzhoehe aus dem Schriftfeld: 'NHN 45,20 m', 'Hoehe in m ue.M.: 668.99', 'Kote Bezugspunkt: ~788.6 m ue. M.'."""
+    for r, t in rows(lines):
+        if r.y0 > y_max:
+            break
+        if (m := GOK_RE.search(t)) or (m := GOK_EXTRA_RE.search(t)):
+            return float((m.group(1) or m.group(2)).replace(",", "."))
+    return None
+
+
+def depth_table(words, lines, heads):
+    """S6: Schichtenliste als Texttabelle - Spalte streng steigender Tiefen ab 0,00, Beschreibung rechts.
+
+    Nur wenn die Seite genau einen Kopf hat und >= 60 % der Intervalle eine Bodenart ergeben
+    (Rammsondier- und Labortabellen enthalten Zahlen, keine Bodenbeschreibung).
+    """
+    if len({c for _, c in heads}) != 1:
+        return None
+    groups: dict[int, list] = defaultdict(list)
+    for r, t, *_ in words:
+        if DEPTH_RE.match(t) and float(t.rstrip("m ").replace(",", ".")) <= 150:
+            groups[round(r.x1 / 6)].append((r, float(t.rstrip("m ").replace(",", "."))))
+    best = None
+    for g in groups.values():
+        g = _longest_non_decreasing(sorted(g, key=lambda e: e[0].y0))
+        if len(g) < 4 or g[0][1] != 0.0 or _arithmetic(g) or any(b[1] <= a[1] for a, b in zip(g, g[1:])):
+            continue
+        x1 = max(r.x1 for r, _ in g)
+        descs = [" ".join(t for r, t in sorted(lines, key=lambda e: e[0].y0)
+                          if x1 + 8 < r.x0 < x1 + 320 and ra.y0 - 2 <= r.y0 < rb.y0 - 2)
+                 for (ra, _), (rb, _) in zip(g, g[1:])]
+        if sum(bool(classify_v3(d.split(",")[0]) or classify_v3(d)) for d in descs) < 0.6 * len(descs):
+            continue
+        if best is None or len(g) > len(best[0]):
+            best = (g, descs)
+    return best
 
 
 def coords_from_text(lines, anchored) -> dict[str, tuple[float, float, int | None]]:
@@ -644,6 +737,13 @@ def coords_from_text(lines, anchored) -> dict[str, tuple[float, float, int | Non
         if (m := COORD_N_RE.search(tt)):
             ns.append((r, float(m.group(1).replace(",", "."))))
     out = {}
+    for r, t in rows(lines):
+        if (m := LV_COORD_RE.search(t)) and anchored:
+            e, n = (float(re.sub(r"[ '’]", "", v).replace(",", ".")) for v in m.groups())
+            epsg = 21781 if 480000 <= e <= 840000 and 70000 <= n <= 300000 else \
+                2056 if 2480000 <= e <= 2840000 and 1070000 <= n <= 1300000 else None
+            if epsg:
+                out[anchored[0][1]] = (e, n, epsg)
     for re_, e, zone in es:
         n = min(ns, key=lambda q: abs(q[0].x0 - re_.x0) + abs(q[0].y0 - re_.y0), default=None)
         if n is None or abs(n[0].y0 - re_.y0) > 40:
@@ -651,7 +751,8 @@ def coords_from_text(lines, anchored) -> dict[str, tuple[float, float, int | Non
         if not anchored:
             continue
         cx = (re_.x0 + re_.x1) / 2
-        hr, code, col = min(anchored, key=lambda a: abs((a[2].rect.x0 + a[2].rect.x1) / 2 - cx))
+        hr, code, col = min(anchored, key=lambda a: abs(((a[2].rect if a[2] else a[0]).x0
+                                                        + (a[2].rect if a[2] else a[0]).x1) / 2 - cx))
         epsg = None
         if 200000 <= e <= 900000 and 5000000 <= n[1] <= 6200000:      # UTM ohne Zonenvorsatz
             epsg = 25800 + int(zone.group(1)) if zone else None
@@ -684,12 +785,30 @@ def extract(pdf: Path):
             # bei hoehenmaessiger Darstellung steht der Kopf weit ueber der Saeule -> keine y-Grenze
             cand = [c for c in cols if c.rect.y0 > hr.y1 and abs((c.rect.x0 + c.rect.x1) / 2 - hx) < 70
                     and id(c) not in used]
+            if RULES["table_filter"]:                    # Spalte voller Tiefenzahlen = Tiefenspalte des Formblatts
+                cand = [c for c in cand if sum(1 for r, t, *_ in words if c.rect.contains(r) and DEPTH_RE.match(t)) < 3]
             if not cand:
                 continue
             col = max(cand, key=lambda c: (round(c.weight, 1), len(c.bounds), -(c.rect.y0 - hr.y1),
                                            -abs((c.rect.x0 + c.rect.x1) / 2 - hx)))
             used.add(id(col))
             anchored.append((hr, code, col))
+        sheet_anchor = False
+        if RULES["single_sheet_anchor"] and not anchored and cols and len({c for _, c in heads}) == 1:
+            # Einzelblatt: ein Kopf, irgendwo; das Profil ist die Saeule mit den meisten bestaetigten Labels
+            # Labels je Kandidat ohne Konkurrenz zuordnen: im Formblatt steht die Tiefenspalte selbst als 'Saeule'
+            scored = []
+            for c in cols:
+                gs = label_groups(words, c, [c])
+                ch = choose_scale(c, gs, scale_txt)
+                lf = label_line(gs) if RULES["label_first"] else None
+                sc = max(ch[4] if ch else 0, len(lf[2]) if lf else 0)
+                if sc >= 3:
+                    scored.append((sc, len(c.bounds), c))
+            scored = [(sc, c) for sc, _, c in sorted(scored, key=lambda e: (e[0], e[1]))]
+            if scored:
+                anchored = [(heads[0][0], heads[0][1], max(scored, key=lambda e: e[0])[1])]
+                sheet_anchor = True
         # Tabellen aussortieren: in einer Bodensaeule stehen hoechstens kurze Kuerzel, keine Zahlenreihen
         if RULES["table_filter"]:
             anchored = [(hr, code, c) for hr, code, c in anchored
@@ -706,11 +825,37 @@ def extract(pdf: Path):
             for r, t in lines:
                 if hr.y0 - 2 <= r.y0 <= col.rect.y0 + 4 and abs((r.x0 + r.x1) / 2 - hx) < 90 and (m := GOK_RE.search(t)):
                     gok = float((m.group(1) or m.group(2)).replace(",", "."))
+            if gok is None and sheet_anchor:                  # Einzelblatt: Kopfdaten irgendwo ueber dem Profil
+                gok = page_gok(lines, col.rect.y0)
             if chosen is None:
                 continue
             a, b, mode, pairs, support, n_labels = chosen
-            if support == 0 and page_has_labels and RULES["labelless_column"]:
+            if support == 0 and page_has_labels and RULES["labelless_column"] and not sheet_anchor:
                 continue                                    # Nachbarsaeulen haben Labels, diese nicht: Ausbau o. ae.
+            lf = None
+            if RULES["label_first"] and n_labels >= 5 and support < 0.5 * n_labels:
+                lf = label_line(label_groups(words, col, [col] if sheet_anchor else acols))
+            if lf:                                           # T4: Grenzen = gedruckte Werte, Linien bestaetigen
+                la, lb, g = lf
+                bh = Borehole(code, pno + 1, round(la / PT_TO_M_AT_1_1), f"labels ({len(g)} Labels)", gok)
+                bh.page_class, bh.fit, bh.support = pclass, (la, lb), 1.0
+                bh.bbox = tuple(round(v, 1) for v in col.rect)
+                line_d = [la * y + lb for y in col.bounds]
+                prev = 0.0
+                for _, v in sorted(g, key=lambda e: e[1]):
+                    if v <= prev:
+                        continue
+                    ly = Layer(prev, v, label_confirmed=True)
+                    if not any(abs(d - v) <= 0.3 for d in line_d):
+                        ly.issues.append("Label ohne Linie in +-0,3 m")
+                    bh.layers.append(ly)
+                    prev = v
+                _assign_text(bh, col, lines, words, (la, lb), "labels", [(None, v) for _, v in g],
+                             min([c.rect.x0 for c in acols if c.rect.x0 > col.rect.x1 + 5] + [page.rect.x1]))
+                if any(NO_GW_RE.search(t) for _, t in lines):
+                    bh.gw_status = "kein Grundwasser"
+                found[code].append(bh)
+                continue
             fit = (a, b)
             bh = Borehole(code, pno + 1, round(a / PT_TO_M_AT_1_1), f"{mode} ({support}/{n_labels} Labels)", gok)
             bh.page_class = pclass
@@ -778,6 +923,19 @@ def extract(pdf: Path):
                                        if (m := WATER_DESC_RE.search(t.replace(" ", "")))})
             if not bh.gw_depths and any(NO_GW_RE.search(t) for _, t in near):
                 bh.gw_status = "kein Grundwasser"
+            found[code].append(bh)
+        if RULES["depth_table"] and heads and not anchored and (tab := depth_table(words, lines, heads)):
+            g, descs = tab
+            code = heads[0][1]
+            bh = Borehole(code, pno + 1, None, f"tabelle ({len(g)} Tiefen)", page_gok(lines, g[0][0].y0))
+            bh.page_class = pclass
+            bh.support = 1.0
+            for (ra, va), (rb, vb), d in zip(g, g[1:], descs):
+                bh.layers.append(Layer(va, vb, classify_v3(d.split(",")[0]) or classify_v3(d), label_confirmed=True, text=d))
+            if any(NO_GW_RE.search(t) for _, t in lines):
+                bh.gw_status = "kein Grundwasser"
+            if RULES["coords_text"]:
+                xy_text.update(coords_from_text(lines, [(heads[0][0], code, None)]))
             found[code].append(bh)
     coords = coordinate_table(doc)
     sv = schichtenverzeichnis(doc) if RULES["sv_source"] else {}

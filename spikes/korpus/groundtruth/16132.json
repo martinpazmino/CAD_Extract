@@ -1,0 +1,17 @@
+{
+ "file": "16132.pdf",
+ "sha256": "865bf68348737da841c094b31591cc51043c99f46b3280264e2f900024aa94de",
+ "source": "https://github.com/swisstopo/swissgeol-boreholes-dataextraction/tree/main/example",
+ "notes": "Blindrunde 4. BG Ingenieurs Conseils (Lancy GE), franzoesisch, 2 Seiten gedreht 270 Grad, Scan mit OCR-Textlage; Tiefen negativ als Oberkante am Zeilenanfang ('-0.30 Gravier ...'). Schichten nicht transkribiert.",
+ "boreholes": [
+  {
+   "code": "MGR01",
+   "kind": "bohrung",
+   "page": 1,
+   "gok": 399.78,
+   "layers": [],
+   "gw_depths": [],
+   "layers_transcribed": false
+  }
+ ]
+}

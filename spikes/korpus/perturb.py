@@ -21,7 +21,8 @@ def rot90(src: pymupdf.Document) -> pymupdf.Document:
     for p in src:
         r = p.rect
         q = out.new_page(width=r.height, height=r.width)
-        q.show_pdf_page(q.rect, src, p.number, rotate=90)
+        # show_pdf_page ignoriert /Rotate der Quelle: deren Drehung hier mit ausgleichen
+        q.show_pdf_page(q.rect, src, p.number, rotate=(90 - p.rotation) % 360)
         q.set_rotation(90)
     return out
 
@@ -30,7 +31,7 @@ def scale70(src: pymupdf.Document) -> pymupdf.Document:
     out = pymupdf.open()
     for p in src:
         q = out.new_page(width=p.rect.width * 0.7, height=p.rect.height * 0.7)
-        q.show_pdf_page(q.rect, src, p.number)
+        q.show_pdf_page(q.rect, src, p.number, rotate=(-p.rotation) % 360)
     return out
 
 
