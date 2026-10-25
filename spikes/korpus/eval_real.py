@@ -133,7 +133,7 @@ def main(pdf_dir: Path, sg_dir: Path | None) -> None:
             unconf = sum(not ly.label_confirmed for ly in b.layers)
             print(f"        {b.code:6s} S.{b.page} M1:{b.scale} {b.mode:13s} GOK {b.gok} "
                   f"Grenzen {[ly.bottom for ly in b.layers]} GW {b.gw_depths or b.gw_status} "
-                  f"Boden {[ly.soil for ly in b.layers]} unbestaetigt {unconf} dup {b.duplicates}")
+                  f"Boden {[ly.soil for ly in b.layers]} unbestaetigt {unconf} dup {b.duplicates} {b.cross_check}")
         if "gw_table" in gt:
             got = gw_table(pdf)
             ok = sum(abs(got.get(k, -99) - v) < 0.005 for k, v in gt["gw_table"].items())

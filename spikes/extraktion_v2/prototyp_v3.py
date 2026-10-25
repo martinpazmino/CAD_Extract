@@ -27,6 +27,16 @@ Nach dem Blindtest (Hausham/DC-Software, Rednitzhembach/Scan; v3 blind 0/13):
   * Scans: Segmente aus dem Bild (OpenCV-Morphologie) + OCR-Textlage, Doppellinien zusammenfuehren
   * Duplikate: Blatt mit Schriftfeld 'Bohrung B 4' / Einzelblatt bevorzugen
 
+Nach Runde 3 (Triefenstein/Badel, Marl/IDAT, Wesel/AutoCAD-SHX, Berlin/Rasterbilder; v3 blind 11/29):
+  * Kopfzeile mit Zusatz ('RKS 1 - Betonweg 0+050')
+  * Labelgruppen in arithmetischer Folge sind Achsen (Lineal, Rammdiagramm), keine Schichtgrenzen
+  * Saeule ohne bestaetigendes Label, waehrend andere Saeulen derselben Seite Labels haben, ist kein
+    Profil (Brunnenausbau GWM neben der Bohrung); ganz ohne Labels (OCR verloren) bleibt der Massstabstext
+  * Probenspalte mit Von/Bis-Paaren ('0,20 / 0,60') ist keine Labelgruppe
+  * Bodenart aus DIN-4023-/ISO-14688-Kuerzeln ('U, t, s´', 'fS, ms´', 'A (S, u´)')
+  * Schichtenverzeichnis (Formblatt DIN 4022 / DIN EN ISO 14688) als zweite Quelle: Tiefen und
+    Benennung als Text, auch wenn das Profil ein Bild oder AutoCAD-SHX-Linien ist; Abgleich mit dem Profil
+
 Achtung: alle Zahlen nach einer Korrektur sind Trainingszahlen (docs/15).
 """
 from __future__ import annotations
@@ -46,6 +56,7 @@ from prototyp_v2 import (DATE_RE, GOK_RE, PT_TO_M_AT_1_1, classify_hatch, coordi
                          hatch_features, soil, soundings)
 
 ID_RE = re.compile(r"^(B|BK|KB|KRB|RKS|BS|GWM|SCH)\s*(\d+[a-z]?)(/\d{2})?$")
+HEAD_RE = re.compile(r"^((?:B|BK|KB|KRB|RKS|BS|GWM|SCH)\s*\d+[a-z]?(?:/\d{2})?)(?:\s+[-–:]\s+\S.*)?$")
 DEPTH_RE = re.compile(r"^\d{1,3}[.,]\d{1,2}\s?m?$")              # DC-Software: '0.20m'
 GW_TEXT_RE = re.compile(r"\bGW\b.*?(\d{1,3}[.,]\d{1,2})\s?m\b|(\d{1,3}[.,]\d{1,2})\s?m\s*u\.?\s*GOK", re.I)
 SCALE_RE = re.compile(r"(?:M(?:a(?:ss|ß)stab)?\.?|H(?:ö|oe)hen-?Ma(?:ss|ß)stab)?\s*1\s*:\s*(\d{2,4})\b")
@@ -55,6 +66,11 @@ ANTHROPOGEN = {"beton": "Beton", "asphalt": "Asphalt", "schwarzdecke": "Schwarzd
                "pflaster": "Pflaster", "anschuettung": "Auffuellung", "anschüttung": "Auffuellung",
                "auffuellung": "Auffuellung", "auffüllung": "Auffuellung", "schotter": "Auffuellung"}
 TOPSOIL = {"oberboden", "mutterboden"}
+# Hauptbodenart als Kuerzel am Anfang der Beschreibung (DIN 4023 bzw. EN ISO 14688)
+ABBR_RE = re.compile(r"^\s*(Mu|Mg|Gr|Sa|Si|Cl|Co|A|[fmg]?S|[fmg]?G|U|T|X|H|F)(?=[\s,(?´'*]|$)")
+ABBR = {"Mu": "Mutterboden", "Mg": "Auffuellung", "A": "Auffuellung", "Gr": "Kies", "G": "Kies",
+        "Sa": "Sand", "S": "Sand", "Si": "Schluff", "U": "Schluff", "Cl": "Ton", "T": "Ton",
+        "Co": "Steine", "X": "Steine", "H": "Torf", "F": "Mudde"}
 STANDARD_SCALES = (10, 20, 25, 33, 50, 75, 100, 125, 150, 200, 250, 500, 1000)
 
 
@@ -250,6 +266,9 @@ def classify_v3(text: str) -> str:
         cls, sure = soil.classify(raw)
         if sure:
             return cls
+    if m := ABBR_RE.match(text):                       # 'U, t, s´' -> Schluff, 'fS' -> Sand
+        k = m.group(1)
+        return ABBR.get(k) or ABBR.get(k[-1], "")
     return ""
 
 
@@ -278,9 +297,22 @@ def label_groups(words, col: Column, cols: list[Column]):
     for g in groups.values():
         g.sort(key=lambda e: e[0].y0)
         g = _longest_non_decreasing(g)                    # versprengte Zahlen (andere Texte) entfernen
-        if len(g) >= 2:
+        if len(g) >= 2 and not _arithmetic(g) and not _paired(g):
             out.append(g)
     return sorted(out, key=lambda g: (-len(g), hdist(g[0][0], col)))
+
+
+def _arithmetic(g, tol: float = 0.011) -> bool:
+    """Lineal, Hoehenleiste, Tiefenachse eines Rammdiagramms: >= 5 Werte mit gleichem Abstand (wie swissgeol)."""
+    v = [x for _, x in g]
+    d = np.diff(v)
+    return len(v) >= 5 and d.min() > 0 and float(d.max() - d.min()) <= tol
+
+
+def _paired(g) -> bool:
+    """Probenspalte: Von/Bis-Paare, fast jeder Wert steht doppelt untereinander."""
+    v = [round(x, 2) for _, x in g]
+    return len(v) >= 6 and len(set(v)) <= 0.7 * len(v)
 
 
 def _longest_non_decreasing(g):
@@ -339,7 +371,7 @@ def fit_depths(col: Column, labels):
     # Reihenfolge: k-tes Label <-> k-te Grenze, ueberzaehlige Grenzen/Labels testweise weglassen
     vals = sorted(v for _, v in labels)
     best = None
-    for drop_b in range(0, 4):
+    for drop_b in range(0, min(4, len(B) + 1)):
         for keep in itertools.combinations(range(len(B)), len(B) - drop_b):
             yb = [B[i] for i in keep]
             for vv in (vals, [v for v in vals if v > 0]):
@@ -388,6 +420,7 @@ class Borehole:
     east: float | None = None
     north: float | None = None
     duplicates: list[str] = field(default_factory=list)
+    cross_check: str = ""            # Abgleich mit dem Schichtenverzeichnis
     support: float = 0.0
     single_sheet: bool = False
     titled: bool = False
@@ -434,6 +467,59 @@ def _groundwater(drawings, segs, col: Column, cols: list[Column], fit, words=())
     return sorted(set(out))
 
 
+SV_CODE_RE = re.compile(r"(?<![A-Za-z0-9])((?:B|BK|KB|KRB|RKS|BS|GWM|SCH)\s*\d+[a-z]?(?:/\d{2})?)(?![\d.,])")
+SV_NO_GW_RE = re.compile(r"kein(?:e[nr]?)?\s+(?:Grund)?wasser|Wasser\s+nicht\s+angetroffen", re.I)
+SV_GW_RE = re.compile(r"(?:Wasserstand|Wasserspiegel|Grundwasser\w*|\bGW)\D{0,40}?(\d{1,2}[.,]\d{1,2})\s*m\b", re.I)
+
+
+def schichtenverzeichnis(doc) -> dict[str, dict]:
+    """Formblatt 'Schichtenverzeichnis': Spalte 1 'Bis ... m unter Ansatzpunkt', Spalte 2 Bloecke a) bis i).
+
+    Das Formblatt ist genormt und bei allen Bueros gleich aufgebaut: die Tiefe steht links vom a)-Block,
+    im Block steht unter a) die Benennung. Liefert je Aufschluss Unterkanten, Benennung und Wasserangaben.
+    """
+    out: dict[str, dict] = {}
+    for pno, page in enumerate(doc):
+        txt = page.get_text()
+        if "schichtenverzeichnis" not in re.sub(r"\s", "", txt).lower() or "Ansatz" not in txt:   # 'S c h i c h t e n ...' 
+            continue
+        ws = {(round(w[0]), round(w[1]), w[4]): w for w in page.get_text("words")}.values()   # doppelter Text
+        hdr = [w for w in ws if w[4].startswith("Ansatz")]
+        marks = sorted((w for w in ws if w[4] == "a)"), key=lambda w: w[1])
+        if not hdr or not marks:
+            continue
+        y_hdr = max(w[3] for w in hdr)
+        x_a = min(w[0] for w in marks)
+        x_col3 = min([w[0] - 4 for w in ws if w[4] in ("Wasserführung", "Bohrwerkzeuge") and w[1] < y_hdr]
+                     + [page.rect.width * 0.6])                                  # Spalte 3
+        blocks = [w for w in marks if w[1] > y_hdr]
+        code = None                                         # 'B 1 Bohrung Nr.', 'Nr.: B 1 / Blatt 1', 'RKS 1 - Weg'
+        for r, t in sorted(primitives(page)[1], key=lambda e: (e[0].y0, e[0].x0)):
+            if r.y1 <= y_hdr and (m := SV_CODE_RE.search(re.sub(r"\s+", " ", t))):
+                code = m.group(1)
+                break
+        if code is None or not blocks:
+            continue
+        rec = out.setdefault(code, {"bottoms": [], "names": [], "gw": [], "gw_status": None, "pages": []})
+        rec["pages"].append(pno + 1)
+        depths = sorted((w for w in ws if w[2] <= x_a + 1 and w[1] > y_hdr and DEPTH_RE.match(w[4])), key=lambda w: w[1])
+        for d in depths:
+            blk = [b for b in blocks if b[1] < d[1]]
+            if not blk:
+                continue
+            b = blk[-1]
+            y_b = min([w[1] for w in ws if w[4] == "b)" and w[1] > b[1] + 1] + [b[1] + 12])
+            name = " ".join(w[4] for w in sorted(ws, key=lambda w: (round(w[1]), w[0]))
+                            if b[1] - 3 <= w[1] < y_b - 1 and w[0] > b[2] and w[0] < x_col3 - 2)
+            rec["bottoms"].append(float(d[4].rstrip("m ").replace(",", ".")))
+            rec["names"].append(name)
+        flat = " ".join(txt.split())
+        rec["gw"] += [float(m.group(1).replace(",", ".")) for m in SV_GW_RE.finditer(flat)]
+        if SV_NO_GW_RE.search(flat):
+            rec["gw_status"] = "kein Grundwasser"
+    return {k: v for k, v in out.items() if v["bottoms"]}
+
+
 def extract(pdf: Path):
     doc = pymupdf.open(pdf)
     swatches = []
@@ -448,7 +534,7 @@ def extract(pdf: Path):
             dph.update(soundings(page))
         cols = find_columns(segs, merge_tol=1.6 if scanned else 0.8)   # Scans zeichnen Linien doppelt
         scale_txt = [int(m) for _, t in lines for m in SCALE_RE.findall(t)]
-        heads = [(r, re.sub(r"\s+", " ", t.strip())) for r, t in lines if ID_RE.match(re.sub(r"\s+", " ", t.strip()))]
+        heads = [(r, m.group(1)) for r, t in lines if (m := HEAD_RE.match(re.sub(r"\s+", " ", t.strip())))]
         anchored: list[tuple] = []
         used = set()
         for hr, code in heads:
@@ -466,16 +552,19 @@ def extract(pdf: Path):
         anchored = [(hr, code, c) for hr, code, c in anchored
                     if sum(1 for r, t, *_ in words if c.rect.contains(r) and re.search(r"\d", t)) <= 2]
         acols = [c for _, _, c in anchored]
-        for hr, code, col in anchored:
+        chosen_all = [choose_scale(c, label_groups(words, c, acols), scale_txt) for _, _, c in anchored]
+        page_has_labels = any(ch and ch[4] > 0 for ch in chosen_all)
+        for (hr, code, col), chosen in zip(anchored, chosen_all):
             hx = (hr.x0 + hr.x1) / 2
             gok = None
             for r, t in lines:
                 if hr.y0 - 2 <= r.y0 <= col.rect.y0 + 4 and abs((r.x0 + r.x1) / 2 - hx) < 90 and (m := GOK_RE.search(t)):
                     gok = float((m.group(1) or m.group(2)).replace(",", "."))
-            chosen = choose_scale(col, label_groups(words, col, acols), scale_txt)
             if chosen is None:
                 continue
             a, b, mode, pairs, support, n_labels = chosen
+            if support == 0 and page_has_labels:            # Nachbarsaeulen haben Labels, diese nicht: Ausbau o. ae.
+                continue
             fit = (a, b)
             bh = Borehole(code, pno + 1, round(a / PT_TO_M_AT_1_1), f"{mode} ({support}/{n_labels} Labels)", gok)
             bh.support = support / n_labels if n_labels else 0.0
@@ -510,6 +599,7 @@ def extract(pdf: Path):
                 bh.gw_status = "kein Grundwasser"
             found[code].append(bh)
     coords = coordinate_table(doc)
+    sv = schichtenverzeichnis(doc)
     out = []
     for code, versions in found.items():
         # GOK gefunden, Labels bestaetigen, groesster Massstab (= kleinste Zahl)
@@ -519,8 +609,36 @@ def extract(pdf: Path):
         best.duplicates = [f"S.{v.page} M1:{v.scale}" for v in versions if v is not best]
         if code in coords:
             best.east, best.north = coords[code]
+        if rec := sv.get(code):
+            _cross_check(best, rec)
         out.append(best)
+    for code, rec in sv.items():                            # nur im Schichtenverzeichnis (Profil = Bild/SHX)
+        if code in found:
+            continue
+        bh = Borehole(code, rec["pages"][0], None, "schichtenverzeichnis", gw_depths=sorted(set(rec["gw"])),
+                      gw_status=None if rec["gw"] else rec["gw_status"])
+        prev = 0.0
+        for d, name in zip(rec["bottoms"], rec["names"]):
+            bh.layers.append(Layer(prev, d, classify_v3(name.split(",")[0]) or classify_v3(name), label_confirmed=True))
+            prev = d
+        out.append(bh)
     return out, dph
+
+
+def _cross_check(bh: Borehole, rec: dict) -> None:
+    """Profil gegen Schichtenverzeichnis: Unterkanten muessen 1:1 uebereinstimmen; Luecken fuellen."""
+    prof = [ly.bottom for ly in bh.layers]
+    miss = [d for d in rec["bottoms"] if not any(abs(d - p) <= 0.03 for p in prof)]
+    extra = [p for p in prof if not any(abs(d - p) <= 0.03 for d in rec["bottoms"])]
+    bh.cross_check = "SV ok" if not miss and not extra else f"SV abweichend: fehlt {miss}, nur im Profil {extra}"
+    for d, name in zip(rec["bottoms"], rec["names"]):
+        for ly in bh.layers:
+            if abs(ly.bottom - d) <= 0.03 and not ly.soil:
+                ly.soil = classify_v3(name.split(",")[0]) or classify_v3(name)
+    if not bh.gw_depths and rec["gw"]:
+        bh.gw_depths = sorted(set(rec["gw"]))
+    if not bh.gw_depths and not bh.gw_status and rec["gw_status"]:
+        bh.gw_status = rec["gw_status"]
 
 
 def _assign_text(bh: Borehole, col: Column, lines, words, fit, mode, pairs, right_limit):
@@ -538,7 +656,7 @@ def _assign_text(bh: Borehole, col: Column, lines, words, fit, mode, pairs, righ
             r |= q
         lines.append((r, " ".join(t for _, t in ws)))
     right = [(r, t) for r, t in lines if col.rect.x1 + 2 < r.x0 < min(col.rect.x1 + 220, right_limit - 5)
-             and re.search(r"[A-Za-zÄÖÜäöü]{3}", t) and not DATE_RE.search(t)]
+             and (re.search(r"[A-Za-zÄÖÜäöü]{3}", t) or ABBR_RE.match(t)) and not DATE_RE.search(t)]
     tops = sorted(v for _, v in pairs)
     if not mode.startswith("direkt") and tops and tops[0] == 0.0:
         lab = sorted([(r, float(t.rstrip("m ").replace(",", "."))) for r, t, *_ in words if DEPTH_RE.match(t)
@@ -549,7 +667,8 @@ def _assign_text(bh: Borehole, col: Column, lines, words, fit, mode, pairs, righ
             for ly in bh.layers:
                 if abs(ly.top - v) <= 0.03 and txt:
                     ly.soil = classify_v3(txt.split(",")[0]) or classify_v3(txt)
-        return
+        if lab:                                           # sonst: Labels links -> Lage im Intervall
+            return
     for ly in bh.layers:
         y0, y1 = (ly.top - b) / a, (ly.bottom - b) / a
         txt = " ".join(t for r, t in right if y0 - 2 <= (r.y0 + r.y1) / 2 < y1 + 2)

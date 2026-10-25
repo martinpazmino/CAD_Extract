@@ -40,6 +40,10 @@ equipo; "Verificado" = respaldado por una prueba en este repo.
 | D26 | **Híbrido:** detección de etiquetas tolerante a formatos (como swissgeol) + validación geométrica propia | swissgeol generalizó mejor en profundidades (13/13 ciego) pero inventó 18 sondeos y no leyó cotas; v3 al revés | [15 §6.4](15_resultados_pdfs_reales.md#64-consecuencia-para-la-arquitectura) | Propuesta |
 | D27 | **Escaneos por la misma lógica**: segmentos desde la imagen (OpenCV) + capa OCR | Evitar un segundo pipeline | Rednitzhembach 4/4 · 15/15 tras el adaptador | Verificado (entrenamiento) |
 | D28 | Escala no normalizada válida si ≥ 80 % de ≥ 3 etiquetas la confirman (revisa D22) | DC-Software ajusta la escala a la hoja | Hausham RKS M ≈ 1:35 | Verificado (entrenamiento) |
+| D29 | **Predicciones congeladas se suben al repo antes de abrir los PDFs** (con `sha256`) | El historial de git demuestra el orden congelar → verdad | `spikes/korpus/frozen/runde3/`; v3 ciego 11/29 ([15 §7](15_resultados_pdfs_reales.md#7-prueba-ciega-3-triefenstein-marl-wesel-y-berlín)) | Decidido; aplicado en la ronda 3 |
+| D30 | **Schichtenverzeichnis (DIN 4022) como segunda fuente** y contraste 1:1 con el perfil | Formulario normado, en texto aunque el dibujo sea imagen o SHX | Wesel 24/24 sólo desde ahí; "SV ok" en 14/14 sondeos | Verificado (entrenamiento) |
+| D31 | **Ejes en progresión aritmética no son etiquetas** (regla, eje DPH), como hace swissgeol | Un eje DPH en el corte suplantó un sondeo | Marl BS 10 | Verificado (entrenamiento) |
+| D32 | **OCR como componente del pipeline** para raster sin texto y dibujos con texto SHX | 12 de los 18 sondeos perdidos en la ronda 3 no tenían texto legible | Berlín 0/11 | Propuesta |
 
 ## Preguntas abiertas
 

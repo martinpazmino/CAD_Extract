@@ -45,7 +45,9 @@ def score_frozen(out: Path, sg_dir: Path | None) -> None:
         print(f"== {pred_file.stem} (Code-Stand {pred.get('code_rev')})")
         print("   v1 ", score(gt, pred["v1"]))
         print("   v3 ", score(gt, pred["v3"]))
-        if sg_dir and (sg := sg_dir / f"real_out_{pred_file.stem}" / "predictions.json").exists():
+        if "sg" in pred:                                   # mit eingefroren (ab Runde 3)
+            print("   sg ", score(gt, pred["sg"]))
+        elif sg_dir and (sg := sg_dir / f"real_out_{pred_file.stem}" / "predictions.json").exists():
             print("   sg ", score(gt, run_sg(sg, pred_file.stem)))
 
 

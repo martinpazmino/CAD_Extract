@@ -9,11 +9,12 @@ aliases: [Spike corpus]
 
 | Archivo | Qué hace |
 |---|---|
-| [`manifest.tsv`](manifest.tsv) | 24 candidatos públicos (B-Pläne, UVP-Verbund, NLWKN, Transparenzportal Hamburg) de 9 Länder: nombre, Land, procedimiento, URL, contenido esperado. Revisados: `wachenroth`, `talheim`, `halle`, `hausham`, `rednitzhembach` (marcados `GEPRUEFT`); los marcados `Runde 3 (blind)` son la próxima ronda ciega; el resto, encontrados por búsqueda y sin abrir |
+| [`manifest.tsv`](manifest.tsv) | 24 candidatos públicos (B-Pläne, UVP-Verbund, NLWKN, Transparenzportal Hamburg) de 9 Länder: nombre, Land, procedimiento, URL, contenido esperado. Revisados (marcados `GEPRUEFT`): los 9 con verdad en `groundtruth/`; los marcados `Runde 4 (blind)` son la próxima ronda ciega (en la ronda 3 su descarga quedó bloqueada); el resto, encontrados por búsqueda y sin abrir |
 | [`screen_corpus.py`](screen_corpus.py) | `--download` descarga el manifest; `--screen` filtra páginas (vector/escaneo/Bohrprofil), corre v1 y v3 y escribe `report.md` + miniaturas (sin verdad) |
 | [`eval_real.py`](eval_real.py) | Compara v1, v3 y (opcional) swissgeol con la verdad de `groundtruth/` |
 | [`blind_test.py`](blind_test.py) | Prueba ciega: `freeze` congela predicciones antes de mirar los PDFs nuevos, `score` las puntúa después |
-| [`groundtruth/`](groundtruth/wachenroth.json) | Verdad transcrita a mano de Wachenroth, Talheim, Halle, Hausham y Rednitzhembach (datos factuales, URL y `sha256` del PDF) |
+| [`frozen/runde3/`](frozen/runde3/marl_251.json) | Predicciones congeladas de la ronda 3 (v3, v1 y profundidades de swissgeol, con `sha256` del PDF), subidas antes de la verdad |
+| [`groundtruth/`](groundtruth/wachenroth.json) | Verdad transcrita a mano de 9 Gutachten: Wachenroth, Talheim, Halle, Hausham, Rednitzhembach, Triefenstein, Marl, Wesel y Berlín (datos factuales, URL y `sha256` del PDF) |
 
 ```bash
 python screen_corpus.py --download ~/gutachten          # requiere acceso de red a los dominios

@@ -1,17 +1,21 @@
 ---
-title: "Resultados con PDFs reales (ronda 1 y prueba ciega)"
+title: "Resultados con PDFs reales (ronda 1 y dos rondas ciegas)"
 date: 2026-10-25
 tags: [corpus, validacion, resultados, extraccion]
 aliases: [Resultados reales, Primera ronda corpus]
 ---
 
-# Resultados con PDFs reales (ronda 1 y prueba ciega)
+# Resultados con PDFs reales (ronda 1 y dos rondas ciegas)
 
 **Conclusión:**
-- **v1 (actual):** 0 de 29 sondeos en cinco Gutachten públicos.
+- **v1 (actual):** 0 de 58 sondeos en nueve Gutachten públicos.
 - **Ronda 1** (3 PDFs): v3 funciona después de siete cambios que los sintéticos no revelaban.
-- **Prueba ciega** (2 PDFs nuevos, código congelado): **v3 sacó 0 de 13**. swissgeol sacó
+- **Prueba ciega 2** (2 PDFs nuevos, código congelado): **v3 sacó 0 de 13**. swissgeol sacó
   13/13 sondeos, pero ninguna cota y 18 sondeos inventados.
+- **Prueba ciega 3** (4 PDFs nuevos, predicciones congeladas en el repo): **v3 sacó 11 de 29**,
+  con cota 12/23 y 1 sondeo falso. swissgeol sacó 12 de 29 (uno sin capas), sin cotas y con 25 sondeos falsos
+  (§7). Los 18 sondeos que faltan están en un raster sin texto (11) o en un título con sufijo (5)
+  o un dibujo AutoCAD con texto convertido en líneas (1), más una instancia equivocada.
 
 La lección es que la geometría da precisión y control de falsos positivos, mientras que la
 tolerancia a formatos de texto desconocidos es el punto fuerte de swissgeol. **La solución es
@@ -19,9 +23,9 @@ combinar ambas** (§6). Tras corregir las causas generales, v3 llega a **29/29 s
 límites**, incluido un PDF escaneado.
 
 > [!WARNING]
-> Las cifras **después** de cada corrección son de *entrenamiento*. La única cifra honesta de
-> generalidad es la de la prueba ciega (§6.1): **0/13**. La próxima ronda debe volver a medirse
-> sin tocar el código ([12](12_corpus_publico.md)).
+> Las cifras **después** de cada corrección son de *entrenamiento*. Las únicas cifras honestas de
+> generalidad son las de las pruebas ciegas: **0/13** (§6.1) y **11/29** (§7.1). La próxima ronda
+> debe volver a medirse sin tocar el código ([12](12_corpus_publico.md)).
 
 ## 1. Los documentos
 
@@ -130,12 +134,72 @@ legibles, y quedan **marcados para revisión**. Ése es el comportamiento buscad
    Los escaneos ya no son un caso aparte ([02](02_bohrprofil_generalizacion.md)).
 3. **La prueba ciega forma parte del proceso:** cada ronda nueva se congela antes de mirar.
 
-## 7. Próximos pasos
+## 7. Prueba ciega 3: Triefenstein, Marl, Wesel y Berlín
 
-1. Tercera ronda ciega con Gutachten **nuevos** (GGU-STRATIG, WinBohr, otro escaneado), ahora
-   con v3 + catálogo de formatos de swissgeol: medir antes de tocar.
-2. Muestras de leyenda desde segmentos → Schraffur y símbolos de agua con datos reales.
-3. Llevar las lecciones L1–L7 al plan de implementación ([10](10_plan_implementacion.md)).
+### 7.1 Resultado ciego
+
+Protocolo reforzado: las predicciones de v3 (commit `36e3554`) y de swissgeol se congelaron y
+**se subieron al repo antes de abrir los PDFs** (commits `5325ead` y `2d4d5e7`,
+[`spikes/korpus/frozen/runde3/`](../spikes/korpus/frozen/runde3/marl_251.json), con `sha256` del
+PDF); la verdad vino después (`acc5cd5`). Así el orden queda demostrado por el historial de git.
+
+| PDF | Oficina / software | Qué es | **v3 (ciego)** | swissgeol (ciego) |
+|---|---|---|---|---|
+| Triefenstein B-Plan 41 (BY) | Geotechnik Badel | Vectorial, 5 RKS en hojas sueltas a M 1:30 y 1:25, títulos `RKS 1 - Betonweg 0+050`, descripciones sólo en abreviaturas DIN 4023; DPH como **tabla de valores** | **0/5** | 0/5 · **15 sondeos falsos** |
+| Marl B-Plan 251 (NRW) | Dr. Spang · **IDAT/GeoDin** | Vectorial, 12 BS a M 1:50 con columna de muestras Von/Bis junto a las etiquetas, Längsschnitt con DPH, ejecución de GWM en la hoja de BS 10 | **12/12** (BS 10 tomado del corte) · 91/97 límites · **GOK 12/12** · 1 sondeo falso | 11/12 · 87/97 · GOK 0/12 · 6 falsos |
+| Wesel Anlage 12 (NRW) | Asmus + Prabucki · **AutoCAD** | 1 sondeo de 38 m, perfil a M 1:200 con **texto SHX convertido en líneas** (sin capa de texto); Schichtenverzeichnis DIN 4022 como texto; fotos de testigos | **0/1** | 1/1 · 0/24 límites · 3 falsos |
+| Berlín V-67b-VE | GuD Consult | Voruntersuchung sin sondeos propios: 11 sondeos de terceros (Geoportal Berlin y archivo) como **imágenes raster sin texto**, con CPT y coordenadas UTM 33N en la imagen | **0/11** | 0/11 · 1 falso |
+| **Total** | | | **11/29 correctos** (+1 instancia equivocada) · 91/200 límites · GOK 12/23 · GW 0/4 · 1 falso | 12/29 (1 sin capas) · 87/200 · GOK 0/23 · GW 0/4 · **25 falsos** |
+
+v3 fue preciso donde leyó (Marl: 87/87 límites en los 11 sondeos correctos y todas las cotas),
+pero se cayó entero por detalles de formato que un humano ni ve. swissgeol volvió a encontrar
+profundidades donde v3 no, a cambio de muchos falsos y ninguna cota.
+
+### 7.2 Por qué falló y qué se cambió después
+
+| # | Causa | Cambio (general) | Efecto (entrenamiento) |
+|---|---|---|---|
+| L13 | Título con sufijo: `RKS 1 - Betonweg 0+050` (nombre y estación) | La cabecera acepta `<código> - <texto>` | Triefenstein 0/5 → **5/5 · 24/24 · GW 2/2** |
+| L14 | La escala de profundidad del diagrama DPH del corte (1,00 … 10,00) pasó por etiquetas de BS 10 | Grupos de etiquetas en **progresión aritmética** (≥ 5 valores, mismo paso) = eje o regla, no límites. swissgeol ya lo hacía y no lo habíamos portado ([08](08_swissgeol_reutilizacion.md)) | Marl BS 10 correcto, 97/97 |
+| L15 | IDAT pone una columna de muestras con pares Von/Bis (`0,20 / 0,60`) junto a las etiquetas; el plano de ejecución de la GWM parecía un segundo sondeo | Grupo con valores duplicados = columna de muestras. Una columna sin etiquetas confirmadas, cuando las vecinas sí tienen, no es un perfil. Sin ninguna etiqueta en la página (OCR perdido) se mantiene la escala del cajetín | 0 sondeos falsos. La primera versión de esta regla rompió B 4 de Rednitzhembach y el conjunto de entrenamiento lo detectó |
+| L16 | Descripción sólo con abreviaturas (`U, t, s´`, `fS, ms´`, `A (S, u´)`) | Fracción principal desde la abreviatura DIN 4023 / EN ISO 14688 | Bodenart Triefenstein 18/24, Marl 18/23 |
+| L17 | AutoCAD con fuentes SHX: las etiquetas son líneas y el perfil no se puede leer sin OCR | **Schichtenverzeichnis** (formulario DIN 4022, igual en todas las oficinas) como segunda fuente: profundidad en la columna 1, denominación bajo `a)` y agua en la columna 3. Contraste 1:1 con el perfil | Wesel **1/1 · 24/24**; contraste "SV ok" en 14/14 sondeos de Hausham y Triefenstein |
+| L18 | Sondeos de terceros como **raster sin capa de texto** (capturas del Geoportal, escaneos de archivo); códigos `422C-460`; CPT | Sin cambio: hace falta un paso de **OCR** (ocrmypdf/Tesseract) antes del pipeline; el adaptador raster (L11) ya cubre las líneas | Berlín sigue en 0/11 |
+
+### 7.3 Acumulado de los nueve PDFs (después de las correcciones = entrenamiento)
+
+| | v1 | v3 | swissgeol (sin cambios) |
+|---|---|---|---|
+| Sondeos | 0/58 | **47/58** (los 11 restantes son el raster de Berlín) | 31/58 |
+| Límites | 0/343 | **288/343** (+1 falso, marcado) | 156/343 |
+| GOK | 0/50 | **39/50** | 6/50 |
+| Nivel freático | 0/12 | **9/12** | 4/12 |
+| Bodenart (capas con verdad) | — | **119/132** | (no clasifica) |
+| Sondeos falsos | 0 | **0** | **55** |
+
+Los sintéticos no cambian (102/102). Reproducir: `python spikes/korpus/eval_real.py <pdfs>`.
+
+### 7.4 Qué aprendimos
+
+1. **El cuello de botella ya no es la geometría sino la entrada:** de los 18 sondeos perdidos,
+   12 no tenían texto legible (raster o SHX). El OCR pasa a ser un componente, no un extra.
+2. **El Schichtenverzeichnis es la fuente más estable:** es un formulario normado, viene en texto
+   incluso cuando el dibujo es una imagen, y sirve para verificar cada perfil ([02](02_bohrprofil_generalizacion.md)).
+3. **Reglas pequeñas, efectos grandes:** un sufijo en el título tumbó un Gutachten entero (0/5). La
+   detección de cabeceras debe ser tolerante y la validación geométrica estricta (D26).
+4. **El conjunto de entrenamiento como prueba de regresión** atrapó una regla que rompía
+   Rednitzhembach. Cada cambio se mide contra los nueve PDFs y los sintéticos.
+
+## 8. Próximos pasos
+
+1. **OCR antes del pipeline** para páginas raster sin texto (Berlín) y para dibujos con texto SHX
+   (Wesel), y códigos de sondeo de terceros (`422C-460`, `B 7/16`).
+2. Cuarta ronda ciega con Gutachten **nuevos** (GGU-STRATIG, WinBohr), con el protocolo
+   de §7.1: congelar y subir al repo antes de mirar.
+3. DPH desde **tablas** (Triefenstein: N10 cada 10 cm como texto) y CPT (Berlín) en el modelo de
+   datos ([05](05_sondierungen.md)).
+4. Muestras de leyenda desde segmentos → Schraffur y símbolos de agua con datos reales.
+5. Llevar las lecciones L1–L18 al plan de implementación ([10](10_plan_implementacion.md)).
 
 Up: [Índice](README.md)
 
