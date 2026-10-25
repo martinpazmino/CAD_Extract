@@ -16,10 +16,11 @@ evalúa.
 
 **Estado (2026-10-25):** la descarga automática está bloqueada por la red del entorno de Claude
 (403 en `www.dresden.de`, `daten.transparenz.hamburg.de`, `www.ditzingen.de`, …). El equipo subió
-a mano **3 PDFs** (Wachenroth, Talheim, Halle), con verdad transcrita en
-[`spikes/korpus/groundtruth/`](../spikes/korpus/groundtruth/talheim.json). Resultados:
-[15](15_resultados_pdfs_reales.md). Faltan **5–7 más, no vistos**, para medir la generalidad de
-verdad.
+a mano **5 PDFs**: 3 de entrenamiento (Wachenroth, Talheim, Halle) y 2 de **prueba ciega**
+(Hausham, Rednitzhembach). La verdad está transcrita en
+[`spikes/korpus/groundtruth/`](../spikes/korpus/groundtruth/talheim.json) y los resultados en
+[15](15_resultados_pdfs_reales.md). Para la próxima ronda ciega: GGU-STRATIG, WinBohr, otro
+escaneado y uno con tabla de coordenadas.
 
 ## 1. Cómo desbloquearlo (elige una)
 

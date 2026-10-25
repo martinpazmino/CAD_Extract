@@ -21,8 +21,10 @@ como issue ([01](01_diagnostico_layout_fijo.md)).
 **Con PDFs reales** (Wachenroth, Talheim) hicieron falta siete cambios: geometría reducida a
 segmentos, normalización de la rotación, escala elegida por confirmación de etiquetas, filtros de
 tablas y escalas normalizadas, entre otros. El resultado es
-[`prototyp_v3.py`](../spikes/extraktion_v2/prototyp_v3.py): **16/16 sondeos y 83/83 límites**,
-sin regresión en los sintéticos. Detalle y límites en
+[`prototyp_v3.py`](../spikes/extraktion_v2/prototyp_v3.py). En la **prueba ciega** con dos PDFs
+nuevos v3 sacó **0/13**: etiquetas `0.20m`, escala ajustada a la hoja y un escaneo. Tras corregirlo
+(incluido un adaptador raster que da los mismos segmentos desde la imagen) llega a **29/29 sondeos
+y 143/143 límites** en los cinco PDFs reales, sin regresión en los sintéticos. Detalle y límites en
 [15 Resultados reales](15_resultados_pdfs_reales.md). El método descrito abajo sigue siendo el
 mismo; las variantes de v3 se indican con **(v3)**.
 

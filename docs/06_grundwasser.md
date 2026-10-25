@@ -22,6 +22,10 @@ estar junto a la columna vecina y lo que decide el sondeo es el extremo de la **
 El símbolo de "angebohrt" (dos trazos + línea) aún no se lee. Wachenroth: "kein Grundwasser"
 detectado en **6/6** y guardado como dato. swissgeol: 1 nivel freático falso.
 
+En **Hausham** (DC-Software) el agua va como texto `GW 2.53m` (4/4 tras añadir la lectura por
+texto). Hubo que descartar como "no agua" tres cosas: la serie de ▽ de la **regla de cotas**, los
+triángulos con una **cota** al lado (`741.00m`) y el ▼ de la **cota de inicio** (profundidad 0).
+
 ## 1. Formas de aparición
 
 | Forma | Dónde | Cómo se lee |

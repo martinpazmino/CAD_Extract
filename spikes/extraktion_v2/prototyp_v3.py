@@ -20,8 +20,14 @@ Was die echten PDFs anders machen als die synthetischen (und was v3 deshalb aend
   * Dieselbe Bohrung auf Einzelblatt und im Schnitt -> nach ID zusammenfuehren,
     das Blatt mit dem groessten Massstab behalten
 
-Achtung: v3 wurde mit Blick auf genau diese zwei PDFs entwickelt (= Trainingsmenge).
-Ein ehrlicher Test braucht weitere, ungesehene Gutachten.
+Nach dem Blindtest (Hausham/DC-Software, Rednitzhembach/Scan; v3 blind 0/13):
+  * Labels mit Einheit ('0.20m'), 'Kein Wasser', GW als Text ('GW 2.53m')
+  * Nicht-Normmassstab zulaessig, wenn >= 80 % von >= 3 Labels ihn bestaetigen (DC skaliert seitenfuellend)
+  * Hoehenleisten-Dreiecke, Dreiecke mit Kote daneben und GOK-Marke sind kein Grundwasser
+  * Scans: Segmente aus dem Bild (OpenCV-Morphologie) + OCR-Textlage, Doppellinien zusammenfuehren
+  * Duplikate: Blatt mit Schriftfeld 'Bohrung B 4' / Einzelblatt bevorzugen
+
+Achtung: alle Zahlen nach einer Korrektur sind Trainingszahlen (docs/15).
 """
 from __future__ import annotations
 
@@ -40,9 +46,10 @@ from prototyp_v2 import (DATE_RE, GOK_RE, PT_TO_M_AT_1_1, classify_hatch, coordi
                          hatch_features, soil, soundings)
 
 ID_RE = re.compile(r"^(B|BK|KB|KRB|RKS|BS|GWM|SCH)\s*(\d+[a-z]?)(/\d{2})?$")
-DEPTH_RE = re.compile(r"^\d{1,3}[.,]\d{1,2}$")
+DEPTH_RE = re.compile(r"^\d{1,3}[.,]\d{1,2}\s?m?$")              # DC-Software: '0.20m'
+GW_TEXT_RE = re.compile(r"\bGW\b.*?(\d{1,3}[.,]\d{1,2})\s?m\b|(\d{1,3}[.,]\d{1,2})\s?m\s*u\.?\s*GOK", re.I)
 SCALE_RE = re.compile(r"(?:M(?:a(?:ss|ß)stab)?\.?|H(?:ö|oe)hen-?Ma(?:ss|ß)stab)?\s*1\s*:\s*(\d{2,4})\b")
-NO_GW_RE = re.compile(r"kein(?:\s+|e\s+)Grundwasser|GW\s+nicht\s+angetroffen|trocken", re.I)
+NO_GW_RE = re.compile(r"kein(?:\s+|e\s+)(?:Grund)?wasser|GW\s+nicht\s+angetroffen|trocken", re.I)
 ROCK_SUFFIX = ("stein", "fels")
 ANTHROPOGEN = {"beton": "Beton", "asphalt": "Asphalt", "schwarzdecke": "Schwarzdecke",
                "pflaster": "Pflaster", "anschuettung": "Auffuellung", "anschüttung": "Auffuellung",
@@ -91,12 +98,44 @@ def _xform_drawing(d: dict, m: pymupdf.Matrix) -> dict:
     return {**d, "items": items, "rect": pymupdf.Rect(d["rect"]) * m}
 
 
+def raster_segments(page: pymupdf.Page, dpi: int = 200) -> list[Seg]:
+    """Gescannte Seite: waagrechte/senkrechte Linien per Morphologie aus dem Bild (wie swissgeol strip logs).
+
+    Liefert dieselben Seg-Objekte wie der Vektorweg, damit Saeulen-/Grenzlogik unveraendert bleibt.
+    """
+    try:
+        import cv2
+    except ImportError:                                  # optional: ohne OpenCV kein Rasterweg
+        return []
+    pix = page.get_pixmap(dpi=dpi, colorspace=pymupdf.csGRAY)
+    img = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.h, pix.w)
+    binary = (img < 150).astype(np.uint8)
+    k = max(15, int(dpi * 0.12))                         # ~3 mm Mindestlaenge
+    f = 72.0 / dpi
+    out = []
+    for kernel, horizontal in ((np.ones((1, k), np.uint8), True), (np.ones((k, 1), np.uint8), False)):
+        lines = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel)
+        n, _, stats, _ = cv2.connectedComponentsWithStats(lines)
+        for x, y, w, h, _area in stats[1:n]:
+            if horizontal and h <= 10:                  # Scan: Linien sind 2-4x breiter als im Vektor
+                yc = (y + h / 2) * f
+                out.append(Seg(x * f, yc, (x + w) * f, yc, h * f, True))
+            elif not horizontal and w <= 10:
+                xc = (x + w / 2) * f
+                out.append(Seg(xc, y * f, xc, (y + h) * f, w * f, True))
+    return out
+
+
 def primitives(page: pymupdf.Page):
     m = page.rotation_matrix
     words = [(pymupdf.Rect(w[:4]) * m, w[4], w[5], w[6]) for w in page.get_text("words")]
     drawings = [_xform_drawing(d, m) for d in page.get_drawings()]
     segs: list[Seg] = []
-    for d in drawings:
+    area = page.rect.width * page.rect.height
+    scanned = len(drawings) < 5 and sum(pymupdf.Rect(i["bbox"]).get_area() for i in page.get_image_info()) > 0.8 * area
+    if scanned:                                          # Scan mit OCR-Textlage: Linien aus dem Bild
+        segs = raster_segments(page)
+    for d in ([] if scanned else drawings):
         stroked = d.get("color") is not None and "s" in d.get("type", "")
         fill = d.get("fill")
         coloured_fill = fill is not None and min(fill) < 0.97          # weisse Masken ignorieren
@@ -127,7 +166,7 @@ def primitives(page: pymupdf.Page):
         for q, _ in ws[1:]:
             r |= q
         text_lines.append((r, " ".join(t for _, t in ws)))
-    return words, text_lines, drawings, segs
+    return words, text_lines, drawings, segs, scanned
 
 
 def _merge(segs: list[Seg], axis: str, gap: float = 1.5) -> list[Seg]:
@@ -161,7 +200,7 @@ class Column:
     weight: float                # Strichstaerke der Raender
 
 
-def find_columns(segs: list[Seg], wmin=8, wmax=80, min_ratio=2.5) -> list[Column]:
+def find_columns(segs: list[Seg], wmin=8, wmax=80, min_ratio=2.5, merge_tol=0.8) -> list[Column]:
     # Schraffurlinien (gestrichelt oder knapp innerhalb der Raender) sind keine Schichtgrenzen
     H = _merge([s for s in segs if s.horizontal and s.x1 - s.x0 >= 3 and not s.dashed], "h")
     V = [v for v in _merge([s for s in segs if s.vertical and s.y1 - s.y0 >= 3 and s.stroked], "v")
@@ -179,8 +218,10 @@ def find_columns(segs: list[Seg], wmin=8, wmax=80, min_ratio=2.5) -> list[Column
         ys = sorted(s.y0 for s in H if s.x0 <= a.x0 + 0.6 and s.x1 >= b.x0 - 0.6 and y0 - 1 <= s.y0 <= y1 + 1)
         bounds = []
         for y in [y0] + ys + [y1]:
-            if not bounds or y - bounds[-1] > 0.8:
+            if not bounds or y - bounds[-1] > merge_tol:
                 bounds.append(y)
+            elif y == y1:
+                bounds[-1] = y1                               # doppelte Unterkante -> eine Grenze
         cols.append(Column(pymupdf.Rect(a.x0, y0, b.x0, y1), bounds, min(a.width, b.width)))
     # verschachtelte Kandidaten (Innenstreifen, Rohr einer GWM) -> den mit kraeftigeren Raendern behalten
     cols.sort(key=lambda c: (-round(c.weight, 1), -len(c.bounds), -c.rect.width))
@@ -221,7 +262,7 @@ def label_groups(words, col: Column, cols: list[Column]):
         return max(c.rect.x0 - r.x1, r.x0 - c.rect.x1, 0)
     cands = []
     for r, t, *_ in words:
-        if not DEPTH_RE.match(t) or float(t.replace(",", ".")) > 150:
+        if not DEPTH_RE.match(t) or float(t.rstrip("m ").replace(",", ".")) > 150:
             continue
         cy = (r.y0 + r.y1) / 2
         if not (col.rect.y0 - 8 <= cy <= col.rect.y1 + 150) or hdist(r, col) > 110:
@@ -229,7 +270,7 @@ def label_groups(words, col: Column, cols: list[Column]):
         near = [c for c in cols if c.rect.y0 - 8 <= cy <= c.rect.y1 + 150]
         if min(near, key=lambda c: hdist(r, c)) is not col:
             continue
-        cands.append((r, float(t.replace(",", "."))))
+        cands.append((r, float(t.rstrip("m ").replace(",", "."))))
     groups: dict[int, list] = defaultdict(list)
     for r, v in cands:
         groups[round(r.x0 / 4)].append((r, v))
@@ -262,8 +303,12 @@ def choose_scale(col: Column, groups, scale_txt: list[int]):
     cands = []
     for g in groups:
         f = fit_depths(col, g)
-        if f and plausible_scale(f[0] / PT_TO_M_AT_1_1):
-            cands.append((label_support(col, g, f[0], f[1]), f[2], f[0], f[1], f[3], g))
+        if not f:
+            continue
+        sup = label_support(col, g, f[0], f[1])
+        # Normmassstab ODER starke Bestaetigung (DC-Software skaliert Profile seitenfuellend, z. B. 1:35)
+        if plausible_scale(f[0] / PT_TO_M_AT_1_1) or (len(g) >= 3 and sup >= 0.8 * len(g)):
+            cands.append((sup, f[2], f[0], f[1], f[3], g))
     for m in sorted(set(scale_txt)):
         a = m * PT_TO_M_AT_1_1
         b = -a * col.bounds[0]
@@ -344,17 +389,32 @@ class Borehole:
     north: float | None = None
     duplicates: list[str] = field(default_factory=list)
     support: float = 0.0
+    single_sheet: bool = False
+    titled: bool = False
 
 
-def _groundwater(drawings, segs, col: Column, cols: list[Column], fit):
+def _groundwater(drawings, segs, col: Column, cols: list[Column], fit, words=()):
     """Dreieck mit Spitze nach unten; Zuordnung ueber die waagrechte Wasserlinie."""
     a, b = fit
     H = [s for s in segs if s.horizontal]
     out = []
+    # Hoehenleisten tragen ein Dreieck je Meter: >= 3 gleich ausgerichtete Dreiecke in einer Spalte = Leiste
+    tri_x = defaultdict(int)
+    for d in drawings:
+        it, r = d["items"], d["rect"]
+        if len(it) == 3 and all(x[0] == "l" for x in it) and 3 < r.width < 16 and 3 < r.height < 16:
+            tri_x[round(r.x0)] += 1
+    ruler_x = {x for x, n in tri_x.items() if n >= 3}
     for d in drawings:
         it = d["items"]
         r = d["rect"]
         if not (len(it) == 3 and all(x[0] == "l" for x in it) and 3 < r.width < 16 and 3 < r.height < 16):
+            continue
+        if any(abs(round(r.x0) - x) <= 1 for x in ruler_x):
+            continue
+        # Hoehenmarke: Dreieck mit Kote daneben ('741.00m', '~770,17')
+        if any(abs((wr.y0 + wr.y1) / 2 - (r.y0 + r.y1) / 2) < 5 and 0 < wr.x0 - r.x1 < 70
+               and re.fullmatch(r"~?\d{3,4}[.,]\d{2}\s?m?", t) for wr, t, *_ in words):
             continue
         pts = [x[1] for x in it]
         apex = max(pts, key=lambda p: p.y)
@@ -368,7 +428,9 @@ def _groundwater(drawings, segs, col: Column, cols: list[Column], fit):
         if target is None:
             target = min(cols, key=lambda c: max(c.rect.x0 - r.x1, r.x0 - c.rect.x1, 0))
         if target is col:
-            out.append(round(float(a * apex.y + b), 2))
+            depth = round(float(a * apex.y + b), 2)
+            if depth > 0.05:                                # Dreieck an der GOK = Ansatzpunkt, kein Wasser
+                out.append(depth)
     return sorted(set(out))
 
 
@@ -378,13 +440,13 @@ def extract(pdf: Path):
     found: dict[str, list[Borehole]] = defaultdict(list)
     dph = {}
     for pno, page in enumerate(doc):
-        words, lines, drawings, segs = primitives(page)
+        words, lines, drawings, segs, scanned = primitives(page)
         if any("BODENARTEN" in t.upper() for _, t in lines) and not swatches:
             from prototyp_v2 import legend_swatches
             swatches = legend_swatches(page)
         if page.rotation == 0:
             dph.update(soundings(page))
-        cols = find_columns(segs)
+        cols = find_columns(segs, merge_tol=1.6 if scanned else 0.8)   # Scans zeichnen Linien doppelt
         scale_txt = [int(m) for _, t in lines for m in SCALE_RE.findall(t)]
         heads = [(r, re.sub(r"\s+", " ", t.strip())) for r, t in lines if ID_RE.match(re.sub(r"\s+", " ", t.strip()))]
         anchored: list[tuple] = []
@@ -417,6 +479,9 @@ def extract(pdf: Path):
             fit = (a, b)
             bh = Borehole(code, pno + 1, round(a / PT_TO_M_AT_1_1), f"{mode} ({support}/{n_labels} Labels)", gok)
             bh.support = support / n_labels if n_labels else 0.0
+            bh.single_sheet = len(anchored) == 1                  # Einzelblatt schlaegt Schnitt/Uebersicht
+            bh.titled = any(re.search(rf"(Bohrung|Bohrprofil|Profil|Sondierung)\s+{re.escape(code)}\b", t)
+                            for _, t in lines)                     # Schriftfeld 'Bohrung B 4' 
             prev = 0.0
             depths = [round(float(a * y + b), 2) for y in col.bounds[1:]]
             confirmed = set()                                   # 1:1 - jedes Label bestaetigt nur die naechste Grenze
@@ -435,16 +500,22 @@ def extract(pdf: Path):
                 prev = d
             right_limit = min([c.rect.x0 for c in acols if c.rect.x0 > col.rect.x1 + 5] + [page.rect.x1])
             _assign_text(bh, col, lines, words, fit, mode, pairs, right_limit)
-            bh.gw_depths = _groundwater(drawings, segs, col, acols, fit)
-            if not bh.gw_depths and any(NO_GW_RE.search(t) and col.rect.y1 - 5 <= r.y0 <= col.rect.y1 + 40
-                                        and abs((r.x0 + r.x1) / 2 - hx) < 90 for r, t in lines):
+            bh.gw_depths = _groundwater(drawings, segs, col, acols, fit, words)
+            near = [(r, t) for r, t in lines if hr.y0 - 2 <= r.y0 <= col.rect.y1 + 60
+                    and abs((r.x0 + r.x1) / 2 - (col.rect.x0 + col.rect.x1) / 2) < 170]
+            if not bh.gw_depths:                            # Symbol als Schriftzeichen: 'GW 2.53m' im Text
+                bh.gw_depths = sorted({float((m.group(1) or m.group(2)).replace(",", "."))
+                                       for _, t in near if (m := GW_TEXT_RE.search(t))})
+            if not bh.gw_depths and any(NO_GW_RE.search(t) for _, t in near):
                 bh.gw_status = "kein Grundwasser"
             found[code].append(bh)
     coords = coordinate_table(doc)
     out = []
     for code, versions in found.items():
         # GOK gefunden, Labels bestaetigen, groesster Massstab (= kleinste Zahl)
-        best = max(versions, key=lambda v: (v.gok is not None, round(v.support, 1), -(v.scale or 1e9)))
+        # schwache Bestaetigung (< 50 %) zaehlt nicht mehr als keine
+        best = max(versions, key=lambda v: (v.gok is not None, v.titled, v.single_sheet,
+                                            round(v.support, 1) if v.support >= 0.5 else 0.0, -(v.scale or 1e9)))
         best.duplicates = [f"S.{v.page} M1:{v.scale}" for v in versions if v is not best]
         if code in coords:
             best.east, best.north = coords[code]
@@ -470,8 +541,8 @@ def _assign_text(bh: Borehole, col: Column, lines, words, fit, mode, pairs, righ
              and re.search(r"[A-Za-zÄÖÜäöü]{3}", t) and not DATE_RE.search(t)]
     tops = sorted(v for _, v in pairs)
     if not mode.startswith("direkt") and tops and tops[0] == 0.0:
-        lab = sorted([(r, float(t.replace(",", "."))) for r, t, *_ in words if DEPTH_RE.match(t)
-                      and r.x0 > col.rect.x1 and float(t.replace(",", ".")) in tops], key=lambda e: e[0].y0)
+        lab = sorted([(r, float(t.rstrip("m ").replace(",", "."))) for r, t, *_ in words if DEPTH_RE.match(t)
+                      and r.x0 > col.rect.x1 and float(t.rstrip("m ").replace(",", ".")) in tops], key=lambda e: e[0].y0)
         for i, (lr, v) in enumerate(lab):
             nxt = lab[i + 1][0].y0 if i + 1 < len(lab) else lr.y0 + 200
             txt = " ".join(t for r, t in right if lr.y0 - 3 <= r.y0 < nxt - 3 and r.x0 >= lr.x1 - 1)

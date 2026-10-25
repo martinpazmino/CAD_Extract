@@ -13,9 +13,10 @@ para CI + real para calibrar) y **métricas** donde la principal sea la **tasa d
 silencioso**: datos erróneos que la app marca como seguros.
 
 > [!NOTE]
-> Hay una primera ronda con **PDFs reales** (3 Gutachten públicos, verdad transcrita):
-> v1 0/16 sondeos; v3 16/16 sondeos, 83/83 límites, 0 falsos; swissgeol 6/16 y 12 falsos.
-> Ver [15 Resultados reales](15_resultados_pdfs_reales.md).
+> Con **PDFs reales** (5 Gutachten públicos): v1 0/29. En la **prueba ciega**, v3 0/13 y
+> swissgeol 13/13 (con 18 falsos). Tras corregir, v3 llega a 29/29 sondeos y 143/143 límites,
+> cifras de entrenamiento. Ver [15 Resultados reales](15_resultados_pdfs_reales.md) y el protocolo
+> ciego (D25).
 
 ## 1. Resultados actuales (spike, PDFs sintéticos)
 

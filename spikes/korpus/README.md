@@ -9,10 +9,11 @@ aliases: [Spike corpus]
 
 | Archivo | Qué hace |
 |---|---|
-| [`manifest.tsv`](manifest.tsv) | 16 candidatos públicos (B-Pläne, UVP-Verbund, Transparenzportal Hamburg) de 8 Länder: nombre, Land, procedimiento, URL, contenido esperado. Revisados: `wachenroth`, `talheim`, `halle` (marcados `GEPRUEFT`); el resto, encontrados por búsqueda y sin abrir |
+| [`manifest.tsv`](manifest.tsv) | 16 candidatos públicos (B-Pläne, UVP-Verbund, Transparenzportal Hamburg) de 8 Länder: nombre, Land, procedimiento, URL, contenido esperado. Revisados: `wachenroth`, `talheim`, `halle`, `hausham`, `rednitzhembach` (marcados `GEPRUEFT`); el resto, encontrados por búsqueda y sin abrir |
 | [`screen_corpus.py`](screen_corpus.py) | `--download` descarga el manifest; `--screen` filtra páginas (vector/escaneo/Bohrprofil), corre v1 y v3 y escribe `report.md` + miniaturas (sin verdad) |
 | [`eval_real.py`](eval_real.py) | Compara v1, v3 y (opcional) swissgeol con la verdad de `groundtruth/` |
-| [`groundtruth/`](groundtruth/wachenroth.json) | Verdad transcrita a mano de Wachenroth, Talheim y Halle (datos factuales, URL y `sha256` del PDF) |
+| [`blind_test.py`](blind_test.py) | Prueba ciega: `freeze` congela predicciones antes de mirar los PDFs nuevos, `score` las puntúa después |
+| [`groundtruth/`](groundtruth/wachenroth.json) | Verdad transcrita a mano de Wachenroth, Talheim, Halle, Hausham y Rednitzhembach (datos factuales, URL y `sha256` del PDF) |
 
 ```bash
 python screen_corpus.py --download ~/gutachten          # requiere acceso de red a los dominios

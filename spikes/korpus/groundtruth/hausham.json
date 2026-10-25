@@ -1,0 +1,306 @@
+{
+ "file": "Baugrundgutachten_12.05.2020.pdf",
+ "sha256": "2e7797e25e50bec9a9a5d41dcd34de1c9e6f02727a52f917937ee57d3c0a618d",
+ "source": "https://www.hausham.de/fileadmin/Dateien/Dateien/Rathaus/Bauleitplanung/Bekanntmachungen/BPL44/Baugrundgutachten_12.05.2020.pdf",
+ "notes": "Blindtest (v3 Stand d35e3d4). FRANK + BUMILLER + KRAFT, Zeichnungen DC-Software. Bohrprofile S.27-29 (B 1-3), RKS-Profile S.36-41 (RKS 4-9). Tiefenlabels mit Einheit '0.20m', Hoehenleiste in m NN links, 'Kein Wasser' als Befund. Schichtenverzeichnisse (Text) S.30-35, 42-48.",
+ "boreholes": [
+  {
+   "code": "B 1",
+   "kind": "bohrung",
+   "page": 27,
+   "gok": 741.97,
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 0.2,
+     "soil": "Auffuellung"
+    },
+    {
+     "top": 0.2,
+     "bottom": 0.9,
+     "soil": "Auffuellung"
+    },
+    {
+     "top": 0.9,
+     "bottom": 2.0,
+     "soil": "Auffuellung"
+    },
+    {
+     "top": 2.0,
+     "bottom": 5.4,
+     "soil": "Kies"
+    },
+    {
+     "top": 5.4,
+     "bottom": 5.8,
+     "soil": "Kies"
+    },
+    {
+     "top": 5.8,
+     "bottom": 10.0,
+     "soil": "Kies"
+    }
+   ],
+   "gw_depths": [],
+   "gw_status": "kein Grundwasser"
+  },
+  {
+   "code": "B 2",
+   "kind": "bohrung",
+   "page": 28,
+   "gok": 742.55,
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 0.7
+    },
+    {
+     "top": 0.7,
+     "bottom": 1.9
+    },
+    {
+     "top": 1.9,
+     "bottom": 4.7
+    },
+    {
+     "top": 4.7,
+     "bottom": 6.6
+    },
+    {
+     "top": 6.6,
+     "bottom": 8.0
+    },
+    {
+     "top": 8.0,
+     "bottom": 10.0
+    }
+   ],
+   "gw_depths": [
+    3.62
+   ],
+   "gw_status": null
+  },
+  {
+   "code": "B 3",
+   "kind": "bohrung",
+   "page": 29,
+   "gok": 743.3,
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 0.2,
+     "soil": "Auffuellung"
+    },
+    {
+     "top": 0.2,
+     "bottom": 1.2,
+     "soil": "Auffuellung"
+    },
+    {
+     "top": 1.2,
+     "bottom": 2.5,
+     "soil": "Kies"
+    },
+    {
+     "top": 2.5,
+     "bottom": 5.5,
+     "soil": "Kies"
+    },
+    {
+     "top": 5.5,
+     "bottom": 6.2,
+     "soil": "Kies"
+    },
+    {
+     "top": 6.2,
+     "bottom": 7.0,
+     "soil": "Kies"
+    },
+    {
+     "top": 7.0,
+     "bottom": 7.7,
+     "soil": "Kies"
+    },
+    {
+     "top": 7.7,
+     "bottom": 8.8,
+     "soil": "Kies"
+    }
+   ],
+   "gw_depths": [
+    4.49
+   ],
+   "gw_status": null
+  },
+  {
+   "code": "RKS 4",
+   "kind": "rks",
+   "page": 36,
+   "gok": 742.48,
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 0.4,
+     "soil": "Auffuellung"
+    },
+    {
+     "top": 0.4,
+     "bottom": 0.6,
+     "soil": "Auffuellung"
+    },
+    {
+     "top": 0.6,
+     "bottom": 1.2,
+     "soil": "Auffuellung"
+    },
+    {
+     "top": 1.2,
+     "bottom": 1.8,
+     "soil": "Kies"
+    },
+    {
+     "top": 1.8,
+     "bottom": 2.2,
+     "soil": "Kies"
+    },
+    {
+     "top": 2.2,
+     "bottom": 3.2,
+     "soil": "Kies"
+    }
+   ],
+   "gw_depths": [
+    2.53
+   ],
+   "gw_status": null
+  },
+  {
+   "code": "RKS 5",
+   "kind": "rks",
+   "page": 37,
+   "gok": 742.16,
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 0.1
+    },
+    {
+     "top": 0.1,
+     "bottom": 0.3
+    },
+    {
+     "top": 0.3,
+     "bottom": 0.6
+    },
+    {
+     "top": 0.6,
+     "bottom": 1.4
+    },
+    {
+     "top": 1.4,
+     "bottom": 3.2
+    }
+   ],
+   "gw_depths": [],
+   "gw_status": "kein Grundwasser"
+  },
+  {
+   "code": "RKS 6",
+   "kind": "rks",
+   "page": 38,
+   "gok": 741.84,
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 0.3
+    },
+    {
+     "top": 0.3,
+     "bottom": 0.7
+    },
+    {
+     "top": 0.7,
+     "bottom": 2.5
+    }
+   ],
+   "gw_depths": [],
+   "gw_status": "kein Grundwasser"
+  },
+  {
+   "code": "RKS 7",
+   "kind": "rks",
+   "page": 39,
+   "gok": 743.42,
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 0.2
+    },
+    {
+     "top": 0.2,
+     "bottom": 0.8
+    },
+    {
+     "top": 0.8,
+     "bottom": 1.4
+    },
+    {
+     "top": 1.4,
+     "bottom": 2.5
+    }
+   ],
+   "gw_depths": [],
+   "gw_status": "kein Grundwasser"
+  },
+  {
+   "code": "RKS 8",
+   "kind": "rks",
+   "page": 40,
+   "gok": 743.74,
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 0.6
+    },
+    {
+     "top": 0.6,
+     "bottom": 0.8
+    },
+    {
+     "top": 0.8,
+     "bottom": 1.8
+    },
+    {
+     "top": 1.8,
+     "bottom": 3.2
+    }
+   ],
+   "gw_depths": [],
+   "gw_status": "kein Grundwasser"
+  },
+  {
+   "code": "RKS 9",
+   "kind": "rks",
+   "page": 41,
+   "gok": 742.85,
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 0.8
+    },
+    {
+     "top": 0.8,
+     "bottom": 1.2
+    },
+    {
+     "top": 1.2,
+     "bottom": 3.2
+    }
+   ],
+   "gw_depths": [
+    2.88
+   ],
+   "gw_status": null
+  }
+ ]
+}

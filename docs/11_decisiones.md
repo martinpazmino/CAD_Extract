@@ -35,7 +35,11 @@ equipo; "Verificado" = respaldado por una prueba en este repo.
 | D21 | **Normalizar la rotación** de página antes de todo | Páginas `/Rotate 90` dan coordenadas sin rotar | Talheim ([15](15_resultados_pdfs_reales.md)) | Verificado (real) |
 | D22 | **Escala = candidato que más etiquetas confirma**, sólo escalas normalizadas; etiquetas pueden estar desplazadas y marcar techo o base | Posición de la etiqueta no es fiable entre oficinas | Talheim 65/65; tabla "B 6" descartada ([15](15_resultados_pdfs_reales.md)) | Verificado (real) |
 | D23 | **Verdad real en el repo como JSON factual** (con URL y `sha256`), PDFs fuera | Medir sin redistribuir obras ajenas | `spikes/korpus/groundtruth/` | Decidido |
-| D24 | Cifras de v3 = conjunto de entrenamiento; **la siguiente ronda se mide sin tocar el código** | Evitar autoengaño | [15](15_resultados_pdfs_reales.md) | Decidido |
+| D24 | Cifras de v3 = conjunto de entrenamiento; **la siguiente ronda se mide sin tocar el código** | Evitar autoengaño | [15](15_resultados_pdfs_reales.md) | Decidido; aplicado en la prueba ciega |
+| D25 | **Prueba ciega con predicciones congeladas** en cada ronda nueva | La única medida honesta de generalidad | v3 ciego: 0/13 ([15 §6](15_resultados_pdfs_reales.md#6-prueba-ciega-hausham-y-rednitzhembach)) | Decidido |
+| D26 | **Híbrido:** detección de etiquetas tolerante a formatos (como swissgeol) + validación geométrica propia | swissgeol generalizó mejor en profundidades (13/13 ciego) pero inventó 18 sondeos y no leyó cotas; v3 al revés | [15 §6.4](15_resultados_pdfs_reales.md#64-consecuencia-para-la-arquitectura) | Propuesta |
+| D27 | **Escaneos por la misma lógica**: segmentos desde la imagen (OpenCV) + capa OCR | Evitar un segundo pipeline | Rednitzhembach 4/4 · 15/15 tras el adaptador | Verificado (entrenamiento) |
+| D28 | Escala no normalizada válida si ≥ 80 % de ≥ 3 etiquetas la confirman (revisa D22) | DC-Software ajusta la escala a la hoja | Hausham RKS M ≈ 1:35 | Verificado (entrenamiento) |
 
 ## Preguntas abiertas
 

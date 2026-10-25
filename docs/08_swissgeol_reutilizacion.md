@@ -106,6 +106,16 @@ Detalle en [15](15_resultados_pdfs_reales.md):
 Confirma la lectura de arriba: su núcleo encuentra bien profundidades y descripciones, pero
 falta saber qué es un sondeo y qué no.
 
+**Prueba ciega** (Hausham con DC-Software y Rednitzhembach escaneado,
+[15 §6](15_resultados_pdfs_reales.md#6-prueba-ciega-hausham-y-rednitzhembach)):
+- swissgeol sacó **13/13 sondeos** y 4/4 niveles freáticos, y nuestro v3 **0/13**: su lectura de
+  etiquetas tolera formatos que no conocía (`0.20m`, OCR).
+- Pero dio 0/13 cotas e inventó 18 sondeos (las páginas de texto del registro de capas parecían
+  perfiles).
+
+Esto refuerza la estrategia A: **portar su catálogo de formatos de etiqueta y su tolerancia al
+OCR**, y mantener nuestra validación geométrica (D26).
+
 ## 5. Estrategias de reutilización
 
 | Estrategia | Pros | Contras | Uso recomendado |

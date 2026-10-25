@@ -1,21 +1,27 @@
 ---
-title: "Resultados con PDFs reales (primera ronda)"
+title: "Resultados con PDFs reales (ronda 1 y prueba ciega)"
 date: 2026-10-25
 tags: [corpus, validacion, resultados, extraccion]
 aliases: [Resultados reales, Primera ronda corpus]
 ---
 
-# Resultados con PDFs reales (primera ronda)
+# Resultados con PDFs reales (ronda 1 y prueba ciega)
 
-**Conclusión:** con los tres primeros Gutachten públicos el parser actual (v1) extrae **0 de 16**
-sondeos. El enfoque geométrico funciona con planos reales, pero sólo después de siete cambios
-que los PDFs sintéticos no habían revelado. Con esos cambios (prototipo **v3**) se obtienen
-**16/16 sondeos, 83/83 límites, 14/14 GOK, 3/4 niveles freáticos** y **0 sondeos falsos**.
+**Conclusión:**
+- **v1 (actual):** 0 de 29 sondeos en cinco Gutachten públicos.
+- **Ronda 1** (3 PDFs): v3 funciona después de siete cambios que los sintéticos no revelaban.
+- **Prueba ciega** (2 PDFs nuevos, código congelado): **v3 sacó 0 de 13**. swissgeol sacó
+  13/13 sondeos, pero ninguna cota y 18 sondeos inventados.
+
+La lección es que la geometría da precisión y control de falsos positivos, mientras que la
+tolerancia a formatos de texto desconocidos es el punto fuerte de swissgeol. **La solución es
+combinar ambas** (§6). Tras corregir las causas generales, v3 llega a **29/29 sondeos y 143/143
+límites**, incluido un PDF escaneado.
 
 > [!WARNING]
-> v3 se ajustó mirando estos mismos PDFs (son el conjunto de *entrenamiento*). Las cifras
-> demuestran que el método es capaz, no que generalice. La prueba honesta es la siguiente
-> ronda con Gutachten **no vistos** ([12](12_corpus_publico.md)).
+> Las cifras **después** de cada corrección son de *entrenamiento*. La única cifra honesta de
+> generalidad es la de la prueba ciega (§6.1): **0/13**. La próxima ronda debe volver a medirse
+> sin tocar el código ([12](12_corpus_publico.md)).
 
 ## 1. Los documentos
 
@@ -29,7 +35,7 @@ Verdad de referencia transcrita a mano y revisada contra las imágenes:
 [`spikes/korpus/groundtruth/`](../spikes/korpus/groundtruth/wachenroth.json) (sólo datos
 factuales: códigos, cotas, profundidades, clase de suelo, agua; con URL y `sha256` del PDF).
 
-## 2. Resultados
+## 2. Resultados de la ronda 1
 
 Tolerancia de límites 5 cm (a M 1:75, 1 pt = 2,6 cm); emparejamiento 1:1.
 Reproducir: `python spikes/korpus/eval_real.py <pdfs> [<salida swissgeol>]`.
@@ -78,10 +84,56 @@ columna **vecina** y lo que asigna el sondeo es el extremo de la **línea de agu
 - **Descripciones completas** (Nebenanteile, consistencia): sólo se evaluó la clase principal.
 - **Sondierungen**: ninguno de los tres trae curvas DPH vectoriales.
 
-## 5. Próximos pasos
+## 6. Prueba ciega: Hausham y Rednitzhembach
 
-1. Segunda ronda con 5–7 Gutachten **nuevos** (otro software: GGU-STRATIG, DC-BOHR, WinBohr),
-   sin tocar v3 antes de medir: esa es la cifra real de generalidad.
+### 6.1 Resultado ciego
+
+Protocolo: predicciones congeladas con el código del commit `d35e3d4` **antes** de mirar los PDFs;
+después, transcripción de la verdad y puntuación ([`blind_test.py`](../spikes/korpus/blind_test.py)).
+
+| PDF | Qué es | v1 | **v3 (ciego)** | swissgeol (ciego) |
+|---|---|---|---|---|
+| Hausham (Frank + Bumiller + Kraft, **DC-Software**) | Vectorial, 3 B + 6 RKS, etiquetas `0.20m`, escala de RKS ajustada a la página | 0/9 | **0/9** | **9/9 · 45/45 límites · 4/4 GW**; GOK 0/9; **15 sondeos falsos** |
+| Rednitzhembach (Prof. Dr. Gründer) | **Escaneado** con capa OCR, 4 B, M 1:50 | 0/4 | **0/4** | 4/4 · 6/15 límites; GOK 0/4; 3 falsos |
+
+### 6.2 Por qué falló v3 y qué se cambió después
+
+| # | Causa | Cambio (general, no específico del PDF) |
+|---|---|---|
+| L8 | Etiquetas con unidad pegada (`0.20m`); "Kein Wasser" | Patrón de etiqueta con unidad opcional; frases de "sin agua" ampliadas |
+| L9 | DC-Software ajusta la escala del perfil a la hoja (M ≈ 1:35) | Se acepta una escala no normalizada si ≥ 80 % de ≥ 3 etiquetas la confirman (corrige L5) |
+| L10 | Nivel freático como texto `GW 2.53m`; los ▽ de la regla de cotas y el ▼ de la cota de inicio parecían agua | GW también por texto; se descartan series de triángulos alineados, triángulos con una cota al lado y triángulos a profundidad 0 |
+| L11 | **Escaneo** sin vectores | **Adaptador raster:** OpenCV detecta líneas horizontales y verticales en la imagen y las convierte en los mismos segmentos que usa la lógica vectorial; la profundidad sale de la escala del cajetín (`M 1:50`) cuando el OCR pierde etiquetas; las líneas duplicadas del escaneo se fusionan |
+| L12 | El mismo sondeo en la hoja individual y en un corte | Preferir la hoja titulada `Bohrung B 4` y la hoja con un solo sondeo; una confirmación de etiquetas < 50 % no cuenta |
+
+### 6.3 Acumulado de los cinco PDFs (después de las correcciones = entrenamiento)
+
+| | v1 | v3 | swissgeol |
+|---|---|---|---|
+| Sondeos | 0/29 | **29/29** | 19/29 |
+| Límites | 0/143 | **143/143** (+1 falso, marcado) | 69/143 |
+| GOK | 0/27 | **27/27** | 6/27 |
+| Nivel freático | 0/8 | **7/8** | 4/8 |
+| Bodenart (capas con verdad) | — | **59/61** | (no clasifica) |
+| Sondeos / GW falsos | 0 / 0 | **0 / 0** | **30 / 1** |
+
+Los 5 límites de B4 (Rednitzhembach) salen sólo de la geometría y la escala, sin etiquetas
+legibles, y quedan **marcados para revisión**. Ése es el comportamiento buscado.
+
+### 6.4 Consecuencia para la arquitectura
+
+1. **Combinar los dos enfoques:** la búsqueda de columnas de profundidad de swissgeol es
+   tolerante a formatos (unidades, OCR, posiciones). La parte geométrica nuestra hace la
+   validación: columna, escala, límites, cabecera y filtros de tablas y duplicados. Hay que
+   portar y ampliar su catálogo de formatos de etiqueta ([08](08_swissgeol_reutilizacion.md)).
+2. **Un solo núcleo, dos fuentes de segmentos:** vectorial (`get_drawings`) o raster (OpenCV).
+   Los escaneos ya no son un caso aparte ([02](02_bohrprofil_generalizacion.md)).
+3. **La prueba ciega forma parte del proceso:** cada ronda nueva se congela antes de mirar.
+
+## 7. Próximos pasos
+
+1. Tercera ronda ciega con Gutachten **nuevos** (GGU-STRATIG, WinBohr, otro escaneado), ahora
+   con v3 + catálogo de formatos de swissgeol: medir antes de tocar.
 2. Muestras de leyenda desde segmentos → Schraffur y símbolos de agua con datos reales.
 3. Llevar las lecciones L1–L7 al plan de implementación ([10](10_plan_implementacion.md)).
 
