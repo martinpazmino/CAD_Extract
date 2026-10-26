@@ -6,16 +6,19 @@ Supabase → geometrías IFC 4.3 en That Open Engine. Arquitectura: `docs/ARQUIT
 La app actual (`app.py`, `geo_agent/`, Streamlit) es v1: posiciones fijas, 0/58 sondeos en PDFs ajenos.
 
 ## Leer antes de tocar la extracción
-- `docs/16_lecciones_aprendidas.md`: reglas explícitas (P1–P8, L1–L18, …). Respetarlas.
+- `docs/16_lecciones_aprendidas.md`: reglas explícitas (proceso P1–P12, entrada E, geometría G, etiquetas L/T, texto B, agua W, segundas fuentes S, swissgeol R, modelo M, entorno X). Respetarlas.
 - `docs/17_algoritmo_extraccion.md`: especificación del algoritmo (etapas, parámetros, confianza).
 - `docs/15_resultados_pdfs_reales.md`: resultados ciegos y de entrenamiento.
-- `docs/11_decisiones.md`: decisiones D1–D32.
+- `docs/11_decisiones.md`: decisiones D1–D38.
 
 ## Reglas de trabajo
 - **Prueba ciega**: con un PDF nuevo, congelar predicciones (`spikes/korpus/blind_test.py freeze`)
   y **subirlas al repo antes de abrir el PDF**; después transcribir la verdad en `spikes/korpus/groundtruth/`.
 - Separar siempre cifras ciegas de cifras de entrenamiento.
-- Todo cambio en la extracción pasa la regresión (`spikes/korpus/regression.py`) sobre PDFs reales y sintéticos.
+- Todo cambio en la extracción pasa la regresión sobre PDFs reales, casos de estrés y sintéticos:
+  `python spikes/korpus/regression.py --module spikes/extraktion_v2/prototyp_v4.py --real <pdfs> --stress <ordner>
+  --synth <ordner> --baseline spikes/korpus/baseline_v4.json` (casos de estrés: `stress_cases.py`; OCR con
+  `GEO_OCR_CACHE=<dir>`). Además: `ablation.py` (qué regla protege qué caso) y `perturb.py` (girar/escalar/raster).
 - Reglas generales (rasgos del dibujo), nunca excepciones por PDF u oficina.
 - Un dato dudoso se **marca** (issue / confianza baja), nunca se esconde. Un sondeo falso es peor que uno perdido.
 - PDFs de terceros **no** se suben al repo: sólo URL, `sha256` y datos factuales.

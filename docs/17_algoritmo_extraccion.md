@@ -45,12 +45,13 @@ puntos PDF; la profundidad es en m bajo el inicio (GOK).
 | Clase | Condición | Consecuencia |
 |---|---|---|
 | `raster` | imágenes cubren > 45 % y < 10 palabras dentro de ellas | segmentos desde la imagen + **OCR** |
-| `raster_ocr` | imágenes > 80 % y < 5 dibujos (escaneo con capa OCR) | segmentos desde la imagen, texto de la capa |
+| `raster_ocr` | imágenes > 80 % (escaneo con capa OCR, aunque traiga ruido vectorial, E2) | segmentos de imagen **y** vectoriales; texto de la capa **+ OCR propio** donde la capa no tiene palabras (L18b) |
 | `vektor_ohne_text` | ≥ 150 dibujos y < 25 palabras (AutoCAD SHX) | segmentos vectoriales + **OCR** |
 | `vektor` | resto | todo nativo |
 
-Lecciones E1, L11, L17, L18. OCR: RapidOCR (ONNX, Apache-2.0) a 200 dpi; se descartan cajas con
-confianza < 0,5 y las que se solapan > 30 % con palabras nativas.
+Lecciones E1, E2, L11, L17, L18. OCR: RapidOCR (ONNX, Apache-2.0); resolución adaptativa
+(≈ 3300 px de lado largo, entre 200 y 300 dpi, para páginas reducidas); se descartan cajas con
+confianza < 0,5 y las que se solapan > 30 % con palabras nativas; caché por imagen de página.
 
 ## E1. Primitivas
 
@@ -67,9 +68,11 @@ Se aceptan, en este orden:
 1. Línea `^<PREFIJO> <n>[a-z][/aa]( - texto)?$` con prefijos `B BK KB KRB RKS BS GWM SCH`
    (L13: el sufijo `- Betonweg 0+050` se ignora).
 2. Archivo: `^S <n>[a-z]$` (`S 2a`).
-3. Genérico: `Bohrung|Bohrprofil|Aufschluss|Kleinrammbohrung|Rammkernsondierung|Kernbohrung`
-   seguido del código en la misma línea o en la línea de debajo (≤ 14 pt, Δx < 30 pt). Código =
-   token con al menos una cifra (`422C-460`, `B 7/16`) (T1).
+3. Genérico: `Bohrung`, `<Palabra>bohrung` (`Sondierbohrung`, `Rotationskernbohrung`),
+   `Bohrprofil`, `Aufschluss`, `Rammkernsondierung`, seguido del código en la misma línea
+   (`Sondierbohrung : SST KB 5`) o en la fila de debajo (≤ 14 pt), uniendo los bloques de esa fila
+   (`RB` + `2 / I`). Código: mayúsculas/cifras/`./-`, ≤ 16 caracteres, con al menos una cifra, que no
+   sea una fecha ni una profundidad (T1).
 
 Los códigos se comparan sin espacios (`B1` = `B 1`), porque el OCR los pierde.
 
@@ -83,7 +86,11 @@ Los códigos se comparan sin espacios (`B1` = `B 1`), porque el OCR los pierde.
 - **Anclaje:** cada cabecera toma la columna con centro a < 70 pt en x y **por debajo** de ella,
   sin límite vertical (L4); preferencia: grosor de borde, nº de límites, cercanía.
 - **Tabla:** una columna con > 2 palabras con cifras dentro es una tabla (G4); se ignoran tokens
-  `000` que el OCR lee en la Schraffur de Kies.
+  `000` que el OCR lee en la Schraffur de Kies (E4). Una columna con ≥ 3 profundidades dentro es la
+  columna de profundidades del formulario y no se ancla (T5).
+- **Hoja con una sola cabecera** sin anclaje: se ancla a la columna con más etiquetas (o con la
+  mejor recta de etiquetas, T4), aunque la cabecera esté lejos (T3); la GOK se busca entonces en el
+  cajetín de toda la página, uniendo bloques de la misma fila (S7).
 
 ## E4. Escala vertical (profundidad = a·y + b)
 
@@ -103,6 +110,12 @@ Los códigos se comparan sin espacios (`B1` = `B 1`), porque el OCR los pierde.
    texto (L3).
 6. **Columna sin etiquetas:** si otra columna de la página sí tiene, se descarta (ejecución de GWM,
    L15b); si ninguna tiene (OCR perdido), se acepta la escala del cajetín y se marca.
+7. **Etiqueta primero (T4):** si < 50 % de ≥ 5 etiquetas se confirman con líneas, se ajusta una
+   recta valor ↔ posición de las etiquetas; se recortan atípicos (hasta 25 %) hasta residuo ≤ 0,2 m
+   y la escala debe ser normalizada. Los límites son los **valores impresos** (los atípicos con
+   residuo ≤ 1 m siguen siendo datos, p. ej. etiquetas apiladas; > 1 m, como una cota `52,35`, no);
+   cada uno se confirma si hay una línea a ≤ 0,3 m. Entre duplicados, este modo pierde frente a uno
+   donde líneas y etiquetas coinciden.
 
 ## E5. Capas
 
@@ -141,17 +154,22 @@ etiqueta, L3):
   `Ansatz`; código en la cabecera; profundidades = números a la izquierda del primer `a)`;
   denominación = palabras del renglón `a)` hasta la columna 3 (`Wasserführung`); agua por texto de
   la página. Texto duplicado se deduplica por (x, y, texto) (S1, S3).
+- **Tabla de capas (S6):** si la página tiene una sola cabecera y ninguna columna anclada, se busca
+  una columna de profundidades estrictamente crecientes desde 0,00 (≥ 4, alineadas a la derecha) con
+  texto a su derecha; se acepta si ≥ 60 % de los intervalos dan una Bodenart.
 - **Coordenadas:** tabla de Aufschlüsse leída por celda (S2) o texto
   `Rechtswert/Ostwert … 394774,3` + `Hochwert/Nordwert … 5818338,1` (se quitan espacios para el
   OCR); se asignan a la cabecera más cercana en x. CRS: `UTM 33` → EPSG:25833, `UTM 32` → 25832;
-  Este de 7 cifras 2–5 millones → Gauß-Krüger (EPSG:31466–31469) (S5).
+  Este de 7 cifras 2–5 millones → Gauß-Krüger (EPSG:31466–31469) (S5). Suiza:
+  `Koordinaten: 607 562 / 187 087.50` → LV03 (EPSG:21781) o LV95 (EPSG:2056) por rango.
 - **Cota de inicio (GOK):** `NHN 45,20 m`, `+59,17 m NHN`, `36,25mNHN` entre la cabecera y la
   columna (≤ 90 pt en x).
 
 ## E9. Fusión, contraste y confianza
 
 - **Duplicados** (hoja propia y corte): se prefiere GOK presente > hoja titulada `Bohrung X` >
-  hoja con un solo sondeo > apoyo de etiquetas (≥ 50 %) > escala mayor (L12).
+  hoja con un solo sondeo > líneas y etiquetas de acuerdo (no sólo etiquetas) > apoyo de
+  etiquetas (≥ 50 %) > escala mayor (L12).
 - **Contraste con el Schichtenverzeichnis:** `SV ok` si los límites coinciden 1:1 (±3 cm);
   si no, `SV abweichend: fehlt …, nur im Profil …`. Rellena Bodenart, texto y agua vacíos.
   Sondeos que sólo están en el SV se emiten con `mode = schichtenverzeichnis` (L17).

@@ -43,7 +43,13 @@ equipo; "Verificado" = respaldado por una prueba en este repo.
 | D29 | **Predicciones congeladas se suben al repo antes de abrir los PDFs** (con `sha256`) | El historial de git demuestra el orden congelar → verdad | `spikes/korpus/frozen/runde3/`; v3 ciego 11/29 ([15 §7](15_resultados_pdfs_reales.md#7-prueba-ciega-3-triefenstein-marl-wesel-y-berlín)) | Decidido; aplicado en la ronda 3 |
 | D30 | **Schichtenverzeichnis (DIN 4022) como segunda fuente** y contraste 1:1 con el perfil | Formulario normado, en texto aunque el dibujo sea imagen o SHX | Wesel 24/24 sólo desde ahí; "SV ok" en 14/14 sondeos | Verificado (entrenamiento) |
 | D31 | **Ejes en progresión aritmética no son etiquetas** (regla, eje DPH), como hace swissgeol | Un eje DPH en el corte suplantó un sondeo | Marl BS 10 | Verificado (entrenamiento) |
-| D32 | **OCR como componente del pipeline** para raster sin texto y dibujos con texto SHX | 12 de los 18 sondeos perdidos en la ronda 3 no tenían texto legible | Berlín 0/11 | Propuesta |
+| D32 | **OCR como componente del pipeline** para raster sin texto y dibujos con texto SHX | 12 de los 18 sondeos perdidos en la ronda 3 no tenían texto legible | Berlín 0/11 → 7/11 con RapidOCR (ONNX, Apache-2.0) | Verificado (entrenamiento) |
+| D33 | **Memoria explícita**: lecciones como reglas en [16](16_lecciones_aprendidas.md) y `CLAUDE.md` en la raíz | Que ninguna persona o agente repita un error ya pagado | 40+ reglas con evidencia | Decidido (2026-10-26) |
+| D34 | **Banco de pruebas en tres capas**: PDFs reales con verdad, un caso de estrés por lección y sintéticos; línea base que falla ante cualquier empeoramiento | Atrapó 3 regresiones propias esta noche | [`regression.py`](../spikes/korpus/regression.py) | Decidido |
+| D35 | **Perturbaciones** (girar, escalar, rasterizar) de los PDFs con verdad | Encuentran fallos invisibles en los originales | Girar destapó el fallo de rotación del lector de SV | Decidido |
+| D36 | **Valor impreso** como profundidad de un límite confirmado (T2) | La geometría tiene ±1 pt de error | Exactos 414 → 509 de 515 | Verificado (entrenamiento) |
+| D37 | **Especificación del algoritmo por etapas** con reglas conmutables (`RULES`) para ablación | Precisar qué hace cada regla y medirla | [17](17_algoritmo_extraccion.md) | Decidido |
+| D38 | **JSON canónico** como único contrato entre extracción, Supabase e IFC | Una sola forma de los datos con procedencia y confianza | PostGIS y That Open cargan el mismo JSON | Verificado (real: Berlín) |
 
 ## Preguntas abiertas
 

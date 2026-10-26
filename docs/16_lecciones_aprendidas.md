@@ -54,6 +54,8 @@ dudoso quede **marcado**, nunca escondido.
 | L18b | La capa OCR de un escaneo **pierde texto** ("2 / I", etiquetas de B 4): complementarla con OCR propio donde no hay palabras | A7367, Rednitzhembach |
 | E4 | El OCR lee la Schraffur de Kies (círculos) como `000`: no contar esos tokens como texto | Caso s12 |
 | E5 | El tamaño de página de un escaneo **no** es el del papel: el `M 1:100` del cajetín no da la escala en puntos PDF; mandan las etiquetas | KB5 |
+| E7 | En raster, una columna dibujada sólo con **rellenos de color sin borde** no da líneas oscuras: hace falta detectar bordes entre colores (gradiente), no sólo umbral de negro | Perturbación raster de Hausham (DC-Software) |
+| E6 | El OCR **pierde espacios** (`KeinWasser`, `RKS 1-Betonweg`, `GW2.53m`, `36,25mNHN`): todo patrón de texto debe aceptar espacios opcionales y no depender de `\b` entre letra y cifra | Perturbación raster: GW-Status 3/20 |
 
 ## G. Geometría: columna y límites
 
@@ -102,6 +104,7 @@ dudoso quede **marcado**, nunca escondido.
 | L10b | El agua también llega como **texto**: `GW 2.53m`, `Wasserstand nach Sondierung 3,00 m`, `Wasseranschnitt 3.8`, "Ruhewasser" | Hausham, Triefenstein, Berlín |
 | W2 | "kein Grundwasser", "trocken", "kein Wassereintritt" son **datos**, no ausencias | Wachenroth 6/6, Wesel |
 | W3 | Falta: símbolos de la leyenda ("angebohrt" con dos trazos) | Talheim BK2 (único GW perdido del entrenamiento) |
+| W4 | Falta: el **símbolo de agua en raster** (▽ ▼ dibujados en un escaneo); hoy sólo se detecta como vector o como texto | Perturbación raster: Hausham GW 4/4 → 0/4 |
 
 ## S. Segundas fuentes y contraste
 

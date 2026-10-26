@@ -37,11 +37,11 @@ from prototyp_v2 import (DATE_RE, GOK_RE, PT_TO_M_AT_1_1, classify_hatch, coordi
                          hatch_features, soil, soundings)
 
 ID_RE = re.compile(r"^(B|BK|KB|KRB|RKS|BS|GWM|SCH)\s*(\d+[a-z]?)(/\d{2})?$")
-HEAD_RE = re.compile(r"^((?:B|BK|KB|KRB|RKS|BS|GWM|SCH)\s*\d+[a-z]?(?:/\d{2})?)(?:\s+[-–:]\s+\S.*)?$")
+HEAD_RE = re.compile(r"^((?:B|BK|KB|KRB|RKS|BS|GWM|SCH)\s*\d+[a-z]?(?:/\d{2})?)(?:\s*[-–:]\s*[A-Za-zÄÖÜäöü0-9].*)?$")
 DEPTH_RE = re.compile(r"^\d{1,3}[.,]\d{1,2}\s?m?$")              # DC-Software: '0.20m'
-GW_TEXT_RE = re.compile(r"\bGW\b.*?(\d{1,3}[.,]\d{1,2})\s?m\b|(\d{1,3}[.,]\d{1,2})\s?m\s*u\.?\s*GOK", re.I)
+GW_TEXT_RE = re.compile(r"(?<![A-Za-z])GW(?![A-Za-z]).*?(\d{1,3}[.,]\d{1,2})\s?m(?![A-Za-z])|(\d{1,3}[.,]\d{1,2})\s?m\s*u\.?\s*GOK", re.I)
 SCALE_RE = re.compile(r"(?:M(?:a(?:ss|ß)stab)?\.?|H(?:ö|oe)hen-?Ma(?:ss|ß)stab)?\s*1\s*:\s*(\d{2,4})\b")
-NO_GW_RE = re.compile(r"kein(?:\s+|e\s+)(?:Grund)?wasser|GW\s+nicht\s+angetroffen|trocken", re.I)
+NO_GW_RE = re.compile(r"kein(?:e)?\s*(?:Grund)?wasser|GW\s*nicht\s*angetroffen|trocken", re.I)   # OCR verliert Leerzeichen
 ROCK_SUFFIX = ("stein", "fels")
 ANTHROPOGEN = {"beton": "Beton", "asphalt": "Asphalt", "schwarzdecke": "Schwarzdecke",
                "pflaster": "Pflaster", "anschuettung": "Auffuellung", "anschüttung": "Auffuellung",
@@ -81,6 +81,8 @@ RULES = {
     "depth_table": True,         # S6   Schichtenliste als Texttabelle (Tiefe | Beschreibung)
     "ocr_supplement": True,      # L18b eigene OCR ergaenzt eine luckenhafte OCR-Textlage
     "label_first": True,         # T4   Labels bilden eine saubere Gerade, Linien nicht: Labels sind die Daten
+    "ocr_decimal_fix": True,     # R1   '0950' -> 9,50 (OCR ohne Komma)
+    "raster_gw_symbol": True,    # W4   GW-Dreieck im Scan
 }
 
 CODE_TOKEN = r"[A-Z0-9][A-Za-z0-9]*(?:[-/.][A-Za-z0-9]+)*"
@@ -230,6 +232,31 @@ def page_class(page: pymupdf.Page, words, drawings) -> str:
     return "vektor"
 
 
+def raster_triangles(page: pymupdf.Page, dpi: int = 200) -> list[dict]:
+    """W4: Dreiecke (GW-Symbol) aus dem Seitenbild, als Pseudo-Zeichnungen fuer _groundwater()."""
+    try:
+        import cv2
+    except ImportError:
+        return []
+    pix = page.get_pixmap(dpi=dpi, colorspace=pymupdf.csGRAY)
+    img = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.h, pix.w)
+    binary = (img < 150).astype(np.uint8) * 255
+    contours, _ = cv2.findContours(binary, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+    f = 72.0 / dpi
+    out = []
+    for c in contours:
+        x, y, w, h = cv2.boundingRect(c)
+        if not (3 / f <= w <= 16 / f and 3 / f <= h <= 16 / f):
+            continue
+        approx = cv2.approxPolyDP(c, 0.12 * cv2.arcLength(c, True), True)
+        if len(approx) != 3:
+            continue
+        pts = [pymupdf.Point(float(q[0][0]) * f, float(q[0][1]) * f) for q in approx]
+        out.append({"items": [("l", pts[0], pts[1]), ("l", pts[1], pts[2]), ("l", pts[2], pts[0])],
+                    "rect": pymupdf.Rect(x * f, y * f, (x + w) * f, (y + h) * f), "type": "s", "color": (0, 0, 0)})
+    return out
+
+
 def primitives(page: pymupdf.Page):
     m = page.rotation_matrix if RULES["rotation"] else pymupdf.Matrix(1, 1)
     words = [(pymupdf.Rect(w[:4]) * m, w[4], w[5], w[6]) for w in page.get_text("words")]
@@ -273,6 +300,8 @@ def primitives(page: pymupdf.Page):
         for q, _ in ws[1:]:
             r |= q
         text_lines.append((r, " ".join(t for _, t in ws)))
+    if scanned and RULES["raster_gw_symbol"]:            # GW-Dreiecke aus dem Bild (nur fuer _groundwater)
+        drawings = drawings + raster_triangles(page)
     return words, text_lines, drawings, segs, scanned, pclass
 
 
@@ -367,13 +396,23 @@ def classify_v3(text: str) -> str:
 # ---------------------------------------------------------------------------
 # Tiefen: Labels finden und den Grenzen zuordnen
 # ---------------------------------------------------------------------------
+def depth_value(t: str) -> float | None:
+    """Tiefenlabel -> Wert; OCR verliert manchmal das Komma ('0950' = 9,50, R1)."""
+    if DEPTH_RE.match(t):
+        return float(t.rstrip("m ").replace(",", "."))
+    if RULES["ocr_decimal_fix"] and re.fullmatch(r"0\d{3}", t):
+        return int(t) / 100
+    return None
+
+
 def label_groups(words, col: Column, cols: list[Column]):
     """Dezimalzahlen-Spalten, die dieser Saeule am naechsten liegen (nicht einer Nachbarsaeule)."""
     def hdist(r, c):
         return max(c.rect.x0 - r.x1, r.x0 - c.rect.x1, 0)
     cands = []
     for r, t, *_ in words:
-        if not DEPTH_RE.match(t) or float(t.rstrip("m ").replace(",", ".")) > 150:
+        v = depth_value(t)
+        if v is None or v > 150:
             continue
         cy = (r.y0 + r.y1) / 2
         if not (col.rect.y0 - 8 <= cy <= col.rect.y1 + 150) or hdist(r, col) > 110:
@@ -381,7 +420,7 @@ def label_groups(words, col: Column, cols: list[Column]):
         near = [c for c in cols if c.rect.y0 - 8 <= cy <= c.rect.y1 + 150]
         if min(near, key=lambda c: hdist(r, c)) is not col:
             continue
-        cands.append((r, float(t.rstrip("m ").replace(",", "."))))
+        cands.append((r, v))
     groups: dict[int, list] = defaultdict(list)
     for r, v in cands:
         groups[round(r.x0 / 4)].append((r, v))
@@ -915,6 +954,7 @@ def extract(pdf: Path):
             bh.gw_depths = _groundwater(drawings, segs, col, acols, fit, words)
             near = [(r, t) for r, t in lines if hr.y0 - 2 <= r.y0 <= col.rect.y1 + 60
                     and abs((r.x0 + r.x1) / 2 - (col.rect.x0 + col.rect.x1) / 2) < 170]
+            near = rows(near)                                # 'GW' und '2.53m' als getrennte Bloecke (S7)
             if not bh.gw_depths and RULES["gw_text"]:       # Symbol als Schriftzeichen: 'GW 2.53m' im Text
                 bh.gw_depths = sorted({float((m.group(1) or m.group(2)).replace(",", "."))
                                        for _, t in near if (m := GW_TEXT_RE.search(t))})
