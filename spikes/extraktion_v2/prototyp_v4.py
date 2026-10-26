@@ -84,7 +84,7 @@ RULES = {
 }
 
 CODE_TOKEN = r"[A-Z0-9][A-Za-z0-9]*(?:[-/.][A-Za-z0-9]+)*"
-GENERIC_HEAD_RE = re.compile(r"^(?:[A-ZÄÖÜ][a-zäöü]*bohrung|Bohrprofil|Aufschluss|Rammkernsondierung)"
+GENERIC_HEAD_RE = re.compile(r"^(?:Bohrung|[A-ZÄÖÜ][a-zäöü]*bohrung|Bohrprofil|Aufschluss|Rammkernsondierung)"
                              r"\s*(?:Nr\.?)?\s*:?\s*(.{0,20}?)\s*$")
 FREE_CODE_RE = re.compile(r"[A-Z0-9][A-Z0-9 ./\-]{0,14}?[a-z]?")             # 'SST KB 5', 'RB 2 / I', '422C-460'
 GOK_EXTRA_RE = re.compile(r"(?:H(?:ö|oe)he|Kote|Ansatzh(?:ö|oe)he|Gel(?:ä|ae)ndeh(?:ö|oe)he|Bezugspunkt)[^\d\n]{0,30}?"
@@ -465,9 +465,11 @@ def label_line(groups, min_n: int = 5, max_res: float = 0.2):
                 break
             keep.pop(int(res.argmax()))
         # Massstab muss ein Normmassstab sein: sonst koennte jede Zahlenreihe eine 'Gerade' bilden
-        if a > 0 and res.max() <= max_res and plausible_scale(a / PT_TO_M_AT_1_1) \
-                and (best is None or len(g) > len(best[2])):
-            best = (float(a), float(b), g)
+        if a > 0 and res.max() <= max_res and plausible_scale(a / PT_TO_M_AT_1_1):
+            # gestapelte Labels (Rest <= 1 m) bleiben Daten; weit abseits (Kote '52,35') gehoert nicht dazu
+            g_ok = [e for e in g if abs(a * (e[0].y0 + e[0].y1) / 2 + b - e[1]) <= 1.0]
+            if best is None or len(g_ok) > len(best[2]):
+                best = (float(a), float(b), g_ok)
     return best
 
 
@@ -838,7 +840,7 @@ def extract(pdf: Path):
             if lf:                                           # T4: Grenzen = gedruckte Werte, Linien bestaetigen
                 la, lb, g = lf
                 bh = Borehole(code, pno + 1, round(la / PT_TO_M_AT_1_1), f"labels ({len(g)} Labels)", gok)
-                bh.page_class, bh.fit, bh.support = pclass, (la, lb), 1.0
+                bh.page_class, bh.fit, bh.support = pclass, (la, lb), len(g) / max(n_labels, 1)
                 bh.bbox = tuple(round(v, 1) for v in col.rect)
                 line_d = [la * y + lb for y in col.bounds]
                 prev = 0.0
@@ -945,6 +947,7 @@ def extract(pdf: Path):
         # schwache Bestaetigung (< 50 %) zaehlt nicht mehr als keine
         if RULES["dup_preference"]:
             best = max(versions, key=lambda v: (v.gok is not None, v.titled, v.single_sheet,
+                                                not v.mode.startswith("labels"),      # Linien+Labels vor nur Labels
                                                 round(v.support, 1) if v.support >= 0.5 else 0.0, -(v.scale or 1e9)))
         else:
             best = max(versions, key=lambda v: v.support)

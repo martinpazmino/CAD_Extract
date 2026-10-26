@@ -346,7 +346,7 @@ create table boreholes (                        -- kuratiert
   source_run_id uuid references extraction_runs on delete set null,
   code text not null,
   kind text not null,
-  collar geometry(PointZ),                      -- SRID = projects.crs_epsg, Z = GOK [m NHN]
+  collar extensions.geometry(PointZ),                      -- SRID = projects.crs_epsg, Z = GOK [m NHN]
   gok_nhn numeric(8,2),
   end_depth numeric(7,2),
   station numeric(10,3),
@@ -397,13 +397,13 @@ create table sections (                         -- Längsschnitte
   id uuid primary key default gen_random_uuid(),
   document_id uuid not null references documents on delete cascade,
   x_to_station jsonb, y_to_nhn jsonb,           -- Regressionen + Residuen
-  alignment geometry(LineStringZ)               -- falls Trasse bekannt
+  alignment extensions.geometry(LineStringZ)               -- falls Trasse bekannt
 );
 create table section_polygons (                 -- Geoslice in (Station, NHN)
   id uuid primary key default gen_random_uuid(),
   section_id uuid not null references sections on delete cascade,
   unit_id uuid references model_units,
-  geom geometry(Polygon),                       -- x = Station [m], y = NHN [m] (kein CRS)
+  geom extensions.geometry(Polygon),                       -- x = Station [m], y = NHN [m] (kein CRS)
   provenance jsonb not null default '[]'
 );
 create table tunnel_profile (
@@ -448,6 +448,11 @@ $$;
 alter table boreholes enable row level security;
 create policy boreholes_read on boreholes for select using (is_member(project_id));
 ```
+
+> [!NOTE]
+> Verificado en PostgreSQL 16 + PostGIS 3 ([spike Supabase](../spikes/supabase/README.md)): con
+> `create extension postgis with schema extensions` los tipos deben ir cualificados
+> (`extensions.geometry`), si no, la migración falla fuera de Supabase.
 
 **Storage**: buckets privados `source-pdfs` y `artifacts` (renders de página, caché de primitivas
 `.json.gz`, `.ifc`, `.frag`, `.glb`); acceso del cliente sólo con URLs firmadas. El

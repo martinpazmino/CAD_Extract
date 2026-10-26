@@ -34,6 +34,10 @@ dudoso quede **marcado**, nunca escondido.
 | P6 | Una regla nueva debe ser **general** (describir un rasgo del dibujo), nunca una excepción por PDF, oficina o coordenada | Las posiciones fijas de v1 son la causa raíz de su 0/58 |
 | P7 | La verdad se transcribe **de la imagen** y se coteja con una segunda fuente (Schichtenverzeichnis, informe) cuando exista | El Schichtenverzeichnis confirmó 14/14 sondeos transcritos |
 | P8 | Los PDFs **no** se suben al repo; sólo URL, `sha256` y datos factuales | Uso interno de obras ajenas (D16, D23) |
+| P9 | **Perturbar los PDFs que ya funcionan** (girar, escalar, rasterizar) con la misma verdad: encuentra fallos que los originales esconden | Girar Wesel destapó que el lector del Schichtenverzeichnis usaba coordenadas sin rotar |
+| P10 | **Ablación**: apagar cada regla y ver qué caso empeora. Una regla que no empeora nada no está protegida por ningún test | [`ablation.py`](../spikes/korpus/ablation.py) |
+| P11 | Un **caso de estrés por lección**: el fallo real se convierte en un PDF mínimo que lo reproduce | [`stress_cases.py`](../spikes/extraktion_v2/stress_cases.py), 13 casos |
+| P12 | Medir también la **precisión al centímetro** (límites exactos), no sólo la tolerancia de 5 cm | v3 414/515 exactos, v4 509/515 tras T2 |
 
 ## E. Entrada: qué tipo de PDF es
 
@@ -45,6 +49,11 @@ dudoso quede **marcado**, nunca escondido.
 | L17 | **AutoCAD con fuentes SHX**: el texto del dibujo son líneas; no hay capa de texto aunque sea vectorial. Detectarlo (muchos paths, casi sin palabras) y pasar por OCR | Wesel S.17: 1389 paths, 18 "palabras" sueltas |
 | L18 | **Raster sin capa de texto** (capturas de portales, escaneos de archivo): hace falta OCR propio | Berlín: 11 sondeos en imágenes; OCR (RapidOCR) lee profundidades y cotas con confianza 0,6–0,9 |
 | E1 | Clasificar cada página **antes** de extraer: vector+texto · vector sin texto (SHX) · raster+OCR · raster sin texto | Las cuatro clases aparecieron en 9 Gutachten |
+| E2 | Un escaneo puede traer **ruido vectorial** (cientos de paths del software de OCR): con imagen > 80 % es escaneo igual, y se usan segmentos de imagen **y** vectoriales | KB5 suizo: 220 paths |
+| E3 | **Todo módulo toma las primitivas de la misma capa normalizada** (E1); nunca `page.get_text()` directo | El lector del SV falló en páginas giradas por saltarse la rotación |
+| L18b | La capa OCR de un escaneo **pierde texto** ("2 / I", etiquetas de B 4): complementarla con OCR propio donde no hay palabras | A7367, Rednitzhembach |
+| E4 | El OCR lee la Schraffur de Kies (círculos) como `000`: no contar esos tokens como texto | Caso s12 |
+| E5 | El tamaño de página de un escaneo **no** es el del papel: el `M 1:100` del cajetín no da la escala en puntos PDF; mandan las etiquetas | KB5 |
 
 ## G. Geometría: columna y límites
 
@@ -70,6 +79,10 @@ dudoso quede **marcado**, nunca escondido.
 | L13 | La cabecera puede llevar **sufijo**: `RKS 1 - Betonweg 0+050`, `B 1 Bohrung Nr.` | Triefenstein 0/5 por esta causa |
 | T1 | Códigos de terceros no siguen el patrón `B 1`: `422C-460`, `B 7/16`, `S 2a`, `DS 1/17`. La lista de prefijos debe ser **configurable** y ampliarse desde la leyenda y el Lageplan del propio documento | Berlín |
 | L12 | El mismo sondeo aparece en hoja propia y en el corte: preferir la **hoja titulada** y con menos sondeos; la confirmación < 50 % no cuenta | Wachenroth B 2, Rednitzhembach B 4 |
+| T2 | Un límite confirmado por etiqueta se entrega con el **valor impreso** (3,50), no con la geometría (3,49) | Precisión exacta 414 → 509 de 515 |
+| T3 | Hoja con **una sola cabecera**: se ancla a la columna con más etiquetas aunque la cabecera esté lejos (formularios con cabecera centrada) | KB5 |
+| T4 | Si las líneas no cuadran pero las etiquetas forman una **recta limpia** con escala normalizada: los límites son las etiquetas, las líneas sólo confirman | KB5 (Schraffur raster crea líneas de más) |
+| T5 | Una columna con ≥ 3 profundidades **dentro** es la columna de profundidades del formulario, no el perfil | KB5 |
 
 ## B. Texto y Bodenart
 
@@ -99,6 +112,8 @@ dudoso quede **marcado**, nunca escondido.
 | S3 | El título de un formulario puede estar **espaciado** (`S c h i c h t e n v e r z e i c h n i s`) y el texto **duplicado** (dos capas): normalizar antes de buscar | Wesel |
 | S4 | Las Rammsondierungen pueden venir como **tabla de valores** (N10 cada 10 cm) en lugar de curva | Triefenstein S.32–35 |
 | S5 | Las coordenadas aparecen en tablas, en cajetines de portales (`Rechtswert (UTM 33N): 394774,3`) o en el Lageplan; sin ellas no hay 3D real | Berlín (en imagen), Halle (tabla de GW 26/26) |
+| S6 | El perfil puede ser **sólo una tabla de texto** (Tiefe \| Beschreibung) sin columna gráfica; aceptarla sólo si ≥ 60 % de los intervalos dan una Bodenart (las tablas DPH y de laboratorio no) | A7367 (Suiza) |
+| S7 | Etiqueta y valor del cajetín pueden ser **bloques separados** en la misma fila (`Höhe in m ü.M.:` · `668.99`): unir por fila antes de buscar | A7367 |
 
 ## R. swissgeol: qué copiar y qué no
 
@@ -116,6 +131,9 @@ dudoso quede **marcado**, nunca escondido.
 | M2 | El `IfcImporter` de That Open **descarta** las clases geotécnicas por defecto: añadir `IFCBOREHOLE`, `IFCGEOMODEL`, `IFCGEOTECHNICALSTRATUM` a `importer.classes.elements` | 0 → 16 elementos con geometría |
 | M3 | Encapsular el escritor IFC: IFC 4.4 sustituye `IfcGeotechnicalStratum` por `IfcGeoScienceFeature` | Borrador 4.4 |
 | M4 | Sin coordenadas, el modelo de sección (estación, NHN) ya aporta valor; con coordenadas locales del Lageplan se puede montar un 3D relativo | [Arquitectura §7.1](ARQUITECTURA_BAUGRUNDMODELL.md#71-escalera-de-niveles-cada-uno-es-entregable) |
+| M5 | Un **Pset vacío** es IFC inválido: crear el Pset sólo si hay valores | Exportador: 5 errores de esquema → 0 |
+| M6 | PostGIS instalado en `extensions`: **cualificar** `extensions.geometry`, si no la migración sólo funciona dentro de Supabase | [Spike Supabase](../spikes/supabase/README.md) |
+| M7 | La cadena completa ya funciona con un PDF real: OCR → JSON canónico → PostGIS → IFC 4.3 georreferenciado → That Open (80 estratos) | Berlín ([15 §8](15_resultados_pdfs_reales.md)) |
 
 ## X. Entorno de trabajo
 
@@ -123,6 +141,10 @@ dudoso quede **marcado**, nunca escondido.
 |---|---|---|
 | X1 | En el entorno de Claude la descarga de Gutachten de webs municipales está **bloqueada** (403/000); pypi y GitHub sí. Los PDFs los sube el usuario | Rondas 1–3 |
 | X2 | Probar dependencias pesadas (swissgeol, OCR) en **entornos separados** del scratchpad; swissgeol fija PyMuPDF 1.26.3 | `sgvenv` |
+| X3 | `pkill -f patrón` en un comando que contiene ese texto en cualquier parte **se mata a sí mismo** (también con `[p]atrón` si el nombre aparece después en el mismo comando): ejecutar `pkill` en un comando aparte | Exit 144 tres veces |
+| X4 | `python -I` no añade la carpeta del script a `sys.path`: los scripts deben insertarla ellos mismos | `ablation.py` |
+| X5 | `show_pdf_page` ignora el `/Rotate` de la página origen; compensar al recomponer PDFs | Primera versión de `perturb.py` |
+| X6 | OCR caro → **caché por imagen de página** (hash) para que la regresión y la ablación sean rápidas | `GEO_OCR_CACHE` |
 
 Up: [Índice](README.md)
 

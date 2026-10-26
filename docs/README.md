@@ -44,13 +44,16 @@ alimente un **Baugrundmodell** (Supabase → IFC 4.3 → That Open).
 - [13 Colaboración con swisstopo](13_colaboracion_swisstopo.md): qué nos dan y qué les damos, primeros pasos, borradores de issues y correo.
 - [14 Licencias: interno hoy, terceros mañana](14_licencias_terceros.md): AGPL, opciones, prueba de pypdfium2, capa de primitivas.
 - [15 Resultados con PDFs reales](15_resultados_pdfs_reales.md): v1 / v3 / swissgeol con 9 Gutachten públicos, dos pruebas ciegas (v3 0/13 y 11/29), dieciocho lecciones, Schichtenverzeichnis como segunda fuente, OCR como siguiente paso.
+- [16 Lecciones aprendidas](16_lecciones_aprendidas.md): **memoria del proyecto**, todas las reglas explícitas (proceso, entrada, geometría, etiquetas, texto, agua, segundas fuentes, swissgeol, IFC/Supabase, entorno).
+- [17 Algoritmo de extracción v4](17_algoritmo_extraccion.md): especificación por etapas E0–E9, parámetros y su origen, confianza y salida canónica.
 - [Glosario alemán–español](glosario.md): términos geotécnicos y de swissgeol.
 
 ## Código de apoyo
 
 - [Spike extracción v2](../spikes/extraktion_v2/README.md): generador de PDFs sintéticos, prototipo v2, comparativa v1/v2/swissgeol.
 - [Spike IFC + That Open](../spikes/ifc_thatopen/README.md): IFC 4.3 geotécnico con IfcOpenShell y su importación en That Open.
-- [Corpus público](../spikes/korpus/README.md): manifest de Gutachten publicados y script de descarga/evaluación.
+- [Corpus público](../spikes/korpus/README.md): manifest, verdad, prueba ciega, regresión, ablación y perturbaciones.
+- [Spike Supabase](../spikes/supabase/README.md): migración probada en PostGIS y cargador del JSON canónico.
 
 ## Cómo leer
 
