@@ -45,7 +45,8 @@ NO_GW_RE = re.compile(r"kein(?:e)?\s*(?:Grund)?wasser|GW\s*nicht\s*angetroffen|t
 ROCK_SUFFIX = ("stein", "fels")
 ANTHROPOGEN = {"beton": "Beton", "asphalt": "Asphalt", "schwarzdecke": "Schwarzdecke",
                "pflaster": "Pflaster", "anschuettung": "Auffuellung", "anschüttung": "Auffuellung",
-               "auffuellung": "Auffuellung", "auffüllung": "Auffuellung", "schotter": "Auffuellung"}
+               "auffuellung": "Auffuellung", "auffüllung": "Auffuellung", "schotter": "Auffuellung",
+               "auffullung": "Auffuellung", "anschuttung": "Auffuellung"}     # OCR ohne Umlaut (E6)
 TOPSOIL = {"oberboden", "mutterboden", "humus"}
 # Hauptbodenart als Kuerzel am Anfang der Beschreibung (DIN 4023 bzw. EN ISO 14688)
 ABBR_RE = re.compile(r"^\s*(Mu|Mg|Gr|Sa|Si|Cl|Co|A|[fmg]?S|[fmg]?G|U|T|X|H|F)(?=[\s,(?´'*]|$)")
@@ -99,6 +100,11 @@ WATER_DESC_RE = re.compile(r"Wasser(?:anschnitt|stand|spiegel|zutritt)\s*(?:bei|
 COORD_E_RE = re.compile(r"(?:Rechtswert|Ostwert|Easting|\bRW\b)(?:\D|UTM\d{2}N?){0,30}?(\d{6,8}(?:[.,]\d+)?)", re.I)
 COORD_N_RE = re.compile(r"(?:Hochwert|Nordwert|Northing|\bHW\b)(?:\D|UTM\d{2}N?){0,30}?(\d{7}(?:[.,]\d+)?)", re.I)
 UTM_ZONE_RE = re.compile(r"UTM\s*(3[23])", re.I)
+
+
+def ckey(code: str) -> str:
+    """Vergleichsschluessel fuer Codes: OCR schreibt 'B 1' mal als 'B1' (E6)."""
+    return re.sub(r"\s+", "", code).upper()
 
 
 def plausible_scale(m: float, tol: float = 0.04) -> bool:
@@ -646,11 +652,11 @@ def _groundwater(drawings, segs, col: Column, cols: list[Column], fit, words=())
 
 
 SV_CODE_RE = re.compile(r"(?<![A-Za-z0-9])((?:B|BK|KB|KRB|RKS|BS|GWM|SCH)\s*\d+[a-z]?(?:/\d{2})?)(?![\d.,])")
-SV_NO_GW_RE = re.compile(r"kein(?:e[nr]?)?\s+(?:Grund)?wasser|Wasser\s+nicht\s+angetroffen", re.I)
+SV_NO_GW_RE = re.compile(r"kein(?:e[nr]?)?\s*(?:Grund)?wasser|Wasser\s*nicht\s*angetroffen", re.I)
 SV_GW_RE = re.compile(r"(?:Wasserstand|Wasserspiegel|Grundwasser\w*|\bGW)\D{0,40}?(\d{1,2}[.,]\d{1,2})\s*m\b", re.I)
 
 
-def schichtenverzeichnis(doc) -> dict[str, dict]:
+def schichtenverzeichnis(doc, prims: dict | None = None) -> dict[str, dict]:
     """Formblatt 'Schichtenverzeichnis': Spalte 1 'Bis ... m unter Ansatzpunkt', Spalte 2 Bloecke a) bis i).
 
     Das Formblatt ist genormt und bei allen Bueros gleich aufgebaut: die Tiefe steht links vom a)-Block,
@@ -658,18 +664,19 @@ def schichtenverzeichnis(doc) -> dict[str, dict]:
     """
     out: dict[str, dict] = {}
     for pno, page in enumerate(doc):
-        txt = page.get_text()
-        if "schichtenverzeichnis" not in re.sub(r"\s", "", txt).lower() or "Ansatz" not in txt:   # 'S c h i c h t e n ...' 
+        # Primitive aus E1 (gedrehte Seiten, OCR bei Scans) - nie page.get_text() direkt (E3)
+        pw, plines = prims[pno] if prims and pno in prims else primitives(page)[:2]
+        txt = " ".join(t for _, t in plines)
+        if "schichtenverzeichnis" not in re.sub(r"\s", "", txt).lower() or "Ansatz" not in txt:   # 'S c h i c h t e n ...'
             continue
-        pw, plines = primitives(page)[:2]                # Ansichtskoordinaten (gedrehte Seiten!)
         ws = {(round(r.x0), round(r.y0), t): (r.x0, r.y0, r.x1, r.y1, t) for r, t, *_ in pw}.values()   # doppelter Text
         hdr = [w for w in ws if w[4].startswith("Ansatz")]
-        marks = sorted((w for w in ws if w[4] == "a)"), key=lambda w: w[1])
+        marks = sorted((w for w in ws if w[4] == "a)" or w[4].startswith("a)")), key=lambda w: w[1])  # OCR: 'a)Auffullung' 
         if not hdr or not marks:
             continue
         y_hdr = max(w[3] for w in hdr)
         x_a = min(w[0] for w in marks)
-        x_col3 = min([w[0] - 4 for w in ws if w[4] in ("Wasserführung", "Bohrwerkzeuge") and w[1] < y_hdr]
+        x_col3 = min([w[0] - 4 for w in ws if re.match(r"Wasserf|Bohrwerkzeug", w[4]) and w[1] < y_hdr]
                      + [page.rect.width * 0.6])                                  # Spalte 3
         blocks = [w for w in marks if w[1] > y_hdr]
         code = None                                         # 'B 1 Bohrung Nr.', 'Nr.: B 1 / Blatt 1', 'RKS 1 - Weg'
@@ -679,7 +686,8 @@ def schichtenverzeichnis(doc) -> dict[str, dict]:
                 break
         if code is None or not blocks:
             continue
-        rec = out.setdefault(code, {"bottoms": [], "names": [], "gw": [], "gw_status": None, "pages": []})
+        rec = out.setdefault(ckey(code), {"code": code, "bottoms": [], "names": [], "gw": [], "gw_status": None,
+                                          "pages": []})
         rec["pages"].append(pno + 1)
         depths = sorted((w for w in ws if w[2] <= x_a + 1 and w[1] > y_hdr and DEPTH_RE.match(w[4])), key=lambda w: w[1])
         for d in depths:
@@ -690,6 +698,8 @@ def schichtenverzeichnis(doc) -> dict[str, dict]:
             y_b = min([w[1] for w in ws if w[4] == "b)" and w[1] > b[1] + 1] + [b[1] + 12])
             name = " ".join(w[4] for w in sorted(ws, key=lambda w: (round(w[1]), w[0]))
                             if b[1] - 3 <= w[1] < y_b - 1 and w[0] > b[2] and w[0] < x_col3 - 2)
+            if b[4] != "a)":                                 # Benennung klebt am Marker (OCR)
+                name = (b[4][2:] + " " + name).strip()
             rec["bottoms"].append(float(d[4].rstrip("m ").replace(",", ".")))
             rec["names"].append(name)
         flat = " ".join(txt.split())
@@ -821,8 +831,10 @@ def extract(pdf: Path):
     found: dict[str, list[Borehole]] = defaultdict(list)
     dph = {}
     xy_text: dict[str, tuple] = {}
+    prims: dict[int, tuple] = {}
     for pno, page in enumerate(doc):
         words, lines, drawings, segs, scanned, pclass = primitives(page)
+        prims[pno] = (words, lines)                       # einmal je Seite (OCR!), auch fuer das SV
         if any("BODENARTEN" in t.upper() for _, t in lines) and not swatches:
             from prototyp_v2 import legend_swatches
             swatches = legend_swatches(page)
@@ -894,7 +906,7 @@ def extract(pdf: Path):
                 bh = Borehole(code, pno + 1, None, f"widerspruch ({support}/{n_labels} Labels)", gok)
                 bh.page_class, bh.bbox = pclass, tuple(round(v, 1) for v in col.rect)
                 bh.issues.append("Massstabstext und Tiefenlabels widersprechen sich: Schichten nicht ausgegeben")
-                found[code].append(bh)
+                found[ckey(code)].append(bh)
                 continue
             if lf:                                           # T4: Grenzen = gedruckte Werte, Linien bestaetigen
                 la, lb, g = lf
@@ -915,7 +927,7 @@ def extract(pdf: Path):
                              min([c.rect.x0 for c in acols if c.rect.x0 > col.rect.x1 + 5] + [page.rect.x1]))
                 if any(NO_GW_RE.search(t) for _, t in lines):
                     bh.gw_status = "kein Grundwasser"
-                found[code].append(bh)
+                found[ckey(code)].append(bh)
                 continue
             fit = (a, b)
             bh = Borehole(code, pno + 1, round(a / PT_TO_M_AT_1_1), f"{mode} ({support}/{n_labels} Labels)", gok)
@@ -985,7 +997,7 @@ def extract(pdf: Path):
                                        if (m := WATER_DESC_RE.search(t.replace(" ", "")))})
             if not bh.gw_depths and any(NO_GW_RE.search(t) for _, t in near):
                 bh.gw_status = "kein Grundwasser"
-            found[code].append(bh)
+            found[ckey(code)].append(bh)
         if RULES["depth_table"] and heads and not anchored and (tab := depth_table(words, lines, heads)):
             g, descs = tab
             code = heads[0][1]
@@ -998,11 +1010,12 @@ def extract(pdf: Path):
                 bh.gw_status = "kein Grundwasser"
             if RULES["coords_text"]:
                 xy_text.update(coords_from_text(lines, [(heads[0][0], code, None)]))
-            found[code].append(bh)
-    coords = coordinate_table(doc)
-    sv = schichtenverzeichnis(doc) if RULES["sv_source"] else {}
+            found[ckey(code)].append(bh)
+    coords = {ckey(k): v for k, v in coordinate_table(doc).items()}
+    xy_text = {ckey(k): v for k, v in xy_text.items()}
+    sv = schichtenverzeichnis(doc, prims) if RULES["sv_source"] else {}
     out = []
-    for code, versions in found.items():
+    for code, versions in found.items():               # code = ckey
         # GOK gefunden, Labels bestaetigen, groesster Massstab (= kleinste Zahl)
         # schwache Bestaetigung (< 50 %) zaehlt nicht mehr als keine
         if RULES["dup_preference"]:
@@ -1024,7 +1037,7 @@ def extract(pdf: Path):
     for code, rec in sv.items():                            # nur im Schichtenverzeichnis (Profil = Bild/SHX)
         if code in found:
             continue
-        bh = Borehole(code, rec["pages"][0], None, "schichtenverzeichnis", gw_depths=sorted(set(rec["gw"])),
+        bh = Borehole(rec["code"], rec["pages"][0], None, "schichtenverzeichnis", gw_depths=sorted(set(rec["gw"])),
                       gw_status=None if rec["gw"] else rec["gw_status"])
         prev = 0.0
         for d, name in zip(rec["bottoms"], rec["names"]):
