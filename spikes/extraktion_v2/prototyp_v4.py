@@ -441,7 +441,7 @@ def label_groups(words, col: Column, cols: list[Column]):
     for g in groups.values():
         g.sort(key=lambda e: e[0].y0)
         g = _longest_non_decreasing(g)                    # versprengte Zahlen (andere Texte) entfernen
-        if len(g) >= 2 and not (RULES["axis_filter"] and _arithmetic(g)) and not (RULES["paired_filter"] and _paired(g)):
+        if len(g) >= 2 and not (RULES["axis_filter"] and _axis(g, col)) and not (RULES["paired_filter"] and _paired(g)):
             out.append(g)
     return sorted(out, key=lambda g: (-len(g), hdist(g[0][0], col)))
 
@@ -451,6 +451,16 @@ def _arithmetic(g, tol: float = 0.011) -> bool:
     v = [x for _, x in g]
     d = np.diff(v)
     return len(v) >= 5 and d.min() > 0 and float(d.max() - d.min()) <= tol
+
+
+def _axis(g, col: Column) -> bool:
+    """L14: Lineal/Diagrammachse = arithmetische Folge mit rundem Schritt und >= 8 Werten, oder mehr Werte
+    als die Saeule Grenzen hat. Gleich dicke Schichten (0,4 / 0,8 / 1,2 ...) bleiben Labels (s15)."""
+    if not _arithmetic(g):
+        return False
+    step = round(g[1][1] - g[0][1], 2)
+    round_step = any(abs(step - r) < 0.011 for r in (0.1, 0.2, 0.25, 0.3, 0.5, 1.0, 2.0, 5.0, 10.0))
+    return (round_step and len(g) >= 8) or len(g) > len(col.bounds) + 1
 
 
 def _paired(g) -> bool:

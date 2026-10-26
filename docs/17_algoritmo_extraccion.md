@@ -97,8 +97,9 @@ Los códigos se comparan sin espacios (`B1` = `B 1`), porque el OCR los pierde.
 1. **Grupos de etiquetas:** números `\d{1,3}[.,]\d{1,2}( ?m)?` ≤ 150, dentro de la franja vertical
    de la columna (−8 / +150 pt) y a ≤ 110 pt; cada número va a su columna más cercana. Se agrupan
    por x (pasos de 4 pt) y se ordenan; se queda la subsecuencia no decreciente más larga.
-2. **Filtros de grupo:** progresión aritmética (≥ 5 valores, mismo paso ± 0,011) = **eje**, no
-   etiquetas (L14); ≥ 6 valores con ≤ 70 % distintos = **pares Von/Bis** de muestras (L15).
+2. **Filtros de grupo:** progresión aritmética (≥ 5 valores, mismo paso ± 0,011) con paso redondo
+   y ≥ 8 valores, o con más valores que límites tiene la columna = **eje**, no etiquetas (L14);
+   ≥ 6 valores con ≤ 70 % distintos = **pares Von/Bis** de muestras (L15).
 3. **Candidatos:**
    - *directo*: la etiqueta se apoya en un límite (base o centro a ≤ 4,5 pt) en ≥ 60 % de los casos;
      regresión con (techo, 0) añadido.
@@ -205,8 +206,8 @@ etiqueta, L3):
 
 ## Cómo se prueba
 
-[`regression.py`](../spikes/korpus/regression.py) corre el conjunto completo: 9 Gutachten
-reales con verdad, 13 casos de estrés (uno por lección,
+[`regression.py`](../spikes/korpus/regression.py) corre el conjunto completo: 13 PDFs
+reales con verdad (9 alemanes, 4 suizos), 17 casos de estrés (uno por lección,
 [`stress_cases.py`](../spikes/extraktion_v2/stress_cases.py)) y 6 layouts sintéticos, y compara
 con una línea base (`baseline_v4.json`); [`ablation.py`](../spikes/korpus/ablation.py) apaga cada
 regla y lista qué casos empeoran (22 de 28 reglas protegidas, [tabla](../spikes/korpus/ablation_v4.md)).

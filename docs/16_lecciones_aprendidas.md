@@ -36,7 +36,7 @@ dudoso quede **marcado**, nunca escondido.
 | P8 | Los PDFs **no** se suben al repo; sólo URL, `sha256` y datos factuales | Uso interno de obras ajenas (D16, D23) |
 | P9 | **Perturbar los PDFs que ya funcionan** (girar, escalar, rasterizar) con la misma verdad: encuentra fallos que los originales esconden | Girar Wesel destapó que el lector del Schichtenverzeichnis usaba coordenadas sin rotar |
 | P10 | **Ablación**: apagar cada regla y ver qué caso empeora. Una regla que no empeora nada no está protegida por ningún test | [`ablation.py`](../spikes/korpus/ablation.py): 22 de 28 reglas protegidas ([tabla](../spikes/korpus/ablation_v4.md)) |
-| P11 | Un **caso de estrés por lección**: el fallo real se convierte en un PDF mínimo que lo reproduce | [`stress_cases.py`](../spikes/extraktion_v2/stress_cases.py), 13 casos |
+| P11 | Un **caso de estrés por lección**: el fallo real se convierte en un PDF mínimo que lo reproduce. Escribir el caso para una regla sin protección suele destapar un fallo nuevo | [`stress_cases.py`](../spikes/extraktion_v2/stress_cases.py), 17 casos; s15 destapó el fallo de L14 |
 | P12 | Medir también la **precisión al centímetro** (límites exactos), no sólo la tolerancia de 5 cm | v3 414/515 exactos, v4 509/515 tras T2 |
 
 ## E. Entrada: qué tipo de PDF es
@@ -74,7 +74,7 @@ dudoso quede **marcado**, nunca escondido.
 | L3 | La **posición** de la etiqueta no es fiable (desplazada, encima, debajo); unas oficinas rotulan el **techo** (con 0,00), otras la **base**. La escala se elige por **cuántas etiquetas confirma** cada candidato (directa, por orden, texto `1:75`) | Talheim 65/65 |
 | L8 | Etiquetas con unidad pegada (`0.20m`), coma o punto decimal | Hausham (DC-Software) |
 | L9 | Escalas no normalizadas existen (perfil ajustado a la hoja, M ≈ 1:35; Triefenstein 1:30): válidas si ≥ 80 % de ≥ 3 etiquetas las confirman | Hausham RKS, Triefenstein |
-| L14 | Un grupo de valores en **progresión aritmética** (≥ 5 valores, mismo paso) es un **eje** (regla de cotas, escala de un diagrama DPH), nunca etiquetas de capa | Marl BS 10 se leyó del eje DPH del corte |
+| L14 | Un grupo de valores en **progresión aritmética** es un **eje** (regla de cotas, escala de un diagrama DPH), no etiquetas de capa, **si** tiene paso redondo (0,1 · 0,25 · 0,3 · 0,5 · 1 m…) y ≥ 8 valores, o más valores que límites la columna. Capas de igual espesor (0,4 · 0,8 · 1,2…) siguen siendo etiquetas | Marl BS 10 (eje DPH); caso s15 (la primera versión de la regla borraba etiquetas reales) |
 | L15 | Una columna de valores **en pares** (Von/Bis de muestras) no son etiquetas de capa | Marl (IDAT/GeoDin) |
 | L15b | Columna sin ninguna etiqueta confirmada mientras las vecinas sí tienen → no es un perfil (p. ej. plano de ejecución de GWM). Si **ninguna** columna de la página tiene etiquetas (OCR perdido), se acepta la escala del cajetín y se marca | Marl GWM 10; Rednitzhembach B 4 |
 | L4 | En la representación en altura la cabecera queda muy por encima de la columna: asociar cabecera con la columna **debajo**, sin límite vertical | Wachenroth corte, Talheim |

@@ -203,7 +203,7 @@ Todo lo de esta sección es **entrenamiento** salvo §8.2 (ronda 4, ciega). Algo
 | Capa | Qué es | Herramienta |
 |---|---|---|
 | Real | 13 PDFs con verdad: 9 Gutachten alemanes + 4 ejemplos suizos de swissgeol | [`regression.py`](../spikes/korpus/regression.py) |
-| Estrés | 13 PDFs mínimos, **uno por lección** (título con sufijo, página girada, eje DPH, columna de muestras, abreviaturas, SHX + SV, raster, código de terceros…) | [`stress_cases.py`](../spikes/extraktion_v2/stress_cases.py) |
+| Estrés | 17 PDFs mínimos, **uno por lección** (título con sufijo, página girada, eje DPH, columna de muestras, abreviaturas, SHX + SV, raster, código de terceros, escala contradictoria, cabecera lejana…) | [`stress_cases.py`](../spikes/extraktion_v2/stress_cases.py) |
 | Sintético | 6 layouts con Schraffur, agua, DPH y coordenadas | `synth_bohrprofil.py` |
 | Perturbación | los 13 reales girados 90°, reducidos al 70 % y rasterizados a 150 dpi sin texto, con la misma verdad | [`perturb.py`](../spikes/korpus/perturb.py) |
 | Ablación | cada regla apagada por separado | [`ablation.py`](../spikes/korpus/ablation.py) |
@@ -240,6 +240,10 @@ descripción) queda fuera.
 | Coordenadas | 17/25 | **25/25** |
 | Sondeos / límites / agua falsos | 0 / 3 / 0 | **0 / 0 / 0** |
 
+Con los 17 casos de estrés actuales (§8.5), v4 queda en 91/96 sondeos y 554/562 límites (551
+exactos); los 8 que faltan son los de s14, que **a propósito** no se emiten porque escala y etiquetas
+se contradicen. Sigue sin ningún dato falso.
+
 Lo que falta: 4 sondeos de archivo de Berlín (escaneos de baja calidad) y el francés; Bodenart con
 líneas de referencia oblicuas (Marl); "trocken" sólo en el texto del informe (Triefenstein).
 
@@ -250,16 +254,17 @@ líneas de referencia oblicuas (Marl); "trocken" sólo en el texto del informe (
 | Original | 56/61 | 369/369 | 366/369 | 0 / 0 / 0 | 7/7 |
 | Girado 90° | 56/61 | 369/369 | 366/369 | 0 / 0 / 0 | 7/7 |
 | Reducido al 70 % | 54/61 | 300/369 | 293/369 | 1 / 2 / 0 | 6/7 |
-| Raster 150 dpi sin texto | 40/61 | 150/369 | 144/369 | **0 / 0 / 0** | 4/7 |
+| Raster 150 dpi sin texto | 46/61 | 203/369 | 196/369 | **0 / 0 / 0** | 4/7 |
 
 - **Giro:** robusto. La primera versión destapó un fallo real (el lector del SV ignoraba la rotación)
   y otro de la propia herramienta (`show_pdf_page` ignora `/Rotate`, X5).
 - **Escala:** era la mayor debilidad (57 límites falsos). El texto `1:75` del cajetín ya no vale si
   el PDF está reducido: ahora, si contradice las etiquetas, el sondeo sale sin capas y con aviso (E5).
   Talheim reducido sigue sin capas: sus etiquetas están desplazadas con líneas de referencia.
-- **Raster:** conservador, sin ningún dato falso. Pierde lo que depende de texto pequeño (Marl a 150 dpi),
-  el Schichtenverzeichnis leído por OCR (Wesel), títulos de Triefenstein, el símbolo ▽ en imagen
-  (W4, intento descartado) y columnas de sólo relleno de color (E7).
+- **Raster:** conservador, sin ningún dato falso. El Schichtenverzeichnis ahora también se lee por
+  OCR (S8): Triefenstein 0/5 → 5/5 y Wesel 0/24 → 24/24 en la versión rasterizada. Sigue perdiendo
+  texto pequeño (Marl a 150 dpi), el símbolo ▽ en imagen (W4, intento descartado) y columnas de sólo
+  relleno de color (E7).
 
 ### 8.5 Ablación: qué regla protege qué caso
 
@@ -278,10 +283,11 @@ apagarlas empeora algo medible. Las de más efecto:
 | `axis_filter` (L14) | 7 límites falsos en Marl |
 | `sv_source` (S1) | Wesel 1/1 → 0/1, caso SHX |
 
-Sin caso que las proteja: `dashed_exclusion` y `table_filter` (sus fallos los cubren otras
-reglas), `top_convention` y `single_sheet_anchor` (ningún caso actual los necesita),
-`scale_contradiction` (sólo la protege la perturbación al 70 %) y `raster_gw_symbol` (apagada).
-Siguiente paso: un caso de estrés para cada una (P10).
+Sin caso que las proteja quedaban seis. Para cuatro se escribieron casos nuevos que ahora fallan
+si se apaga la regla: s14 (`scale_contradiction`), s15 (`top_convention`), s16
+(`single_sheet_anchor`) y s17 (`dashed_exclusion`). El caso s15 destapó además un fallo real: la
+regla de ejes (L14) borraba las etiquetas de capas de igual espesor; se afinó. Quedan sin caso
+`table_filter` (sus fallos los cubren otras reglas) y `raster_gw_symbol` (apagada).
 
 ### 8.6 La regresión como red de seguridad
 

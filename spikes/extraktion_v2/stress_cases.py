@@ -92,6 +92,10 @@ def _hatch(page, r: pymupdf.Rect, kind: str) -> None:
             for x in xs:
                 sh.draw_circle(pymupdf.Point(x, y), 1.6)
         sh.finish(color=(0, 0, 0), width=0.3)
+    elif kind == "hdash_wide":                    # Ton: gestrichelte Linien ueber die volle Breite, 12 pt Abstand
+        for y in [r.y0 + 6 + i * 12 for i in range(int((r.height - 6) // 12))]:
+            sh.draw_line(pymupdf.Point(r.x0, y), pymupdf.Point(r.x1, y))
+        sh.finish(color=(0, 0, 0), width=0.3, dashes="[3 2] 0")
     elif kind == "hdash":                         # Ton: Striche ueber die ganze Breite (Falle L6)
         for y in ys:
             sh.draw_line(pymupdf.Point(r.x0, y), pymupdf.Point(r.x1, y))
@@ -123,7 +127,7 @@ def draw_profile(page, s: Spec) -> None:
     ppm = PT_PER_M_1_1 / s.scale
     top, x0 = s.top_y, s.x0
     col = pymupdf.Rect(x0, top, x0 + s.col_w, top + s.layers[-1][0] * ppm)
-    page.insert_text((x0 - 20, top - 40), s.title.format(code=s.code), fontsize=10)
+    page.insert_text(s.extra.get("title_xy", (x0 - 20, top - 40)), s.title.format(code=s.code), fontsize=10)
     if s.gok is not None:
         page.insert_text((x0 - 20, top - 26), f"NHN {_fmt(s.gok, s.decimal)} m", fontsize=7)
     if s.coords:
@@ -135,14 +139,16 @@ def draw_profile(page, s: Spec) -> None:
     prev = 0.0
     for k, (bot, soil, desc) in enumerate(s.layers):
         y0, y1 = top + prev * ppm, top + bot * ppm
-        _hatch(page, pymupdf.Rect(col.x0, y0, col.x1, y1), HATCH.get(soil, "dots"))
+        _hatch(page, pymupdf.Rect(col.x0, y0, col.x1, y1), s.extra.get("hatch", {}).get(soil, HATCH.get(soil, "dots")))
         _line(page, (col.x0 - (14 if s.label_side == "left" else 0), y1),
               (col.x1 + (14 if s.label_side == "right" else 0), y1), 0.6)
         val = prev if s.convention == "top" else bot
         lab = _fmt(val, s.decimal) + s.unit
         ly = (y0 if s.convention == "top" else y1) + s.label_dy
         lx = col.x0 - 34 if s.label_side == "left" else col.x1 + 4
-        if s.shx:
+        if k in s.extra.get("label_skip", ()):
+            pass                                   # Schicht ohne Tiefenlabel
+        elif s.shx:
             stroke_text(page, lx, ly, lab)
         else:
             page.insert_text((lx, ly), lab, fontsize=6.5)
@@ -151,7 +157,11 @@ def draw_profile(page, s: Spec) -> None:
         if s.leader:                               # Text versetzt mit Fuehrungslinie (L3, B1)
             ty = y0 + 8
             _line(page, (col.x1 + 2, (y0 + y1) / 2), (tx - 2, ty - 2), 0.3)
-        page.insert_text((tx, ty), desc, fontsize=6.5)
+        if s.extra.get("desc_from_label"):         # mehrzeilige Beschreibung ab dem Label (laeuft in die naechste Schicht)
+            for i, part in enumerate(desc.split("|")):
+                page.insert_text((tx + 30, ly + i * 8), part.strip(), fontsize=6.5)
+        else:
+            page.insert_text((tx, ty), desc, fontsize=6.5)
         prev = bot
     _line(page, (col.x0, top), (col.x1, top), 0.8)
     if s.convention == "top" and not s.shx:          # Endteufe auch beschriftet
@@ -393,6 +403,35 @@ def build(out: Path) -> list[str]:
     draw_profile(p, Spec("422C-460", lay, title="Bohrung {code}", gok=36.25, scale=100, scale_text=None,
                          coords=(394774.3, 5818338.1)))
     save("s13_fremdcode", doc, [_truth("422C-460", lay, 36.25, [3.8], xy=(394774.3, 5818338.1))], "T1, S5, L10b")
+    # s14 Massstabstext widerspricht den Labels: Bohrung melden, keine Schichten raten (E5)
+    lay = [(0.5, "Mutterboden", "Mutterboden"), (1.2, "Sand", "Sand, kiesig"), (2.0, "Kies", "Kies, sandig"),
+           (2.6, "Sand", "Sand"), (3.4, "Schluff", "Schluff, tonig"), (4.1, "Ton", "Ton"), (4.8, "Sand", "Sand"),
+           (5.5, "Kies", "Kies")]
+    doc = pymupdf.open(); p = doc.new_page(width=595, height=842)
+    draw_profile(p, Spec("B 14", lay, gok=50.0, scale=50, scale_text="M 1:100", label_dy=11,
+                         extra={"label_skip": {0, 2, 4, 6}}))
+    save("s14_massstab_widerspruch", doc, [_truth("B 14", lay, 50.0)],
+         "E5: Massstabstext 1:100, Zeichnung 1:50, nur 4 versetzte Labels -> Bohrung ohne Schichten, keine falschen Grenzen")
+
+    # s15 Oberkanten-Labels, Beschreibung mehrzeilig ab dem Label, laeuft in die naechste Schicht (L3)
+    lay = [(0.4, "Sand", "Sand, schluffig,|braun, locker,|Kiesnester"), (0.8, "Ton", "Ton, schluffig,|steif, grau,|Kiesnester"),
+           (1.2, "Sand", "Sand, fein,|gelb, dicht,|Kiesnester"), (1.6, "Ton", "Ton, sandig,|weich, braun,|Kiesnester"),
+           (2.0, "Sand", "Sand, mittel,|grau,|Kiesnester")]
+    doc = pymupdf.open(); p = doc.new_page(width=595, height=842)
+    draw_profile(p, Spec("BK 15", lay, gok=40.0, convention="top", label_side="right", label_dy=9, scale=50,
+                         extra={"desc_from_label": True}))
+    save("s15_oberkante_mehrzeilig", doc, [_truth("BK 15", lay, 40.0)], "L3: Text gehoert zum Label, nicht zur Lage im Intervall")
+
+    # s16 Einzelblatt, Kopf weit links oben ueber dem Schriftfeld (T3)
+    doc = pymupdf.open(); p = doc.new_page(width=595, height=842)
+    draw_profile(p, Spec("B 16", L_STD, gok=48.0, x0=330, extra={"title_xy": (40, 70)}))
+    save("s16_kopf_fern", doc, [_truth("B 16", L_STD, 48.0)], "T3: ein Kopf, ein Profil, Abstand > 70 pt")
+
+    # s17 gestrichelte Ton-Schraffur ueber die volle Breite mit 12 pt Abstand (G2)
+    lay = [(0.3, "Mutterboden", "Mutterboden"), (2.5, "Ton", "Ton, schluffig, steif"), (4.0, "Sand", "Sand")]
+    doc = pymupdf.open(); p = doc.new_page(width=595, height=842)
+    draw_profile(p, Spec("B 17", lay, gok=45.0, extra={"hatch": {"Ton": "hdash_wide"}}))
+    save("s17_schraffur_gestrichelt", doc, [_truth("B 17", lay, 45.0)], "G2: gestrichelte Waagrechte sind Schraffur")
     return made
 
 

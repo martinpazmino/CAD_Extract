@@ -298,6 +298,50 @@
   "falsches GW": 0,
   "XY": "1/1"
  },
+ "stress/s14_massstab_widerspruch": {
+  "Bohrungen": "1/1",
+  "Grenzen": "0/8",
+  "Grenzen exakt": "0/8",
+  "Bodenart": "0/8",
+  "GOK": "1/1",
+  "GW": "0/0",
+  "falsche Bohrungen": 0,
+  "falsche Grenzen": 0,
+  "falsches GW": 0
+ },
+ "stress/s15_oberkante_mehrzeilig": {
+  "Bohrungen": "1/1",
+  "Grenzen": "5/5",
+  "Grenzen exakt": "5/5",
+  "Bodenart": "5/5",
+  "GOK": "1/1",
+  "GW": "0/0",
+  "falsche Bohrungen": 0,
+  "falsche Grenzen": 0,
+  "falsches GW": 0
+ },
+ "stress/s16_kopf_fern": {
+  "Bohrungen": "1/1",
+  "Grenzen": "5/5",
+  "Grenzen exakt": "5/5",
+  "Bodenart": "5/5",
+  "GOK": "1/1",
+  "GW": "0/0",
+  "falsche Bohrungen": 0,
+  "falsche Grenzen": 0,
+  "falsches GW": 0
+ },
+ "stress/s17_schraffur_gestrichelt": {
+  "Bohrungen": "1/1",
+  "Grenzen": "3/3",
+  "Grenzen exakt": "3/3",
+  "Bodenart": "3/3",
+  "GOK": "1/1",
+  "GW": "0/0",
+  "falsche Bohrungen": 0,
+  "falsche Grenzen": 0,
+  "falsches GW": 0
+ },
  "synth/synth_A": {
   "Bohrungen": "3/3",
   "Grenzen": "18/18",
