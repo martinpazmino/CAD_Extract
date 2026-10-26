@@ -35,7 +35,7 @@ dudoso quede **marcado**, nunca escondido.
 | P7 | La verdad se transcribe **de la imagen** y se coteja con una segunda fuente (Schichtenverzeichnis, informe) cuando exista | El Schichtenverzeichnis confirmó 14/14 sondeos transcritos |
 | P8 | Los PDFs **no** se suben al repo; sólo URL, `sha256` y datos factuales | Uso interno de obras ajenas (D16, D23) |
 | P9 | **Perturbar los PDFs que ya funcionan** (girar, escalar, rasterizar) con la misma verdad: encuentra fallos que los originales esconden | Girar Wesel destapó que el lector del Schichtenverzeichnis usaba coordenadas sin rotar |
-| P10 | **Ablación**: apagar cada regla y ver qué caso empeora. Una regla que no empeora nada no está protegida por ningún test | [`ablation.py`](../spikes/korpus/ablation.py) |
+| P10 | **Ablación**: apagar cada regla y ver qué caso empeora. Una regla que no empeora nada no está protegida por ningún test | [`ablation.py`](../spikes/korpus/ablation.py): 22 de 28 reglas protegidas ([tabla](../spikes/korpus/ablation_v4.md)) |
 | P11 | Un **caso de estrés por lección**: el fallo real se convierte en un PDF mínimo que lo reproduce | [`stress_cases.py`](../spikes/extraktion_v2/stress_cases.py), 13 casos |
 | P12 | Medir también la **precisión al centímetro** (límites exactos), no sólo la tolerancia de 5 cm | v3 414/515 exactos, v4 509/515 tras T2 |
 

@@ -261,7 +261,29 @@ líneas de referencia oblicuas (Marl); "trocken" sólo en el texto del informe (
   el Schichtenverzeichnis leído por OCR (Wesel), títulos de Triefenstein, el símbolo ▽ en imagen
   (W4, intento descartado) y columnas de sólo relleno de color (E7).
 
-### 8.5 La regresión como red de seguridad
+### 8.5 Ablación: qué regla protege qué caso
+
+Cada una de las 28 reglas de `RULES` se apagó por separado sobre el conjunto completo
+([tabla](../spikes/korpus/ablation_v4.md)). **22 reglas están protegidas por al menos un caso**:
+apagarlas empeora algo medible. Las de más efecto:
+
+| Regla apagada | Qué se rompe |
+|---|---|
+| `rotation` (L2) | Talheim 10/10 → 0/10, Wesel 24/24 → 0, caso girado |
+| `generic_heads` (T1) | Berlín 7/11 → 1/11, los dos suizos, caso de código de terceros |
+| `ocr` (L18) | Berlín 7/11 → 0/11, caso raster |
+| `label_snap` (T2) | límites exactos: Berlín 55 → 37, Talheim 65 → 45, Rednitzhembach 13 → 6 |
+| `abbreviations` (L16) | Bodenart Marl 18 → 0, Triefenstein 18 → 1 |
+| `gw_symbol_filter` (L10) | 54 niveles de agua falsos en Hausham |
+| `axis_filter` (L14) | 7 límites falsos en Marl |
+| `sv_source` (S1) | Wesel 1/1 → 0/1, caso SHX |
+
+Sin caso que las proteja: `dashed_exclusion` y `table_filter` (sus fallos los cubren otras
+reglas), `top_convention` y `single_sheet_anchor` (ningún caso actual los necesita),
+`scale_contradiction` (sólo la protege la perturbación al 70 %) y `raster_gw_symbol` (apagada).
+Siguiente paso: un caso de estrés para cada una (P10).
+
+### 8.6 La regresión como red de seguridad
 
 Durante la noche la batería atrapó **cinco** errores propios antes de subirlos: la regla de
 Schraffur que borraba capas finas reales (Wachenroth, Rednitzhembach), `Bohrung` sin sufijo que dejó
@@ -269,7 +291,7 @@ de reconocerse (Berlín 7 → 2), el modo "etiqueta primero" que coló una cota 
 los triángulos raster que inventaron 146 niveles de agua, y la regla de escala que borraba un
 sondeo de Berlín. Ninguno llegó al resultado final (P5).
 
-### 8.6 Cadena completa con datos reales (el objetivo)
+### 8.7 Cadena completa con datos reales (el objetivo)
 
 PDF → `prototyp_v4` → JSON canónico (procedencia y confianza por capa) →
 [PostGIS con el esquema Supabase](../spikes/supabase/README.md) (56 sondeos, 383 capas de 10

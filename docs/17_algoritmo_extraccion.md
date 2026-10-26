@@ -209,7 +209,8 @@ etiqueta, L3):
 reales con verdad, 13 casos de estrés (uno por lección,
 [`stress_cases.py`](../spikes/extraktion_v2/stress_cases.py)) y 6 layouts sintéticos, y compara
 con una línea base (`baseline_v4.json`); [`ablation.py`](../spikes/korpus/ablation.py) apaga cada
-regla y lista qué casos empeoran. Resultados: [15 §8](15_resultados_pdfs_reales.md).
+regla y lista qué casos empeoran (22 de 28 reglas protegidas, [tabla](../spikes/korpus/ablation_v4.md)).
+Resultados: [15 §8](15_resultados_pdfs_reales.md).
 
 ## Límites conocidos
 
