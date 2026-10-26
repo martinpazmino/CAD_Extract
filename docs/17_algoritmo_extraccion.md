@@ -157,7 +157,11 @@ etiqueta, L3):
 - **Schichtenverzeichnis** (formulario DIN 4022): página con el título (también espaciado) y
   `Ansatz`; código en la cabecera; profundidades = números a la izquierda del primer `a)`;
   denominación = palabras del renglón `a)` hasta la columna 3 (`Wasserführung`); agua por texto de
-  la página. Texto duplicado se deduplica por (x, y, texto) (S1, S3).
+  la página. Texto duplicado se deduplica por (x, y, texto) (S1, S3). Usa las **mismas primitivas**
+  de E1 (giro, OCR), así que también lee formularios escaneados; acepta el marcador pegado al texto
+  (`a)Auffullung`) y palabras sin diéresis (S8).
+- **Códigos:** todos los cruces (páginas, duplicados, SV, coordenadas) comparan el código
+  normalizado sin espacios (`B 1` = `B1`), porque el OCR no conserva los espacios.
 - **Tabla de capas (S6):** si la página tiene una sola cabecera y ninguna columna anclada, se busca
   una columna de profundidades estrictamente crecientes desde 0,00 (≥ 4, alineadas a la derecha) con
   texto a su derecha; se acepta si ≥ 60 % de los intervalos dan una Bodenart.

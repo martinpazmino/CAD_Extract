@@ -116,6 +116,7 @@ dudoso quede **marcado**, nunca escondido.
 | S4 | Las Rammsondierungen pueden venir como **tabla de valores** (N10 cada 10 cm) en lugar de curva | Triefenstein S.32–35 |
 | S5 | Las coordenadas aparecen en tablas, en cajetines de portales (`Rechtswert (UTM 33N): 394774,3`) o en el Lageplan; sin ellas no hay 3D real | Berlín (en imagen), Halle (tabla de GW 26/26) |
 | S6 | El perfil puede ser **sólo una tabla de texto** (Tiefe \| Beschreibung) sin columna gráfica; aceptarla sólo si ≥ 60 % de los intervalos dan una Bodenart (las tablas DPH y de laboratorio no) | A7367 (Suiza) |
+| S8 | El Schichtenverzeichnis **escaneado** se lee igual por OCR si el lector usa las primitivas comunes: el OCR pega el marcador al texto (`a)Auffullung`), quita diéresis (`Auffullung`) y espacios (`B1` en una página, `B 1` en otra): comparar códigos **normalizados** y aceptar formas sin diéresis | Perturbación raster: Triefenstein 0/5 → 5/5, Wesel 0/24 → 24/24 |
 | S7 | Etiqueta y valor del cajetín pueden ser **bloques separados** en la misma fila (`Höhe in m ü.M.:` · `668.99`): unir por fila antes de buscar | A7367 |
 
 ## R. swissgeol: qué copiar y qué no
@@ -148,6 +149,7 @@ dudoso quede **marcado**, nunca escondido.
 | X4 | `python -I` no añade la carpeta del script a `sys.path`: los scripts deben insertarla ellos mismos | `ablation.py` |
 | X5 | `show_pdf_page` ignora el `/Rotate` de la página origen; compensar al recomponer PDFs | Primera versión de `perturb.py` |
 | X6 | OCR caro → **caché por imagen de página** (hash) para que la regresión y la ablación sean rápidas | `GEO_OCR_CACHE` |
+| X8 | La ablación recarga el módulo en cada configuración: **no editar el módulo mientras corre** (se mezclarían versiones); probar cambios en una copia con otro nombre | Ablación final |
 | X7 | Cada proceso que carga el modelo OCR ocupa varios GB: 4 procesos de ablación en paralelo **agotaron la memoria y reiniciaron el contenedor**. Cargar el modelo sólo si falla la caché y usar ≤ 2 procesos | Reinicio durante la ablación final |
 
 Up: [Índice](README.md)
