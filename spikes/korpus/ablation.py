@@ -1,7 +1,7 @@
 """Ablation: jede Regel einzeln abschalten und messen, welche Faelle schlechter werden.
 
     python ablation.py --module ../extraktion_v2/prototyp_v4.py --real <pdfs> --stress <ordner> --synth <ordner> \\
-                       [--out ablation.md] [--jobs 3]
+                       [--out ablation.md] [--jobs 2]
 
 Eine Regel, deren Abschalten nichts verschlechtert, ist durch keinen Testfall belegt: entweder fehlt
 ein Fall (docs/16) oder die Regel ist ueberfluessig.
@@ -48,7 +48,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--module", required=True)
     ap.add_argument("--real"); ap.add_argument("--stress"); ap.add_argument("--synth")
-    ap.add_argument("--out", default="ablation.md"); ap.add_argument("--jobs", type=int, default=3)
+    ap.add_argument("--out", default="ablation.md"); ap.add_argument("--jobs", type=int, default=2)      # OCR-Modell je Prozess: mehr Jobs sprengen den Speicher
     args = ap.parse_args()
     rules = list(R.load_module(Path(args.module).resolve()).RULES)
     with mp.Pool(args.jobs) as pool:

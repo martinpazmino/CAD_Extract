@@ -148,6 +148,7 @@ dudoso quede **marcado**, nunca escondido.
 | X4 | `python -I` no añade la carpeta del script a `sys.path`: los scripts deben insertarla ellos mismos | `ablation.py` |
 | X5 | `show_pdf_page` ignora el `/Rotate` de la página origen; compensar al recomponer PDFs | Primera versión de `perturb.py` |
 | X6 | OCR caro → **caché por imagen de página** (hash) para que la regresión y la ablación sean rápidas | `GEO_OCR_CACHE` |
+| X7 | Cada proceso que carga el modelo OCR ocupa varios GB: 4 procesos de ablación en paralelo **agotaron la memoria y reiniciaron el contenedor**. Cargar el modelo sólo si falla la caché y usar ≤ 2 procesos | Reinicio durante la ablación final |
 
 Up: [Índice](README.md)
 

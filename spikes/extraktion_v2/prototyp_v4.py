@@ -184,22 +184,22 @@ def ocr_words(page: pymupdf.Page, dpi: int | None = None, min_conf: float = 0.5)
     Ein OCR-Kasten ist eine Zeile; die Woerter darin bekommen anteilige x-Bereiche.
     """
     global _OCR
-    if _OCR is None:
-        try:
-            from rapidocr_onnxruntime import RapidOCR
-            _OCR = RapidOCR()
-        except ImportError:                              # ohne OCR bleibt die Seite stumm (und wird gemeldet)
-            _OCR = False
-    if not _OCR:
-        return []
     dpi = dpi or adaptive_dpi(page)                      # verkleinerte Seiten schaerfer rendern
     pix = page.get_pixmap(dpi=dpi)
     cache = None
     if os.environ.get("GEO_OCR_CACHE"):                  # Cache je Seitenbild (Tests laufen oft)
         cache = Path(os.environ["GEO_OCR_CACHE"]) / (hashlib.md5(pix.samples).hexdigest() + f"_{dpi}.json")
     if cache and cache.exists():
-        res = json.loads(cache.read_text())
+        res = json.loads(cache.read_text())              # Modell erst bei Cache-Fehlschlag laden (Speicher, X7)
     else:
+        if _OCR is None:
+            try:
+                from rapidocr_onnxruntime import RapidOCR
+                _OCR = RapidOCR()
+            except ImportError:                          # ohne OCR bleibt die Seite stumm (und wird gemeldet)
+                _OCR = False
+        if not _OCR:
+            return []
         img = np.ascontiguousarray(np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.h, pix.w, pix.n)[:, :, :3])
         res, _ = _OCR(img)
         res = [[[[float(c) for c in q] for q in box], txt, float(conf)] for box, txt, conf in (res or [])]
