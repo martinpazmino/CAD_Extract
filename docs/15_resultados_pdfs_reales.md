@@ -1,17 +1,20 @@
 ---
-title: "Resultados con PDFs reales (ronda 1 y dos rondas ciegas)"
+title: "Resultados con PDFs reales (ronda 1, tres rondas ciegas y banco de pruebas)"
 date: 2026-10-25
 tags: [corpus, validacion, resultados, extraccion]
 aliases: [Resultados reales, Primera ronda corpus]
 ---
 
-# Resultados con PDFs reales (ronda 1 y dos rondas ciegas)
+# Resultados con PDFs reales (ronda 1, tres rondas ciegas y banco de pruebas)
 
 **Conclusión:**
 - **v1 (actual):** 0 de 58 sondeos en nueve Gutachten públicos.
 - **Ronda 1** (3 PDFs): v3 funciona después de siete cambios que los sintéticos no revelaban.
 - **Prueba ciega 2** (2 PDFs nuevos, código congelado): **v3 sacó 0 de 13**. swissgeol sacó
   13/13 sondeos, pero ninguna cota y 18 sondeos inventados.
+- **Prueba ciega 4** (4 ejemplos suizos de swissgeol, otro dominio): v3 y v4 **0 de 3**, sin falsos (§8.2).
+- **v4 + banco de pruebas** (entrenamiento, §8): 87/92 sondeos, 541/541 límites (538 exactos al cm),
+  0 datos falsos; robusto al giro, conservador en raster; cadena completa PDF → PostGIS → IFC → That Open.
 - **Prueba ciega 3** (4 PDFs nuevos, predicciones congeladas en el repo): **v3 sacó 11 de 29**,
   con cota 12/23 y 1 sondeo falso. swissgeol sacó 12 de 29 (uno sin capas), sin cotas y con 25 sondeos falsos
   (§7). Los 18 sondeos que faltan están en un raster sin texto (11) o en un título con sufijo (5)
@@ -24,8 +27,8 @@ límites**, incluido un PDF escaneado.
 
 > [!WARNING]
 > Las cifras **después** de cada corrección son de *entrenamiento*. Las únicas cifras honestas de
-> generalidad son las de las pruebas ciegas: **0/13** (§6.1) y **11/29** (§7.1). La próxima ronda
-> debe volver a medirse sin tocar el código ([12](12_corpus_publico.md)).
+> generalidad son las de las pruebas ciegas: **0/13** (§6.1), **11/29** (§7.1) y **0/3** (§8.2, Suiza).
+> La próxima ronda con Gutachten alemanes nuevos debe medirse con v4 congelado ([12](12_corpus_publico.md)).
 
 ## 1. Los documentos
 
@@ -190,12 +193,97 @@ Los sintéticos no cambian (102/102). Reproducir: `python spikes/korpus/eval_rea
 4. **El conjunto de entrenamiento como prueba de regresión** atrapó una regla que rompía
    Rednitzhembach. Cada cambio se mide contra los nueve PDFs y los sintéticos.
 
-## 8. Próximos pasos
+## 8. Banco de pruebas, algoritmo v4 y cadena completa (2026-10-26)
 
-1. **OCR antes del pipeline** para páginas raster sin texto (Berlín) y para dibujos con texto SHX
-   (Wesel), y códigos de sondeo de terceros (`422C-460`, `B 7/16`).
-2. Cuarta ronda ciega con Gutachten **nuevos** (GGU-STRATIG, WinBohr), con el protocolo
-   de §7.1: congelar y subir al repo antes de mirar.
+Todo lo de esta sección es **entrenamiento** salvo §8.2 (ronda 4, ciega). Algoritmo:
+[17](17_algoritmo_extraccion.md); reglas: [16](16_lecciones_aprendidas.md).
+
+### 8.1 El banco de pruebas
+
+| Capa | Qué es | Herramienta |
+|---|---|---|
+| Real | 13 PDFs con verdad: 9 Gutachten alemanes + 4 ejemplos suizos de swissgeol | [`regression.py`](../spikes/korpus/regression.py) |
+| Estrés | 13 PDFs mínimos, **uno por lección** (título con sufijo, página girada, eje DPH, columna de muestras, abreviaturas, SHX + SV, raster, código de terceros…) | [`stress_cases.py`](../spikes/extraktion_v2/stress_cases.py) |
+| Sintético | 6 layouts con Schraffur, agua, DPH y coordenadas | `synth_bohrprofil.py` |
+| Perturbación | los 13 reales girados 90°, reducidos al 70 % y rasterizados a 150 dpi sin texto, con la misma verdad | [`perturb.py`](../spikes/korpus/perturb.py) |
+| Ablación | cada regla apagada por separado | [`ablation.py`](../spikes/korpus/ablation.py) |
+
+Nueva métrica: **límites exactos** (al centímetro, como están impresos) además de la tolerancia de 5 cm.
+
+### 8.2 Ronda 4 ciega: ejemplos suizos de swissgeol
+
+Predicciones congeladas y subidas antes de abrir los PDFs (v3 `6162150`, v4 `68f0b54`). Dominio
+distinto (Suiza, escaneos con capa OCR, francés), verdad con códigos `RB 2/I`, `SST KB5`, `MGR01`.
+
+| | v3 (ciego) | v4 (ciego) | v4 después (entrenamiento) |
+|---|---|---|---|
+| Sondeos | 0/3 | 0/3 | 2/3 (el francés sigue en 0) |
+| Límites | 0/26 | 0/26 | 26/26 exactos |
+| Falsos | 0 | 0 | 0 |
+
+Causas y cambios: cabecera `Sondierbohrung : SST KB 5` (T1), código partido por el OCR (`RB` + `2 / I`),
+capa OCR que pierde texto (L18b), escaneo con ruido vectorial (E2), columna de profundidades del
+formulario (T5), etiquetas apiladas con escala en puntos que no es la del papel (E5, T4) y perfil sólo
+como **tabla de texto** (S6). El documento francés (profundidades negativas al inicio de cada
+descripción) queda fuera.
+
+### 8.3 v3 frente a v4 en el mismo conjunto (13 reales + 13 estrés + 6 sintéticos)
+
+| | v3 | **v4** |
+|---|---|---|
+| Sondeos | 76/92 | **87/92** |
+| Límites (±5 cm) | 451/541 | **541/541** |
+| Límites exactos (al cm) | 414/541 | **538/541** |
+| Bodenart | 282/295 | 300/315 |
+| GOK | 65/81 | **74/81** |
+| Nivel freático | 30/35 | **33/35** |
+| Coordenadas | 17/25 | **25/25** |
+| Sondeos / límites / agua falsos | 0 / 3 / 0 | **0 / 0 / 0** |
+
+Lo que falta: 4 sondeos de archivo de Berlín (escaneos de baja calidad) y el francés; Bodenart con
+líneas de referencia oblicuas (Marl); "trocken" sólo en el texto del informe (Triefenstein).
+
+### 8.4 Perturbaciones (misma verdad, 13 PDFs reales)
+
+| Variante | Sondeos | Límites | Exactos | Falsos (sondeos / límites / agua) | Coordenadas |
+|---|---|---|---|---|---|
+| Original | 56/61 | 369/369 | 366/369 | 0 / 0 / 0 | 7/7 |
+| Girado 90° | 56/61 | 369/369 | 366/369 | 0 / 0 / 0 | 7/7 |
+| Reducido al 70 % | 54/61 | 300/369 | 293/369 | 1 / 2 / 0 | 6/7 |
+| Raster 150 dpi sin texto | 40/61 | 150/369 | 144/369 | **0 / 0 / 0** | 4/7 |
+
+- **Giro:** robusto. La primera versión destapó un fallo real (el lector del SV ignoraba la rotación)
+  y otro de la propia herramienta (`show_pdf_page` ignora `/Rotate`, X5).
+- **Escala:** era la mayor debilidad (57 límites falsos). El texto `1:75` del cajetín ya no vale si
+  el PDF está reducido: ahora, si contradice las etiquetas, el sondeo sale sin capas y con aviso (E5).
+  Talheim reducido sigue sin capas: sus etiquetas están desplazadas con líneas de referencia.
+- **Raster:** conservador, sin ningún dato falso. Pierde lo que depende de texto pequeño (Marl a 150 dpi),
+  el Schichtenverzeichnis leído por OCR (Wesel), títulos de Triefenstein, el símbolo ▽ en imagen
+  (W4, intento descartado) y columnas de sólo relleno de color (E7).
+
+### 8.5 La regresión como red de seguridad
+
+Durante la noche la batería atrapó **cinco** errores propios antes de subirlos: la regla de
+Schraffur que borraba capas finas reales (Wachenroth, Rednitzhembach), `Bohrung` sin sufijo que dejó
+de reconocerse (Berlín 7 → 2), el modo "etiqueta primero" que coló una cota como profundidad (Marl),
+los triángulos raster que inventaron 146 niveles de agua, y la regla de escala que borraba un
+sondeo de Berlín. Ninguno llegó al resultado final (P5).
+
+### 8.6 Cadena completa con datos reales (el objetivo)
+
+PDF → `prototyp_v4` → JSON canónico (procedencia y confianza por capa) →
+[PostGIS con el esquema Supabase](../spikes/supabase/README.md) (56 sondeos, 383 capas de 10
+Gutachten; Berlín en EPSG:25833 con distancias correctas; LV03 suizo transformado a LV95) →
+[IFC 4.3](../spikes/ifc_thatopen/README.md) (0 errores de esquema) → That Open (69 estratos con
+geometría, 7 sondeos de Berlín). Las capas con confianza < 0,6 (9 de 383) quedan marcadas para revisión.
+
+## 9. Próximos pasos
+
+1. **Quinta ronda ciega con Gutachten alemanes nuevos** (los 4 bloqueados de la ronda 3:
+   Wolfsburg/GGU, NLWKN, Böblingen, Königslutter), con v4 congelado y subido antes de mirar. Es la
+   única cifra que dirá si v4 generaliza.
+2. Raster: Schichtenverzeichnis por OCR, bordes de rellenos de color (E7), símbolo de agua por
+   plantilla de la leyenda (W4).
 3. DPH desde **tablas** (Triefenstein: N10 cada 10 cm como texto) y CPT (Berlín) en el modelo de
    datos ([05](05_sondierungen.md)).
 4. Muestras de leyenda desde segmentos → Schraffur y símbolos de agua con datos reales.
