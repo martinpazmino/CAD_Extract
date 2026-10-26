@@ -82,7 +82,8 @@ RULES = {
     "ocr_supplement": True,      # L18b eigene OCR ergaenzt eine luckenhafte OCR-Textlage
     "label_first": True,         # T4   Labels bilden eine saubere Gerade, Linien nicht: Labels sind die Daten
     "ocr_decimal_fix": True,     # R1   '0950' -> 9,50 (OCR ohne Komma)
-    "raster_gw_symbol": True,    # W4   GW-Dreieck im Scan
+    "scale_contradiction": True, # E5   Massstabstext ohne Bestaetigung durch vorhandene Labels: keine Grenzen
+    "raster_gw_symbol": False,   # W4   GW-Dreieck im Scan: AUS (Konturen finden Schraffur, nicht das Symbol)
 }
 
 CODE_TOKEN = r"[A-Z0-9][A-Za-z0-9]*(?:[-/.][A-Za-z0-9]+)*"
@@ -140,7 +141,12 @@ def _xform_drawing(d: dict, m: pymupdf.Matrix) -> dict:
     return {**d, "items": items, "rect": pymupdf.Rect(d["rect"]) * m}
 
 
-def raster_segments(page: pymupdf.Page, dpi: int = 200) -> list[Seg]:
+def adaptive_dpi(page: pymupdf.Page) -> int:
+    """~3300 px lange Seite, 200-300 dpi: verkleinerte Seiten werden schaerfer gerendert."""
+    return int(min(300, max(200, 3300 / (max(page.rect.width, page.rect.height) / 72))))
+
+
+def raster_segments(page: pymupdf.Page, dpi: int | None = None) -> list[Seg]:
     """Gescannte Seite: waagrechte/senkrechte Linien per Morphologie aus dem Bild (wie swissgeol strip logs).
 
     Liefert dieselben Seg-Objekte wie der Vektorweg, damit Saeulen-/Grenzlogik unveraendert bleibt.
@@ -149,6 +155,7 @@ def raster_segments(page: pymupdf.Page, dpi: int = 200) -> list[Seg]:
         import cv2
     except ImportError:                                  # optional: ohne OpenCV kein Rasterweg
         return []
+    dpi = dpi or adaptive_dpi(page)
     pix = page.get_pixmap(dpi=dpi, colorspace=pymupdf.csGRAY)
     img = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.h, pix.w)
     binary = (img < 150).astype(np.uint8)
@@ -159,10 +166,10 @@ def raster_segments(page: pymupdf.Page, dpi: int = 200) -> list[Seg]:
         lines = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel)
         n, _, stats, _ = cv2.connectedComponentsWithStats(lines)
         for x, y, w, h, _area in stats[1:n]:
-            if horizontal and h <= 10:                  # Scan: Linien sind 2-4x breiter als im Vektor
+            if horizontal and h <= 10 * dpi / 200:      # Scan: Linien sind 2-4x breiter als im Vektor
                 yc = (y + h / 2) * f
                 out.append(Seg(x * f, yc, (x + w) * f, yc, h * f, True))
-            elif not horizontal and w <= 10:
+            elif not horizontal and w <= 10 * dpi / 200:
                 xc = (x + w / 2) * f
                 out.append(Seg(xc, y * f, xc, (y + h) * f, w * f, True))
     return out
@@ -185,8 +192,7 @@ def ocr_words(page: pymupdf.Page, dpi: int | None = None, min_conf: float = 0.5)
             _OCR = False
     if not _OCR:
         return []
-    if dpi is None:                                      # ~3300 px lange Seite: kleine Seiten (verkleinert) schaerfer
-        dpi = int(min(300, max(200, 3300 / (max(page.rect.width, page.rect.height) / 72))))
+    dpi = dpi or adaptive_dpi(page)                      # verkleinerte Seiten schaerfer rendern
     pix = page.get_pixmap(dpi=dpi)
     cache = None
     if os.environ.get("GEO_OCR_CACHE"):                  # Cache je Seitenbild (Tests laufen oft)
@@ -253,7 +259,8 @@ def raster_triangles(page: pymupdf.Page, dpi: int = 200) -> list[dict]:
             continue
         pts = [pymupdf.Point(float(q[0][0]) * f, float(q[0][1]) * f) for q in approx]
         out.append({"items": [("l", pts[0], pts[1]), ("l", pts[1], pts[2]), ("l", pts[2], pts[0])],
-                    "rect": pymupdf.Rect(x * f, y * f, (x + w) * f, (y + h) * f), "type": "s", "color": (0, 0, 0)})
+                    "rect": pymupdf.Rect(x * f, y * f, (x + w) * f, (y + h) * f), "type": "s", "color": (0, 0, 0),
+                    "raster": True})
     return out
 
 
@@ -504,7 +511,8 @@ def label_line(groups, min_n: int = 5, max_res: float = 0.2):
                 break
             keep.pop(int(res.argmax()))
         # Massstab muss ein Normmassstab sein: sonst koennte jede Zahlenreihe eine 'Gerade' bilden
-        if a > 0 and res.max() <= max_res and plausible_scale(a / PT_TO_M_AT_1_1):
+        # >= 8 Labels auf einer Geraden sind starke Evidenz, auch bei verkleinertem Druck (Massstab krumm)
+        if a > 0 and res.max() <= max_res and (plausible_scale(a / PT_TO_M_AT_1_1) or len(keep) >= 8):
             # gestapelte Labels (Rest <= 1 m) bleiben Daten; weit abseits (Kote '52,35') gehoert nicht dazu
             g_ok = [e for e in g if abs(a * (e[0].y0 + e[0].y1) / 2 + b - e[1]) <= 1.0]
             if best is None or len(g_ok) > len(best[2]):
@@ -619,12 +627,16 @@ def _groundwater(drawings, segs, col: Column, cols: list[Column], fit, words=())
         apex = max(pts, key=lambda p: p.y)
         if sum(abs(p.y - apex.y) < 0.5 for p in pts) != 1 or not (col.rect.y0 <= apex.y <= col.rect.y1 + 2):
             continue
+        if d.get("raster") and any(c.rect.contains((r.tl + r.br) / 2) for c in cols):
+            continue                                        # Bild-Dreieck in einer Saeule = Schraffur
         target = None
         for s in H:                                         # Wasserlinie an der Spitze
             if abs(s.y0 - apex.y) < 1.5 and s.x0 - 2 <= apex.x <= s.x1 + 2 and s.x1 - s.x0 > 15:
                 end = s.x1 if abs(s.x1 - apex.x) > abs(s.x0 - apex.x) else s.x0
                 target = min(cols, key=lambda c: min(abs(c.rect.x0 - end), abs(c.rect.x1 - end)))
         if target is None:
+            if d.get("raster"):                             # im Bild nur mit Wasserlinie (sonst Schraffur, Text, Rauschen)
+                continue
             target = min(cols, key=lambda c: max(c.rect.x0 - r.x1, r.x0 - c.rect.x1, 0))
         if target is col:
             depth = round(float(a * apex.y + b), 2)
@@ -876,6 +888,14 @@ def extract(pdf: Path):
             lf = None
             if RULES["label_first"] and n_labels >= 5 and support < 0.5 * n_labels:
                 lf = label_line(label_groups(words, col, [col] if sheet_anchor else acols))
+            if not lf and RULES["scale_contradiction"] and mode == "massstab-text" and n_labels >= 3 \
+                    and support < 0.3 * n_labels:
+                # Massstabstext widerspricht den Labels (verkleinerter Druck): Bohrung melden, Schichten nicht raten
+                bh = Borehole(code, pno + 1, None, f"widerspruch ({support}/{n_labels} Labels)", gok)
+                bh.page_class, bh.bbox = pclass, tuple(round(v, 1) for v in col.rect)
+                bh.issues.append("Massstabstext und Tiefenlabels widersprechen sich: Schichten nicht ausgegeben")
+                found[code].append(bh)
+                continue
             if lf:                                           # T4: Grenzen = gedruckte Werte, Linien bestaetigen
                 la, lb, g = lf
                 bh = Borehole(code, pno + 1, round(la / PT_TO_M_AT_1_1), f"labels ({len(g)} Labels)", gok)
@@ -986,7 +1006,7 @@ def extract(pdf: Path):
         # GOK gefunden, Labels bestaetigen, groesster Massstab (= kleinste Zahl)
         # schwache Bestaetigung (< 50 %) zaehlt nicht mehr als keine
         if RULES["dup_preference"]:
-            best = max(versions, key=lambda v: (v.gok is not None, v.titled, v.single_sheet,
+            best = max(versions, key=lambda v: (bool(v.layers), v.gok is not None, v.titled, v.single_sheet,
                                                 not v.mode.startswith("labels"),      # Linien+Labels vor nur Labels
                                                 round(v.support, 1) if v.support >= 0.5 else 0.0, -(v.scale or 1e9)))
         else:

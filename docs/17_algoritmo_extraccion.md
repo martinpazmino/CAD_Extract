@@ -115,7 +115,11 @@ Los códigos se comparan sin espacios (`B1` = `B 1`), porque el OCR los pierde.
    y la escala debe ser normalizada. Los límites son los **valores impresos** (los atípicos con
    residuo ≤ 1 m siguen siendo datos, p. ej. etiquetas apiladas; > 1 m, como una cota `52,35`, no);
    cada uno se confirma si hay una línea a ≤ 0,3 m. Entre duplicados, este modo pierde frente a uno
-   donde líneas y etiquetas coinciden.
+   donde líneas y etiquetas coinciden. Con ≥ 8 etiquetas en recta se acepta también una escala no
+   normalizada (PDF impreso reducido).
+8. **Contradicción (E5):** si sólo queda la escala del cajetín y < 30 % de ≥ 3 etiquetas la
+   confirman, el sondeo se emite **sin capas** y con el aviso "Massstabstext und Tiefenlabels
+   widersprechen sich" (PDF reducido o recompuesto). Entre duplicados gana una versión con capas.
 
 ## E5. Capas
 
