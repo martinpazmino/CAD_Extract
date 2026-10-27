@@ -138,6 +138,13 @@ dudoso quede **marcado**, nunca escondido.
 | M5 | Un **Pset vacío** es IFC inválido: crear el Pset sólo si hay valores | Exportador: 5 errores de esquema → 0 |
 | M6 | PostGIS instalado en `extensions`: **cualificar** `extensions.geometry`, si no la migración sólo funciona dentro de Supabase | [Spike Supabase](../spikes/supabase/README.md) |
 | M7 | La cadena completa ya funciona con un PDF real: OCR → JSON canónico → PostGIS → IFC 4.3 georreferenciado → That Open (80 estratos) | Berlín ([15 §8](15_resultados_pdfs_reales.md)) |
+| M8 | **Bajo la Endteufe es desconocido, no ausente**: tratarlo como ausencia acuña las unidades profundas en cada sondeo corto | Caso `zensiert`, Berlín ([18](18_modelador_capas.md)) |
+| M9 | La misma Bodenart a otra cota es **otra unidad** (Sand 1 / Sand 2): correlacionar por clase **y** cota, no sólo por nombre | Berlín 422C-461: dos niveles de Kies |
+| M10 | Una lente que falta dentro de un Abschnitt continuo: el límite es **libre** dentro del Abschnitt; colocarlo en la mitad interpolada de la lente, no en un límite de capa | Caso `linse`, Berlín 422C-460 |
+| M11 | Sondeos como **nodos** de la malla + interpolador exacto ⇒ el modelo reproduce cada contacto (comprobarlo siempre: desviación máxima en el informe) | 0,0 m en todos los casos |
+| M12 | IDW sólo llega a 0 en los propios sondeos: una unidad vista en un sondeo se extiende fina bajo todo el solar. Limitar la extensión (indicador de presencia) | Volumen de lente ×6,3 → ×1,9 |
+| M13 | Umbrales de espesor en las **superficies**, no sólo en la malla: si no, el volumen del IFC y el del modelo difieren | La prueba de volumen lo detectó (5 m³) |
+| M14 | Para leer geología hace falta **exageración vertical** (solar 150 m × 20 m); escalar `model.object` en y alrededor de la base: el raycast de Fragments usa `matrixWorld` y sigue funcionando. Transparencia con `depthWrite: false` | Capturas del visor |
 
 ## X. Entorno de trabajo
 
@@ -149,9 +156,12 @@ dudoso quede **marcado**, nunca escondido.
 | X4 | `python -I` no añade la carpeta del script a `sys.path`: los scripts deben insertarla ellos mismos | `ablation.py` |
 | X5 | `show_pdf_page` ignora el `/Rotate` de la página origen; compensar al recomponer PDFs | Primera versión de `perturb.py` |
 | X6 | OCR caro → **caché por imagen de página** (hash) para que la regresión y la ablación sean rápidas | `GEO_OCR_CACHE` |
-| X8 | La ablación recarga el módulo en cada configuración: **no editar el módulo mientras corre** (se mezclarían versiones); probar cambios en una copia con otro nombre | Ablación final |
 | X7 | Cada proceso que carga el modelo OCR ocupa varios GB: 4 procesos de ablación en paralelo **agotaron la memoria y reiniciaron el contenedor**. Cargar el modelo sólo si falla la caché y usar ≤ 2 procesos | Reinicio durante la ablación final |
+| X8 | La ablación recarga el módulo en cada configuración: **no editar el módulo mientras corre** (se mezclarían versiones); probar cambios en una copia con otro nombre | Ablación final |
+| X9 | **web-ifc 0.0.78**: el `web-ifc.wasm` de navegador no casa con su JS (`StreamMeshes called with 4 arguments, expected 3`); en Node funciona. En el visor, 0.0.77 | `apps/web` |
+| X10 | That Open descarga por defecto WASM (`autoSetWasm`) y worker (`getWorker`) de unpkg: copiarlos a `public/vendor` (`npm run vendor`) para trabajar sin red y con versiones fijas | `apps/web` |
+| X11 | `vite preview` sirve `dist/`: un IFC copiado a `public/` después del build no se ve; el chequeo copia el IFC a `dist/` | Capturas con volúmenes viejos |
 
 Up: [Índice](README.md)
 
-Related: [15 Resultados reales](15_resultados_pdfs_reales.md) · [11 Decisiones](11_decisiones.md) · [09 Validación](09_validacion_benchmark.md) · [Arquitectura](ARQUITECTURA_BAUGRUNDMODELL.md)
+Related: [15 Resultados reales](15_resultados_pdfs_reales.md) · [11 Decisiones](11_decisiones.md) · [09 Validación](09_validacion_benchmark.md) · [Arquitectura](ARQUITECTURA_BAUGRUNDMODELL.md) · [18 Modelador de capas](18_modelador_capas.md)

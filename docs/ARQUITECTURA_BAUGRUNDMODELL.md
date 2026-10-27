@@ -768,6 +768,12 @@ Gutachter en lugar del punto medio entre sondeos.
 El spike (`spikes/ifc_thatopen/baugrund_ifc_spike.py`) implementa los pasos 3–5 en versión
 mínima (IDW + recorte + sólidos) para 3 sondeos sintéticos.
 
+> [!NOTE]
+> **Implementado (2026-10-27)** en [`services/modeler`](../services/modeler/README.md): pasos 1–6
+> con unidades automáticas por correlación de secuencias, contactos censurados, lentes, sondeos
+> como nodos de la malla, extensión limitada de unidades parciales y sólidos cerrados; visor en
+> [`apps/web`](../apps/web/README.md). Detalle y resultados: [18](18_modelador_capas.md).
+
 ---
 
 ## 8. IFC 4.3 + That Open Engine
@@ -807,6 +813,10 @@ npm install && npm run spike
 ```
 
 ### 8.3 Integración en el frontend (esbozo, API v3.6)
+
+> [!NOTE]
+> Implementación real: [`apps/web/src/main.ts`](../apps/web/src/main.ts) (WASM y worker locales,
+> web-ifc 0.0.77, ver [18 §5](18_modelador_capas.md#5-visor-appsweb)).
 
 ```ts
 import * as OBC from "@thatopen/components";

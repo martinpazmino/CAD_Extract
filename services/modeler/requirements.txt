@@ -1,0 +1,4 @@
+numpy>=1.26
+scipy>=1.11
+ifcopenshell>=0.8
+pytest>=8

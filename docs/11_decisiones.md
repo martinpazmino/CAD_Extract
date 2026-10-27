@@ -50,6 +50,13 @@ equipo; "Verificado" = respaldado por una prueba en este repo.
 | D36 | **Valor impreso** como profundidad de un límite confirmado (T2) | La geometría tiene ±1 pt de error | Exactos 414 → 509 de 515 | Verificado (entrenamiento) |
 | D37 | **Especificación del algoritmo por etapas** con reglas conmutables (`RULES`) para ablación | Precisar qué hace cada regla y medirla | [17](17_algoritmo_extraccion.md) | Decidido |
 | D38 | **JSON canónico** como único contrato entre extracción, Supabase e IFC | Una sola forma de los datos con procedencia y confianza | PostGIS y That Open cargan el mismo JSON | Verificado (real: Berlín) |
+| D39 | **Unidades de modelo automáticas por alineamiento de secuencias** (clase + cota, programación dinámica con acuñamiento, lente y censura) | Que las Bodenschichten salgan sin dibujar a mano; misma clase a otra cota = otra unidad | Berlín: Sand 1 / Kies 1 / Sand 2 / Kies 2 / Sand 3; 28 pruebas ([18](18_modelador_capas.md)) | Verificado (sintético + real) |
+| D40 | **Bajo la Endteufe = desconocido, no ausente** (contacto censurado: base ≤ Endteufe − 0,5 m) | Un sondeo corto no prueba que falten las unidades profundas | Caso `zensiert`; Berlín 3 sondeos de 8 m | Decidido |
+| D41 | **Sondeos como nodos de la malla e interpoladores exactos** | El modelo debe respetar cada dato | Desviación 0,0 m en todos los casos | Verificado |
+| D42 | **Extensión de unidades parciales por indicador de presencia** (termina a medio camino de sondeos sin ella) | Con IDW una lente de un sondeo quedaba bajo todo el solar | Volumen de lente ×6,3 → ×1,9; cuñas 0,89 → 0,68 | Decidido (compromiso medido) |
+| D43 | **El geotécnico confirma las unidades** con `einheiten.json` (plantilla en el informe) | La correlación automática no distingue arenas de distinto origen | Prueba con "Sande und Kiese" | Decidido |
+| D44 | **`services/modeler` y `apps/web`** como primeros componentes de la estructura objetivo ([arquitectura §10](ARQUITECTURA_BAUGRUNDMODELL.md#10-estructura-de-repositorio-propuesta)) | Ya no son spikes: tienen pruebas y contrato (JSON → IFC) | — | Decidido |
+| D45 | Visor **sin dependencias de red** (WASM y worker locales) y **web-ifc 0.0.77** fijado | 0.0.78 trae un WASM de navegador que no casa con su JS | Error `StreamMeshes … 4 arguments, expected 3` | Verificado |
 
 ## Preguntas abiertas
 
@@ -61,4 +68,4 @@ equipo; "Verificado" = respaldado por una prueba en este repo.
 
 Up: [Índice](README.md)
 
-Related: [Arquitectura](ARQUITECTURA_BAUGRUNDMODELL.md) · [10 Plan](10_plan_implementacion.md) · [09 Validación](09_validacion_benchmark.md)
+Related: [Arquitectura](ARQUITECTURA_BAUGRUNDMODELL.md) · [10 Plan](10_plan_implementacion.md) · [09 Validación](09_validacion_benchmark.md) · [18 Modelador de capas](18_modelador_capas.md)

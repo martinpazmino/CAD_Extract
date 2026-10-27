@@ -1,0 +1,87 @@
+:root {
+  --hg: #f4f5f7;
+  --flaeche: #ffffff;
+  --text: #1d2330;
+  --leise: #5f6b7a;
+  --linie: #d9dee5;
+  --akzent: #1e6fd9;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 14px;
+  color: var(--text);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--hg); }
+body { display: grid; grid-template-columns: 300px 1fr; overflow: hidden; }
+
+#seite {
+  background: var(--flaeche);
+  border-right: 1px solid var(--linie);
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+h1 { font-size: 18px; margin: 0 0 4px; }
+h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--leise); margin: 0 0 8px; }
+.leise { color: var(--leise); font-size: 12px; margin: 4px 0 0; }
+code { font-size: 12px; }
+
+.datei input { display: none; }
+.datei span {
+  display: block; padding: 8px 10px; border: 1px dashed var(--linie); border-radius: 6px;
+  text-align: center; cursor: pointer; color: var(--akzent);
+}
+body.ziehen .datei span { border-color: var(--akzent); background: #eef4fd; }
+
+.liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.liste li {
+  display: grid; grid-template-columns: 18px 14px 1fr auto; align-items: center; gap: 8px;
+  padding: 4px 6px; border-radius: 4px; cursor: pointer;
+}
+.liste li:hover, .liste li.aktiv { background: #eef4fd; }
+.liste .farbe { width: 14px; height: 14px; border-radius: 3px; border: 1px solid rgba(0, 0, 0, 0.25); }
+.liste .wert { color: var(--leise); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+.schalter { display: flex; gap: 8px; align-items: center; margin: 4px 0; }
+.knoepfe { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+button {
+  font: inherit; font-size: 13px; padding: 5px 9px; border: 1px solid var(--linie);
+  border-radius: 5px; background: var(--flaeche); color: var(--text); cursor: pointer;
+}
+button:hover { border-color: var(--akzent); }
+select { font: inherit; font-size: 13px; padding: 3px 6px; border: 1px solid var(--linie); border-radius: 5px; background: var(--flaeche); }
+
+.marke {
+  position: absolute; transform: translate(-50%, -100%); padding: 1px 5px; border-radius: 3px;
+  background: rgba(29, 35, 48, 0.78); color: #fff; font-size: 11px; white-space: nowrap; pointer-events: none;
+}
+#marken { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+
+#viewer { position: relative; min-width: 0; min-height: 0; }
+
+#eigenschaften {
+  position: fixed; right: 16px; top: 16px; width: 360px; max-height: calc(100% - 32px); overflow-y: auto;
+  background: var(--flaeche); border: 1px solid var(--linie); border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(20, 30, 50, 0.12); padding: 12px 14px;
+}
+#eigenschaften header { display: flex; justify-content: space-between; align-items: start; gap: 8px; }
+#eigenschaften h2 { text-transform: none; letter-spacing: 0; font-size: 15px; color: var(--text); }
+#eigenschaften h3 { font-size: 12px; color: var(--leise); margin: 12px 0 4px; }
+#eigenschaften table { width: 100%; border-collapse: collapse; font-size: 12px; }
+#eigenschaften td { padding: 3px 0; border-bottom: 1px solid var(--hg); vertical-align: top; }
+#eigenschaften td:first-child { color: var(--leise); padding-right: 10px; white-space: nowrap; }
+#eigenschaften td:last-child { word-break: break-word; }
+#auswahl-zu { border: none; font-size: 18px; line-height: 1; padding: 0 4px; }
+
+#meldung {
+  position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
+  background: var(--text); color: #fff; padding: 8px 14px; border-radius: 6px; font-size: 13px;
+}
+
+@media (max-width: 720px) {
+  body { grid-template-columns: 1fr; grid-template-rows: 45% 55%; }
+  #seite { border-right: none; border-bottom: 1px solid var(--linie); }
+  #eigenschaften { left: 16px; right: 16px; width: auto; top: auto; bottom: 16px; max-height: 45%; }
+}

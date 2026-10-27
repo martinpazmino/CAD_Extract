@@ -46,6 +46,7 @@ alimente un **Baugrundmodell** (Supabase → IFC 4.3 → That Open).
 - [15 Resultados con PDFs reales](15_resultados_pdfs_reales.md): v1 / v3 / swissgeol con 9 Gutachten públicos, dos pruebas ciegas (v3 0/13 y 11/29), dieciocho lecciones, Schichtenverzeichnis como segunda fuente, OCR como siguiente paso.
 - [16 Lecciones aprendidas](16_lecciones_aprendidas.md): **memoria del proyecto**, todas las reglas explícitas (proceso, entrada, geometría, etiquetas, texto, agua, segundas fuentes, swissgeol, IFC/Supabase, entorno).
 - [17 Algoritmo de extracción v4](17_algoritmo_extraccion.md): especificación por etapas E0–E9, parámetros y su origen, confianza y salida canónica.
+- [18 Modelador de capas y visor That Open](18_modelador_capas.md): Bodenschichten automáticas (unidades por correlación, superficies, sólidos cerrados), IFC 4.3 y visor web; resultados contra verdad sintética y con Berlín.
 - [Glosario alemán–español](glosario.md): términos geotécnicos y de swissgeol.
 
 ## Código de apoyo
@@ -54,6 +55,8 @@ alimente un **Baugrundmodell** (Supabase → IFC 4.3 → That Open).
 - [Spike IFC + That Open](../spikes/ifc_thatopen/README.md): IFC 4.3 geotécnico con IfcOpenShell y su importación en That Open.
 - [Corpus público](../spikes/korpus/README.md): manifest, verdad, prueba ciega, regresión, ablación y perturbaciones.
 - [Spike Supabase](../spikes/supabase/README.md): migración probada en PostGIS y cargador del JSON canónico.
+- [Modelador `baugrundmodell`](../services/modeler/README.md): JSON canónico → unidades → sólidos → IFC 4.3 (`IfcGeomodel`), con pruebas.
+- [Visor web](../apps/web/README.md): That Open Engine; unidades, propiedades, cortes, exageración vertical.
 
 ## Cómo leer
 
@@ -68,9 +71,10 @@ Arquitectura ─► 11 Decisiones
 08 swissgeol ─► 13 Colaboración swisstopo
       │              14 Licencias
       ▼
-09 Validación ◄─ 12 Corpus público ─► 15 Resultados reales
-      ▼
-10 Plan
+09 Validación ◄─ 12 Corpus público ─► 15 Resultados reales ─► 16 Lecciones · 17 Algoritmo
+      ▼                                                               │
+10 Plan                                                               ▼
+                                                     18 Modelador de capas + visor That Open
 ```
 
 Up: [README del repositorio](../README.md)

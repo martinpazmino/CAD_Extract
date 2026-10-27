@@ -1,0 +1,25 @@
+{
+  "name": "baugrund-viewer",
+  "private": true,
+  "type": "module",
+  "description": "Baugrundmodell-Viewer auf That Open Engine: IFC4X3 mit IfcGeomodel und IfcBorehole",
+  "scripts": {
+    "vendor": "node scripts/vendor.mjs",
+    "dev": "npm run vendor && vite",
+    "build": "npm run vendor && tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "check": "node scripts/check.mjs"
+  },
+  "dependencies": {
+    "@thatopen/components": "3.6.0",
+    "@thatopen/fragments": "3.6.0",
+    "camera-controls": "3.1.2",
+    "three": "0.186.1",
+    "web-ifc": "0.0.77"
+  },
+  "devDependencies": {
+    "@types/three": "0.186.0",
+    "typescript": "5.8.3",
+    "vite": "6.3.5"
+  }
+}

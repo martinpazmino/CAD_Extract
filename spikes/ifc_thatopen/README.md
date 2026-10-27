@@ -14,7 +14,7 @@ Comprueba que un Baugrundmodell exportado con IfcOpenShell (`IfcBorehole`, `IfcG
 |---|---|
 | [`baugrund_ifc_spike.py`](baugrund_ifc_spike.py) | Genera el IFC4X3 (3 sondeos, modelo layer-cake con IDW) |
 | [`thatopen_import_spike.mjs`](thatopen_import_spike.mjs) | Lo importa con `web-ifc` y con el `IfcImporter` de `@thatopen/fragments` |
-| [`export_ifc.py`](export_ifc.py) | **Datos reales:** JSON canónico de la extracción → IFC4X3 (`IfcBorehole` + estratos con procedencia y confianza; georreferenciado si hay CRS) |
+| [`export_ifc.py`](export_ifc.py) | **Datos reales:** JSON canónico de la extracción → IFC4X3 (`IfcBorehole` + estratos con procedencia y confianza; georreferenciado si hay CRS). Usa el escritor de [`services/modeler`](../../services/modeler/README.md); el modelo de capas (N3) lo genera `python -m baugrundmodell` |
 | [`package.json`](package.json) | Versiones fijadas (fragments 3.6.0, web-ifc 0.0.78) |
 
 ```bash
