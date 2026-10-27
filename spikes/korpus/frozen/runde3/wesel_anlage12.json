@@ -1,0 +1,29 @@
+{
+ "code_rev": "36e3554",
+ "pdf_sha256": "bf703bd6ce1d64e53307a14d00fe1a540d1e06ec646fdaccfb407b03aa0390e5",
+ "v1": {},
+ "v3": {},
+ "v3_detail": [],
+ "sg": {
+  "B1": {
+   "gok": null,
+   "bottoms": [],
+   "gw": []
+  },
+  "B1#dup1": {
+   "gok": null,
+   "bottoms": [],
+   "gw": []
+  },
+  "B1#dup2": {
+   "gok": null,
+   "bottoms": [],
+   "gw": []
+  },
+  "B1#dup3": {
+   "gok": null,
+   "bottoms": [],
+   "gw": []
+  }
+ }
+}

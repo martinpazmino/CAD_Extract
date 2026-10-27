@@ -1,0 +1,351 @@
+{
+ "file": "geotechnischer_bericht_b_plan_v67bve.pdf",
+ "sha256": "659713acda108330cc99b7c60146b017f78908fce376ab277d2ce126790027c4",
+ "source": "https://www.berlin.de/sen/stadtentwicklung/_assets/planung/bebauungsplanverfahren/bebauungsplanverfahren-der-senatsverwaltung-fuer-stadtentwicklung-bauen-und-wohnen/v-67b-ve/geotechnischer_bericht_b_plan_v67bve.pdf",
+ "notes": "Blindtest Runde 3 (v3 Stand 36e3554). GuD Consult, Voruntersuchung ohne eigene Bohrungen: Anlage 3 (S.28-33) zeigt Fremdaufschluesse als RASTERBILDER ohne Textlayer (kein OCR). S.28-29 Geoportal Berlin (sauberes Rendering, mit UTM 33N Rechts-/Hochwert im Bild), S.30-33 Archiv-Scans mit S 1/S 2/S 2a + DPH R1/R2, B 7/16, B 1/17, B 4/17 + CPT (Drucksondierungen D/DS, Spitzenwiderstand/Mantelreibung) und Pegelausbau. Schichten nur fuer die 5 Geoportal-Bohrungen transkribiert; Archiv-Bohrungen nur Code/Seite/GOK (S 1-S 2a in 'm NN'). Geoportal-GW = 'Wasseranschnitt' in der Schichtbeschreibung. Koordinaten (EPSG:25833) im Feld 'xy'. Lageplan S.26 (vektoriell, Codes als Text).",
+ "boreholes": [
+  {
+   "code": "422C-460",
+   "kind": "bohrung",
+   "page": 28,
+   "gok": 36.25,
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 2.0
+    },
+    {
+     "top": 2.0,
+     "bottom": 3.5
+    },
+    {
+     "top": 3.5,
+     "bottom": 3.8
+    },
+    {
+     "top": 3.8,
+     "bottom": 4.5
+    },
+    {
+     "top": 4.5,
+     "bottom": 6.0
+    },
+    {
+     "top": 6.0,
+     "bottom": 7.7
+    },
+    {
+     "top": 7.7,
+     "bottom": 9.0
+    },
+    {
+     "top": 9.0,
+     "bottom": 10.3
+    },
+    {
+     "top": 10.3,
+     "bottom": 11.1
+    },
+    {
+     "top": 11.1,
+     "bottom": 12.6
+    },
+    {
+     "top": 12.6,
+     "bottom": 13.8
+    },
+    {
+     "top": 13.8,
+     "bottom": 15.5
+    },
+    {
+     "top": 15.5,
+     "bottom": 17.0
+    },
+    {
+     "top": 17.0,
+     "bottom": 18.6
+    },
+    {
+     "top": 18.6,
+     "bottom": 20.0
+    }
+   ],
+   "gw_depths": [
+    3.8
+   ],
+   "xy": [
+    394774.3,
+    5818338.1
+   ]
+  },
+  {
+   "code": "422C-461",
+   "kind": "bohrung",
+   "page": 28,
+   "gok": 36.25,
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 2.0
+    },
+    {
+     "top": 2.0,
+     "bottom": 3.5
+    },
+    {
+     "top": 3.5,
+     "bottom": 3.9
+    },
+    {
+     "top": 3.9,
+     "bottom": 4.2
+    },
+    {
+     "top": 4.2,
+     "bottom": 6.0
+    },
+    {
+     "top": 6.0,
+     "bottom": 7.7
+    },
+    {
+     "top": 7.7,
+     "bottom": 9.3
+    },
+    {
+     "top": 9.3,
+     "bottom": 11.0
+    },
+    {
+     "top": 11.0,
+     "bottom": 12.5
+    },
+    {
+     "top": 12.5,
+     "bottom": 14.0
+    },
+    {
+     "top": 14.0,
+     "bottom": 15.3
+    },
+    {
+     "top": 15.3,
+     "bottom": 17.0
+    },
+    {
+     "top": 17.0,
+     "bottom": 18.5
+    },
+    {
+     "top": 18.5,
+     "bottom": 20.0
+    }
+   ],
+   "gw_depths": [
+    3.6
+   ],
+   "xy": [
+    394770.9,
+    5818370.1
+   ]
+  },
+  {
+   "code": "422C-5525",
+   "kind": "bohrung",
+   "page": 29,
+   "gok": 35.65,
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 2.0
+    },
+    {
+     "top": 2.0,
+     "bottom": 2.3
+    },
+    {
+     "top": 2.3,
+     "bottom": 2.8
+    },
+    {
+     "top": 2.8,
+     "bottom": 3.2
+    },
+    {
+     "top": 3.2,
+     "bottom": 3.9
+    },
+    {
+     "top": 3.9,
+     "bottom": 6.4
+    },
+    {
+     "top": 6.4,
+     "bottom": 8.0
+    }
+   ],
+   "gw_depths": [],
+   "xy": [
+    394838.8,
+    5818468.8
+   ]
+  },
+  {
+   "code": "422C-5526",
+   "kind": "bohrung",
+   "page": 29,
+   "gok": 35.01,
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 1.8
+    },
+    {
+     "top": 1.8,
+     "bottom": 2.4
+    },
+    {
+     "top": 2.4,
+     "bottom": 2.6
+    },
+    {
+     "top": 2.6,
+     "bottom": 2.9
+    },
+    {
+     "top": 2.9,
+     "bottom": 3.2
+    },
+    {
+     "top": 3.2,
+     "bottom": 3.8
+    },
+    {
+     "top": 3.8,
+     "bottom": 5.1
+    },
+    {
+     "top": 5.1,
+     "bottom": 6.8
+    },
+    {
+     "top": 6.8,
+     "bottom": 8.0
+    }
+   ],
+   "gw_depths": [],
+   "xy": [
+    394887.4,
+    5818449.9
+   ]
+  },
+  {
+   "code": "422C-5527",
+   "kind": "bohrung",
+   "page": 29,
+   "gok": 34.88,
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 1.8
+    },
+    {
+     "top": 1.8,
+     "bottom": 2.1
+    },
+    {
+     "top": 2.1,
+     "bottom": 2.6
+    },
+    {
+     "top": 2.6,
+     "bottom": 2.9
+    },
+    {
+     "top": 2.9,
+     "bottom": 3.2
+    },
+    {
+     "top": 3.2,
+     "bottom": 3.6
+    },
+    {
+     "top": 3.6,
+     "bottom": 3.9
+    },
+    {
+     "top": 3.9,
+     "bottom": 5.8
+    },
+    {
+     "top": 5.8,
+     "bottom": 7.3
+    },
+    {
+     "top": 7.3,
+     "bottom": 8.0
+    }
+   ],
+   "gw_depths": [],
+   "xy": [
+    394909.3,
+    5818442.5
+   ]
+  },
+  {
+   "code": "S 1",
+   "kind": "bohrung",
+   "page": 30,
+   "gok": 41.38,
+   "layers": [],
+   "gw_depths": [],
+   "layers_transcribed": false
+  },
+  {
+   "code": "S 2",
+   "kind": "bohrung",
+   "page": 30,
+   "gok": 36.52,
+   "layers": [],
+   "gw_depths": [],
+   "layers_transcribed": false
+  },
+  {
+   "code": "S 2a",
+   "kind": "bohrung",
+   "page": 30,
+   "gok": 36.52,
+   "layers": [],
+   "gw_depths": [],
+   "layers_transcribed": false
+  },
+  {
+   "code": "B 7/16",
+   "kind": "bohrung",
+   "page": 31,
+   "gok": 35.0,
+   "layers": [],
+   "gw_depths": [],
+   "layers_transcribed": false
+  },
+  {
+   "code": "B 1/17",
+   "kind": "bohrung",
+   "page": 32,
+   "gok": 35.05,
+   "layers": [],
+   "gw_depths": [],
+   "layers_transcribed": false
+  },
+  {
+   "code": "B 4/17",
+   "kind": "bohrung",
+   "page": 33,
+   "gok": 34.86,
+   "layers": [],
+   "gw_depths": [],
+   "layers_transcribed": false
+  }
+ ]
+}

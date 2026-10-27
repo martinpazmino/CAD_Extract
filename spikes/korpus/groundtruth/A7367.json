@@ -1,0 +1,77 @@
+{
+ "file": "A7367.pdf",
+ "sha256": "6f1e1cd104e7b162d1f9bf9c76529f8cf3108243f643c63f6fef3e2217428878",
+ "source": "https://github.com/swisstopo/swissgeol-boreholes-dataextraction/tree/main/example",
+ "notes": "Blindrunde 4 (Schweiz, swissgeol-Beispiele; v3 6162150, v4 68f0b54 eingefroren). Geotechnisches Institut Bern, Rotationskernbohrung RB 2 / I als TEXTTABELLE ohne Saeule (Spalte 'Tiefe in m' mit Grenzen, Beschreibung rechts). Scan mit OCR-Textlage. Koordinaten LV03 607562/187087.50, Hoehe 668.99 m ue.M. 'Bohrung trocken'.",
+ "boreholes": [
+  {
+   "code": "RB 2/I",
+   "kind": "bohrung",
+   "page": 1,
+   "gok": 668.99,
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 0.25,
+     "soil": "Mutterboden"
+    },
+    {
+     "top": 0.25,
+     "bottom": 0.6,
+     "soil": "Kies"
+    },
+    {
+     "top": 0.6,
+     "bottom": 0.9,
+     "soil": "Kies"
+    },
+    {
+     "top": 0.9,
+     "bottom": 2.3,
+     "soil": "Kies"
+    },
+    {
+     "top": 2.3,
+     "bottom": 4.8,
+     "soil": "Kies"
+    },
+    {
+     "top": 4.8,
+     "bottom": 5.5,
+     "soil": "Sand"
+    },
+    {
+     "top": 5.5,
+     "bottom": 6.1,
+     "soil": "Sand"
+    },
+    {
+     "top": 6.1,
+     "bottom": 6.2,
+     "soil": "Fels (Sandstein)"
+    },
+    {
+     "top": 6.2,
+     "bottom": 6.9,
+     "soil": "Fels (Tonstein)"
+    },
+    {
+     "top": 6.9,
+     "bottom": 9.1,
+     "soil": "Fels (Tonstein)"
+    },
+    {
+     "top": 9.1,
+     "bottom": 10.0,
+     "soil": "Fels (Tonstein)"
+    }
+   ],
+   "gw_depths": [],
+   "gw_status": "trocken",
+   "xy": [
+    607562.0,
+    187087.5
+   ]
+  }
+ ]
+}

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Baugrundmodell</title>
+    <link rel="stylesheet" href="./src/style.css" />
+  </head>
+  <body>
+    <aside id="seite">
+      <header>
+        <h1>Baugrundmodell</h1>
+        <p id="modellinfo" class="leise">IFC4X3 laden (Datei, Ablegen oder <code>?ifc=</code>)</p>
+      </header>
+      <label class="datei">
+        <input id="datei" type="file" accept=".ifc" />
+        <span>IFC-Datei öffnen …</span>
+      </label>
+
+      <section>
+        <h2>Einheiten</h2>
+        <ul id="einheiten" class="liste"></ul>
+      </section>
+
+      <section>
+        <h2>Ansicht</h2>
+        <label class="schalter"><input id="bohrsaeulen" type="checkbox" checked /> Bohrsäulen</label>
+        <label class="schalter"><input id="transparent" type="checkbox" /> Einheiten durchscheinend</label>
+        <label class="schalter">Überhöhung
+          <select id="ueberhoehung">
+            <option value="1">1×</option>
+            <option value="2">2×</option>
+            <option value="5">5×</option>
+            <option value="10">10×</option>
+          </select>
+        </label>
+        <div class="knoepfe">
+          <button id="schnitt-ow" type="button">Schnitt O–W</button>
+          <button id="schnitt-ns" type="button">Schnitt N–S</button>
+          <button id="schnitt-weg" type="button">Schnitte löschen</button>
+        </div>
+        <p class="leise">Klick: Eigenschaften · Doppelklick: Schnittebene an der Fläche</p>
+      </section>
+
+      <section>
+        <h2>Nicht im Modell</h2>
+        <p id="ausgeschlossen" class="leise">–</p>
+      </section>
+    </aside>
+
+    <main id="viewer"></main>
+
+    <section id="eigenschaften" hidden>
+      <header>
+        <h2 id="auswahl-name"></h2>
+        <button id="auswahl-zu" type="button" aria-label="Schließen">×</button>
+      </header>
+      <div id="auswahl-inhalt"></div>
+    </section>
+
+    <div id="meldung" hidden></div>
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>

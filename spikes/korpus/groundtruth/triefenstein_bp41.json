@@ -1,0 +1,180 @@
+{
+ "file": "Anlage-2_TR_BPlan-41_-Baugrundgutachten_Oktober-2023.pdf",
+ "sha256": "cee70d9cae068cfd60a3c7e89b6efe0e9fdf02266cfd622a500271f490122381",
+ "source": "https://markt-triefenstein.de/wp-content/uploads/2024/07/Anlage-2_TR_BPlan-41_-Baugrundgutachten_Oktober-2023.pdf",
+ "notes": "Blindtest Runde 3 (v3 Stand 36e3554, eingefroren 5325ead/2d4d5e7). Geotechnik Badel GmbH. RKS-Profile vektoriell S.20,23,26,28,30 (Hoehenmassstab 1:30 bzw. 1:25, kein Standardmassstab 1:30), Labels '0,35' links der Saeule, Bodenbezeichnung nur als DIN-Kuerzel ('U, t, s´'), Lineal links 0,00..4,80. Keine GOK/NHN. GW: RKS 1 3,00 m, RKS 2 2,70 m (Dreieck + Datum), RKS 3-5 trocken (nur Berichtstext S.5). DPH 1-4 als Wertetabelle (N10 je 0,10 m) S.32-35, Lageplan mit Stationierung S.18.",
+ "boreholes": [
+  {
+   "code": "RKS 1",
+   "kind": "rks",
+   "page": 20,
+   "gok": null,
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 0.14,
+     "soil": "Beton"
+    },
+    {
+     "top": 0.14,
+     "bottom": 0.35,
+     "soil": "Auffuellung"
+    },
+    {
+     "top": 0.35,
+     "bottom": 0.6,
+     "soil": "Auffuellung"
+    },
+    {
+     "top": 0.6,
+     "bottom": 1.8,
+     "soil": "Schluff"
+    },
+    {
+     "top": 1.8,
+     "bottom": 2.2,
+     "soil": "Schluff"
+    },
+    {
+     "top": 2.2,
+     "bottom": 3.3,
+     "soil": "Schluff"
+    },
+    {
+     "top": 3.3,
+     "bottom": 4.5,
+     "soil": "Schluff"
+    }
+   ],
+   "gw_depths": [
+    3.0
+   ]
+  },
+  {
+   "code": "RKS 2",
+   "kind": "rks",
+   "page": 23,
+   "gok": null,
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 0.4,
+     "soil": "Mutterboden"
+    },
+    {
+     "top": 0.4,
+     "bottom": 1.0,
+     "soil": "Schluff"
+    },
+    {
+     "top": 1.0,
+     "bottom": 1.7,
+     "soil": "Schluff"
+    },
+    {
+     "top": 1.7,
+     "bottom": 2.1,
+     "soil": "Schluff"
+    },
+    {
+     "top": 2.1,
+     "bottom": 2.7,
+     "soil": "Schluff"
+    },
+    {
+     "top": 2.7,
+     "bottom": 4.5,
+     "soil": "Schluff"
+    }
+   ],
+   "gw_depths": [
+    2.7
+   ]
+  },
+  {
+   "code": "RKS 3",
+   "kind": "rks",
+   "page": 26,
+   "gok": null,
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 0.35,
+     "soil": "Mutterboden"
+    },
+    {
+     "top": 0.35,
+     "bottom": 1.5,
+     "soil": "Schluff"
+    },
+    {
+     "top": 1.5,
+     "bottom": 2.0,
+     "soil": "Schluff"
+    }
+   ],
+   "gw_depths": [],
+   "gw_status": "trocken"
+  },
+  {
+   "code": "RKS 4",
+   "kind": "rks",
+   "page": 28,
+   "gok": null,
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 0.35,
+     "soil": "Mutterboden"
+    },
+    {
+     "top": 0.35,
+     "bottom": 1.2,
+     "soil": "Schluff"
+    },
+    {
+     "top": 1.2,
+     "bottom": 4.5,
+     "soil": "Schluff"
+    }
+   ],
+   "gw_depths": [],
+   "gw_status": "trocken"
+  },
+  {
+   "code": "RKS 5",
+   "kind": "rks",
+   "page": 30,
+   "gok": null,
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 0.35,
+     "soil": "Mutterboden"
+    },
+    {
+     "top": 0.35,
+     "bottom": 1.0,
+     "soil": "Schluff"
+    },
+    {
+     "top": 1.0,
+     "bottom": 2.0,
+     "soil": "Schluff"
+    },
+    {
+     "top": 2.0,
+     "bottom": 2.8,
+     "soil": "Schluff"
+    },
+    {
+     "top": 2.8,
+     "bottom": 4.5,
+     "soil": "Schluff"
+    }
+   ],
+   "gw_depths": [],
+   "gw_status": "trocken"
+  }
+ ]
+}

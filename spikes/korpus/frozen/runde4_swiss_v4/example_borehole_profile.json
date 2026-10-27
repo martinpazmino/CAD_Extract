@@ -1,0 +1,11 @@
+{
+ "document": {
+  "file": "example_borehole_profile.pdf",
+  "sha256": "89360e1844046d60402dde8834c84fce677fa06d580f1174c1ca99cfe3128eda",
+  "parser_version": "prototyp_v4",
+  "pages": 1
+ },
+ "boreholes": [],
+ "soundings": {},
+ "code_rev": "07f9bc2"
+}

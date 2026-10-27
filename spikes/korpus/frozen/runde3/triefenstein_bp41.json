@@ -1,0 +1,88 @@
+{
+ "code_rev": "36e3554",
+ "pdf_sha256": "cee70d9cae068cfd60a3c7e89b6efe0e9fdf02266cfd622a500271f490122381",
+ "v1": {},
+ "v3": {},
+ "v3_detail": [],
+ "sg": {
+  "?0": {
+   "gok": null,
+   "bottoms": [],
+   "gw": []
+  },
+  "?1": {
+   "gok": null,
+   "bottoms": [],
+   "gw": []
+  },
+  "?2": {
+   "gok": null,
+   "bottoms": [],
+   "gw": []
+  },
+  "?3": {
+   "gok": null,
+   "bottoms": [],
+   "gw": []
+  },
+  "?4": {
+   "gok": null,
+   "bottoms": [],
+   "gw": [
+    3.0
+   ]
+  },
+  "?5": {
+   "gok": null,
+   "bottoms": [],
+   "gw": []
+  },
+  "?6": {
+   "gok": null,
+   "bottoms": [],
+   "gw": []
+  },
+  "?7": {
+   "gok": null,
+   "bottoms": [],
+   "gw": [
+    2.7
+   ]
+  },
+  "RKS2-RRB": {
+   "gok": null,
+   "bottoms": [],
+   "gw": []
+  },
+  "RKS3-0+140": {
+   "gok": null,
+   "bottoms": [],
+   "gw": []
+  },
+  "RKS3-0+140#dup10": {
+   "gok": null,
+   "bottoms": [],
+   "gw": []
+  },
+  "RKS4-0+084": {
+   "gok": null,
+   "bottoms": [],
+   "gw": []
+  },
+  "RKS4-0+084#dup12": {
+   "gok": null,
+   "bottoms": [],
+   "gw": []
+  },
+  "RKS5-0+028": {
+   "gok": null,
+   "bottoms": [],
+   "gw": []
+  },
+  "RKS5-0+028#dup14": {
+   "gok": null,
+   "bottoms": [],
+   "gw": []
+  }
+ }
+}

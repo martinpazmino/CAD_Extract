@@ -1,0 +1,7 @@
+{
+ "file": "clipping_test.pdf",
+ "sha256": "5b06eb955ba658a8b0d50eac485fa8fa7a1164b255cf73c3af30e7d057d63ba2",
+ "source": "https://github.com/swisstopo/swissgeol-boreholes-dataextraction/tree/main/example",
+ "notes": "Blindrunde 4. Testdokument von swissgeol (Koordinaten im Fliesstext), kein Aufschluss.",
+ "boreholes": []
+}

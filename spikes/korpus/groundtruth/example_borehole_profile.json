@@ -1,0 +1,81 @@
+{
+ "file": "example_borehole_profile.pdf",
+ "sha256": "89360e1844046d60402dde8834c84fce677fa06d580f1174c1ca99cfe3128eda",
+ "source": "https://github.com/swisstopo/swissgeol-boreholes-dataextraction/tree/main/example",
+ "notes": "Blindrunde 4. BLS AlpTransit, Sondierbohrung SST KB 5 (geneigt 80 Grad, Tiefe = Bohrlaenge), Scan mit OCR-Textlage und Vektor-Rauschen, M 1:100, Grenzen in Spalte 'Bohrlaenge ab Bezugspunkt' (OCR '0950' = 9,50). Fels (Tonschiefer/Sandstein), Bodenarten nicht transkribiert. Koordinaten LV03 615790/157500, Kote ~788,6 m ue.M.",
+ "boreholes": [
+  {
+   "code": "SST KB5",
+   "kind": "bohrung",
+   "page": 1,
+   "gok": 788.6,
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 9.5
+    },
+    {
+     "top": 9.5,
+     "bottom": 10.0
+    },
+    {
+     "top": 10.0,
+     "bottom": 10.3
+    },
+    {
+     "top": 10.3,
+     "bottom": 12.3
+    },
+    {
+     "top": 12.3,
+     "bottom": 12.65
+    },
+    {
+     "top": 12.65,
+     "bottom": 16.4
+    },
+    {
+     "top": 16.4,
+     "bottom": 17.6
+    },
+    {
+     "top": 17.6,
+     "bottom": 21.3
+    },
+    {
+     "top": 21.3,
+     "bottom": 21.5
+    },
+    {
+     "top": 21.5,
+     "bottom": 22.9
+    },
+    {
+     "top": 22.9,
+     "bottom": 23.2
+    },
+    {
+     "top": 23.2,
+     "bottom": 25.85
+    },
+    {
+     "top": 25.85,
+     "bottom": 25.9
+    },
+    {
+     "top": 25.9,
+     "bottom": 28.9
+    },
+    {
+     "top": 28.9,
+     "bottom": 30.0
+    }
+   ],
+   "gw_depths": [],
+   "xy": [
+    615790.0,
+    157500.0
+   ]
+  }
+ ]
+}
