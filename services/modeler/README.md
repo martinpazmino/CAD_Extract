@@ -17,7 +17,7 @@ cd services/modeler
 python -m baugrundmodell modelo.ifc extraccion1.json [extraccion2.json ...] --bericht informe.json
 #   --methode idw|tps   --raster 2.0   --puffer 15   --basis 10.0 (m NHN)   --ohne-bohrsaeulen
 #   --einheiten einheiten.json   (unidades del geotécnico; plantilla en informe.json → vorlage_einheiten)
-python -m pytest tests                                     # 28 pruebas con verdad sintética
+python -m pytest tests                                     # 31 pruebas con verdad sintética
 python -m baugrundmodell.synthetisch demo demo.json        # casos: geneigt auskeilen linse zensiert stoerungen demo
 ```
 
@@ -30,7 +30,7 @@ python -m baugrundmodell.synthetisch demo demo.json        # casos: geneigt ausk
 | [`modell.py`](baugrundmodell/modell.py) | Orquestación, informe JSON |
 | [`synthetisch.py`](baugrundmodell/synthetisch.py) | Casos con verdad conocida (pruebas y demo del visor) |
 
-Ver el resultado: [visor `apps/web`](../../apps/web/README.md).
+Ver el resultado: [visor `apps/web`](../../apps/web/README.md) o la app (`streamlit run app.py`, [19](../../docs/19_app_v2.md)).
 
 Up: [Índice de documentación](../../docs/README.md)
 

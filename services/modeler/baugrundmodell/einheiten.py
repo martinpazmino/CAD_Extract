@@ -52,6 +52,8 @@ class Bohrung:
     abschnitte: list[Abschnitt]
     dokument: str
     hinweise: list[str] = field(default_factory=list)
+    lage: str = "georeferenziert"      # Herkunft der Lage: Koordinatenquelle der Extraktion, manuell, schematisch
+    hoehe: str = "m NHN"               # Herkunft der Ansatzhoehe: m NHN, manuell, relativ
 
     @property
     def ende(self) -> float:
@@ -85,26 +87,31 @@ class Kontakt:
 
 
 # ---------------------------------------------------------------- Vorbereitung
+def _system(b: dict) -> str:
+    return f"EPSG:{b['crs_epsg']}" if b.get("crs_epsg") else "lokal"
+
+
 def bohrungen_aus_extraktion(docs: list[dict]) -> tuple[list[Bohrung], list[dict], int | None]:
-    """Kanonische Extraktions-JSONs -> modellfaehige Bohrungen; der Rest mit Grund in 'ausgeschlossen'."""
-    lagen = Counter(b.get("crs_epsg") for d in docs for b in d["boreholes"]
-                    if b.get("x") is not None and b.get("y") is not None and b.get("crs_epsg"))
-    epsg = lagen.most_common(1)[0][0] if lagen else None
+    """Kanonische Extraktions-JSONs -> modellfaehige Bohrungen; der Rest mit Grund in 'ausgeschlossen'.
+
+    Lage ohne EPSG (manuell, Lageplan, schematisch) ist ein lokales System. Ein Modell hat genau ein
+    System: das der meisten Bohrungen (bei Gleichstand das georeferenzierte); Rueckgabe-EPSG None = lokal.
+    """
+    lagen = Counter(_system(b) for d in docs for b in d["boreholes"] if b.get("x") is not None and b.get("y") is not None)
+    system = max(lagen, key=lambda k: (lagen[k], k != "lokal")) if lagen else None
+    epsg = int(system.split(":")[1]) if system and system != "lokal" else None
     bohrungen: list[Bohrung] = []
     ausgeschlossen: list[dict] = []
     for d in docs:
         datei = d["document"]["file"]
         for b in d["boreholes"]:
-            grund = None
-            if b.get("x") is None or b.get("y") is None or not b.get("crs_epsg"):
-                grund = "keine Koordinaten"
-            elif b["crs_epsg"] != epsg:
-                grund = f"anderes Koordinatensystem (EPSG:{b['crs_epsg']} statt EPSG:{epsg})"
-            elif b.get("gok_nhn") is None:
-                grund = "Ansatzhoehe (GOK) unbekannt"
-            elif not b.get("layers"):
-                grund = "keine Schichten"
-            else:
+            fehlt = [t for t, f in (("keine Koordinaten", b.get("x") is None or b.get("y") is None),
+                                    ("Ansatzhoehe (GOK) unbekannt", b.get("gok_nhn") is None),
+                                    ("keine Schichten", not b.get("layers"))) if f]
+            grund = ", ".join(fehlt) or None
+            if not grund and _system(b) != system:
+                grund = f"anderes Koordinatensystem ({_system(b)} statt {system})"
+            elif not grund:
                 for c in bohrungen:
                     if c.code == b["code"] and abs(c.x - b["x"]) < 0.5 and abs(c.y - b["y"]) < 0.5:
                         grund = f"doppelt (bereits aus {c.dokument})"
@@ -165,26 +172,42 @@ def _vorbereiten(b: dict, dokument: str) -> Bohrung:
             abschnitte[-1].schichten += idx
         else:
             abschnitte.append(Abschnitt(klasse, gok - oben, gok - unten, list(idx)))
-    return Bohrung(b["code"], float(b["x"]), float(b["y"]), gok, abschnitte, dokument, hinweise)
+    lage = b.get("coord_source") or ("georeferenziert" if b.get("crs_epsg") else "lokal")
+    hoehe = {"manuell": "manuell (m NHN)", "relativ": "relativ (GOK unbekannt, 0 m gesetzt)"}.get(
+        b.get("gok_source") or "", "m NHN")
+    return Bohrung(b["code"], float(b["x"]), float(b["y"]), gok, abschnitte, dokument, hinweise, lage, hoehe)
 
 
 # ---------------------------------------------------------------- Ausrichtung
-def _hoehe(a: Abschnitt, ref: tuple[float, float] | None) -> float:
+Ref = tuple[float, float, float, float]               # Oberkante, Unterkante (m NHN), dieselben als Tiefe u. GOK
+
+
+def _abstand(o1: float, u1: float, o2: float, u2: float) -> float:
+    """Luecke zwischen zwei Bereichen (oben > unten) plus Abstand der Mitten, gewichtet."""
+    luecke = max(0.0, u1 - o2, u2 - o1)
+    return K_ABSTAND * luecke + K_MITTE * abs((o1 + u1) / 2 - (o2 + u2) / 2)
+
+
+def _hoehe(b: Bohrung, a: Abschnitt, ref: Ref | None) -> float:
+    """Kleinerer Abstand von Hoehe (m NHN) und Tiefe unter GOK: tiefe Schichten liegen auf gleicher Hoehe,
+    oberflaechennahe (Auffuellung, Decke, Mutterboden) folgen dem Gelaende (Talheim: GOK 749-772 m)."""
     if ref is None:
         return 0.0
-    ok, uk = ref
-    luecke = max(0.0, a.uk - ok, uk - a.ok)
-    return K_ABSTAND * luecke + K_MITTE * abs((a.ok + a.uk) / 2 - (ok + uk) / 2)
+    hoehe = _abstand(a.ok, a.uk, ref[0], ref[1])
+    tiefe = _abstand(-(b.gok - a.ok), -(b.gok - a.uk), -ref[2], -ref[3])
+    return min(hoehe, tiefe)
 
 
-def _ueber_ende(b: Bohrung, ref: tuple[float, float] | None) -> float:
-    if ref is None or ref[1] <= b.ende:
+def _ueber_ende(b: Bohrung, ref: Ref | None) -> float:
+    """Strafe, wenn die Einheit nach Hoehe UND nach Tiefe ganz ueber der Endteufe laege."""
+    if ref is None:
         return 0.0
-    return K_UEBER_ENDE + K_ABSTAND * (ref[1] - b.ende)
+    luecke = min(ref[1] - b.ende, (b.gok - b.ende) - ref[3])
+    return 0.0 if luecke <= 0 else K_UEBER_ENDE + K_ABSTAND * luecke
 
 
 def ausrichten(b: Bohrung, einheiten: list[Einheit],
-               refs: list[tuple[float, float] | None]) -> tuple[float, list[tuple]]:
+               refs: list[Ref | None]) -> tuple[float, list[tuple]]:
     """Ausrichtung einer Bohrung gegen die Einheitenfolge.
 
     Zustand (i, j, s): i Abschnitte und j Einheiten verbraucht; s = 0 der letzte Abschnitt gehoert
@@ -209,7 +232,7 @@ def ausrichten(b: Bohrung, einheiten: list[Einheit],
                     continue
                 st = (i, j, s)
                 if i < m and j < n and A[i].klasse in einheiten[j].klassen:
-                    schieben(st, (i + 1, j + 1, 1), _hoehe(A[i], refs[j]), ("M", i, j))
+                    schieben(st, (i + 1, j + 1, 1), _hoehe(b, A[i], refs[j]), ("M", i, j))
                 if j < n and (i < m or s in (1, 2)):
                     schieben(st, (i, j + 1, 2 if s else 0), K_FEHLT, ("S", None, j))
                 if j < n and i == m and s in (0, 1):
@@ -217,9 +240,9 @@ def ausrichten(b: Bohrung, einheiten: list[Einheit],
                 if i < m:
                     schieben(st, (i + 1, j, 0), K_NEU, ("N", i, j))
                 if s in (1, 2) and i > 0 and j < n and A[i - 1].klasse in einheiten[j].klassen:
-                    schieben(st, (i, j + 1, 1), K_SPALT + _hoehe(A[i - 1], refs[j]), ("E", i - 1, j))
+                    schieben(st, (i, j + 1, 1), K_SPALT + _hoehe(b, A[i - 1], refs[j]), ("E", i - 1, j))
                 if s == 1 and i < m and j > 0 and A[i].klasse in einheiten[j - 1].klassen:
-                    schieben(st, (i + 1, j, 1), K_WEITER + _hoehe(A[i], refs[j - 1]), ("C", i, j - 1))
+                    schieben(st, (i + 1, j, 1), K_WEITER + _hoehe(b, A[i], refs[j - 1]), ("C", i, j - 1))
     ende = min(((m, n, s) for s in (0, 1) if (m, n, s) in kosten), key=lambda k: kosten[k])
     ops = []
     st = ende
@@ -230,32 +253,33 @@ def ausrichten(b: Bohrung, einheiten: list[Einheit],
 
 
 # ---------------------------------------------------------------- Korrelation
-def _belegung(b: Bohrung, ops: list[tuple]) -> dict[int, tuple[float, float]]:
-    """Hoehenbereich je Einheit (Objekt-id) in einer Bohrung; bei E der ganze geteilte Abschnitt."""
-    bel: dict[int, tuple[float, float]] = {}
+def _belegung(b: Bohrung, ops: list[tuple]) -> dict[int, Ref]:
+    """Bereich je Einheit (Objekt-id) in einer Bohrung, als Hoehe und als Tiefe; bei E der ganze Abschnitt."""
+    bel: dict[int, Ref] = {}
     for op, i, e in ops:
         if op in ("M", "C", "E"):
             a = b.abschnitte[i]
             alt = bel.get(id(e))
-            bel[id(e)] = (a.ok, a.uk) if alt is None else (max(alt[0], a.ok), min(alt[1], a.uk))
+            ok, uk = (a.ok, a.uk) if alt is None else (max(alt[0], a.ok), min(alt[1], a.uk))
+            bel[id(e)] = (ok, uk, b.gok - ok, b.gok - uk)
     return bel
 
 
 def _referenzen(b: Bohrung, einheiten: list[Einheit], belegungen: dict[str, dict],
-                lage: dict[str, tuple[float, float]]) -> list[tuple[float, float] | None]:
-    """Hoehenbereich je Einheit an der Stelle von b: IDW-Mittel der anderen Bohrungen (ohne b)."""
-    refs = []
+                lage: dict[str, tuple[float, float]]) -> list[Ref | None]:
+    """Bereich je Einheit an der Stelle von b (Hoehe und Tiefe): IDW-Mittel der anderen Bohrungen (ohne b)."""
+    refs: list[Ref | None] = []
     for e in einheiten:
-        sw = so = su = 0.0
+        sw = 0.0
+        summe = [0.0, 0.0, 0.0, 0.0]
         for code, bel in belegungen.items():
             if code == b.code or id(e) not in bel:
                 continue
             x, y = lage[code]
             w = 1.0 / ((x - b.x) ** 2 + (y - b.y) ** 2 + 1.0)
             sw += w
-            so += w * bel[id(e)][0]
-            su += w * bel[id(e)][1]
-        refs.append((so / sw, su / sw) if sw else None)
+            summe = [s_ + w * v for s_, v in zip(summe, bel[id(e)])]
+        refs.append(tuple(v / sw for v in summe) if sw else None)
     return refs
 
 

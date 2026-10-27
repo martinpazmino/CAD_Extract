@@ -57,6 +57,13 @@ equipo; "Verificado" = respaldado por una prueba en este repo.
 | D43 | **El geotécnico confirma las unidades** con `einheiten.json` (plantilla en el informe) | La correlación automática no distingue arenas de distinto origen | Prueba con "Sande und Kiese" | Decidido |
 | D44 | **`services/modeler` y `apps/web`** como primeros componentes de la estructura objetivo ([arquitectura §10](ARQUITECTURA_BAUGRUNDMODELL.md#10-estructura-de-repositorio-propuesta)) | Ya no son spikes: tienen pruebas y contrato (JSON → IFC) | — | Decidido |
 | D45 | Visor **sin dependencias de red** (WASM y worker locales) y **web-ifc 0.0.77** fijado | 0.0.78 trae un WASM de navegador que no casa con su JS | Error `StreamMeshes … 4 arguments, expected 3` | Verificado |
+| D46 | **App v2 = página principal de Streamlit**: PDF → extracción v4 → revisión → modelo → visor, todo automático; la v1 (Excel) queda como segunda página | El objetivo es el Baugrundmodell, no la hoja Excel de un layout | 4 flujos de punta a punta verificados ([19](19_app_v2.md)) | Verificado (Linux) |
+| D47 | **Visor como componente Streamlit** con el `dist` compilado **en el repo**; IFC servido por URL con nombre = hash | Arranca sin Node; el IFC no viaja por el websocket en cada rerun | `ui/viewer.py` | Decidido |
+| D48 | **Fila esquemática por defecto** si ningún sondeo tiene coordenadas; GOK = 0 si ninguno tiene GOK; siempre marcado | Casi ningún PDF trae coordenadas; sin esto no hay modelo "automático" | Talheim: 8 sondeos, 6 unidades, avisos en app/IFC/visor | Decidido |
+| D49 | **Correcciones del usuario en la misma tabla** y marcadas (`manuell`); nunca sobrescriben el JSON de extracción | Trazabilidad: qué vino del PDF y qué puso una persona | Prueba `test_manuelle_korrektur_wird_markiert` | Decidido |
+| D50 | **Correlación por el menor entre distancia en cota y en profundidad** | Con relieve las capas superficiales siguen el terreno | Talheim 15 → 6 unidades; sintéticos sin cambio | Verificado |
+| D51 | **Extracción cacheada en disco** por `sha256` + OCR + huella del extractor; progreso envolviendo `primitives()` | Rerun inmediato sin tocar el extractor de referencia | `ui/pipeline.py` | Decidido |
+| D52 | **Arranque en Windows con `start.bat`** (venv, requisitos, OCR opcional, navegador) | El usuario trabaja en Windows; nada de pasos manuales | No probado en Windows desde aquí | Propuesta (a validar) |
 
 ## Preguntas abiertas
 

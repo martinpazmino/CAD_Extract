@@ -1,25 +1,79 @@
-# Geo_Agent — Baugrunddaten aus PDF → Excel
+# Geo_Agent — del Bodengutachten al Baugrundmodell
 
-Lokales Web-Tool (nur `localhost`, kein Deployment), das aus zwei Baugrund-PDFs
-eine Excel-Datei nach fester Vorlage (`Geo_Template.xlsx`) erzeugt:
+Herramienta local (Streamlit, sólo `localhost`) para informes geotécnicos alemanes en PDF:
 
-* **`Bohrprofil.pdf`** — Bohrprofile nach DIN 4023 (Vektor-CAD, kein OCR)
-* **`Längsschnitt.pdf`** — geologischer Längsschnitt / Vortriebsplan mit Tunnel
+* **Baugrundmodell (v2, página principal):** se suben los PDF → se reconocen los sondeos
+  (vector o escaneo con OCR) → se revisan y corrigen en una tabla → las **Bodenschichten se generan
+  automáticamente** como modelo 3D (IFC 4.3: `IfcGeomodel` + `IfcBorehole`) y se ven en el visor
+  **That Open** integrado: unidades, propiedades con procedencia, cortes, exageración vertical.
+  Export: IFC, informe de control, JSON.
+* **Excel nach Vorlage (v1):** Bohrprofil + Längsschnitt (layout Hamburgo) → `.xlsx` de 4 hojas.
 
-Ablauf im Tool: **beide PDFs hochladen → dynamische Spalten ankreuzen →
-Excel generieren → herunterladen.**
+![App v2: ejemplo de Talheim con la fila esquemática en el visor That Open](docs/img/19_app_talheim.jpg)
 
-## Installation & Start
+## Arrancar
+
+**Windows:** doble clic en [`start.bat`](start.bat). La primera vez crea `.venv` e instala todo
+(unos minutos; el OCR es opcional y no bloquea), después abre `http://localhost:8501`.
+
+**A mano (cualquier sistema):**
 
 ```bash
 pip install -r requirements.txt
+pip install -r requirements-ocr.txt      # opcional: escaneos y texto SHX (OpenCV + onnxruntime)
 streamlit run app.py
 ```
 
-Der Browser öffnet `http://localhost:8501`. In der Seitenleiste **beide** PDFs
-hochladen (getrennte Felder für Bohrprofil und Längsschnitt).
+No hace falta Node: el visor compilado está en `apps/web/dist`. Sin PDF propio, la barra lateral
+ofrece [ejemplos](data/beispiele/README.md) (Berlín georreferenciado, Talheim sin coordenadas,
+demo sintética y un PDF sintético para probar la subida).
 
-## Ausgabe — 4 Blätter (exakt nach `Geo_Template.xlsx`)
+Si la instalación se quedó a medias: borrar la carpeta `.venv` y volver a ejecutar `start.bat`.
+
+## Qué hace la v2
+
+1. **Extracción v4** ([docs/17](docs/17_algoritmo_extraccion.md)): clase de página, columnas,
+   escala, límites, Bodenart, nivel freático, Schichtenverzeichnis, coordenadas; cada capa con
+   confianza y procedencia (página, bbox).
+2. **Revisión**: tabla editable (incluir, GOK, Rechts-/Hochwert, EPSG), perfiles de todos los
+   sondeos, lageplan. Todo lo corregido o supuesto queda **marcado** (manuell, schematisch, relativ).
+3. **Modelo de capas** ([docs/18](docs/18_modelador_capas.md)): unidades por correlación de las
+   secuencias (clase + cota/profundidad, acuñamientos, lentes, sondeos cortos), superficies que
+   respetan cada contacto, sólidos cerrados, IFC 4.3 válido. Las unidades se pueden fijar a mano.
+4. **Visor That Open** ([apps/web](apps/web/README.md)) dentro de la página.
+
+Detalle de la app: [docs/19](docs/19_app_v2.md). Sin coordenadas en el PDF los sondeos se colocan
+en una **fila esquemática** (avisado en la app, el IFC y el visor): sirve para ver la secuencia,
+no para medir.
+
+## Estructura
+
+```
+app.py                      entrada Streamlit (páginas v2 y v1)
+start.bat                   arranque en Windows (venv + instalación + navegador)
+ui/                         páginas, pipeline sin interfaz, componente del visor
+spikes/extraktion_v2/       extracción v4 (referencia de la regresión, docs/17)
+services/modeler/           modelador de capas `baugrundmodell` (python -m baugrundmodell …)
+apps/web/                   visor That Open (Vite + TypeScript); dist/ compilado en el repo
+geo_agent/                  paquete v1 (Excel)
+data/beispiele/             ejemplos (datos factuales y sintéticos)
+tests/  scripts/            pruebas de la app y prueba de punta a punta (Playwright)
+docs/                       notas enlazadas (español): índice en docs/README.md
+spikes/                     corpus, regresión, IFC, Supabase
+```
+
+Pruebas: `pytest tests`, `cd services/modeler && pytest tests`, y con la app en marcha
+`node scripts/check_app.mjs http://localhost:8501 capturas "<ejemplo>"`.
+
+Documentación: [`docs/README.md`](docs/README.md) (arquitectura, decisiones, lecciones, resultados).
+
+## v1: Excel nach Vorlage (descripción original, en alemán)
+
+Eingabe: **`Bohrprofil.pdf`** (DIN 4023, Vektor-CAD) und **`Längsschnitt.pdf`** (Vortriebsplan mit
+Tunnel). Seite *Excel nach Vorlage (v1)*: beide PDFs hochladen → dynamische Spalten ankreuzen →
+Excel generieren. Nur für das Layout, für das v1 gebaut wurde.
+
+### Ausgabe — 4 Blätter (exakt nach `Geo_Template.xlsx`)
 
 | Blatt | Spalten | Zeilen |
 |---|---|---|
@@ -36,9 +90,9 @@ weggelassen.
 **Zellfarben:** 🟩 grün = sicher · 🟨 gelb = unsicher / nicht klassifizierbar
 (manuell prüfen).
 
-## Wie es funktioniert
+### Wie es funktioniert
 
-### Bohrprofil (Blatt 1 & 2) — erprobt
+#### Bohrprofil (Blatt 1 & 2) — erprobt
 * Nur **Kernbohrungen** (Header `B nn/jj`); Sonden (`DS`) und Messstellen (`GWM`)
   werden ausgeschlossen, dienen aber als X-Grenze des Bodenart-Textbands.
 * Pro Bohrung: Tiefen-Spalte (Paare `(NHN_rel) tiefe`), Bodenart-Textband,
@@ -51,7 +105,7 @@ weggelassen.
   Wiederholt sich eine Bodenart innerhalb **einer** Bohrung, wird sie durchnummeriert
   (z. B. `Sand`, `Sand1`, `Sand2`), damit jede Schicht eindeutig benannt ist.
 
-### Längsschnitt (Blatt 3 & 4) — heikelste Stelle, prüfbar gemacht
+#### Längsschnitt (Blatt 3 & 4) — heikelste Stelle, prüfbar gemacht
 * **X → Tunnelmeter** und **Y → NHN** über lineare Regression der Achsen-Labels.
 * **Tunnelröhre:** nur die grauen Füllpolygone (RGB ≈ 0,73) werden als saubere
   Maske gerastert → pro Tunnelmeter OK (oben) / Sohle (unten) / Achse (Mitte).
@@ -74,7 +128,7 @@ weggelassen.
   Sohle (blau), Abschnitts-Bänder und verortete Bohrungen über den Originalplan —
   damit Zwischenergebnisse sichtbar sind statt blind geschrieben.
 
-## Hinweise zur Vorlage
+### Hinweise zur Vorlage
 
 * **Blatt 1** enthält laut Vorlage `Rechtswert`/`Hochwert`. Diese Koordinaten stehen
   nicht im Bohrprofil-PDF und bleiben leer (gelb markiert).
@@ -84,32 +138,7 @@ weggelassen.
 * `Bohr_BID` (Blatt 3) und `bohr_id` (Blatt 4) = die Kernbohrung, die den Abschnitt
   definiert (im Längsschnitt verortet, mit vorliegendem Bohrprofil).
 
-## Projektstruktur
-
-```
-app.py                      Streamlit-UI (Upload → Auswahl → Download)
-geo_agent/
-  legend.py                 Legende (BODENARTEN + DIN-Sektionen) parsen
-  soil.py                   Bodenart-Klassifikation + DIN-Token-Parsing
-  bohrprofil.py             Blatt 1 & 2
-  laengsschnitt.py          Blatt 3 & 4 (Tunnel + Geologie, Prüfbild)
-  excel_writer.py           .xlsx exakt nach Vorlage, grün/gelb-Markierung
-data/                       Eingabe-PDFs + Geo_Template.xlsx
-```
-
-## Weiterentwicklung (Baugrundmodell)
-
-Einstieg: [`docs/README.md`](docs/README.md) (Index der verknüpften Notizen, Spanisch).
-
-* [Architektur & Tool-Vergleich](docs/ARQUITECTURA_BAUGRUNDMODELL.md): Supabase, IFC 4.3, That Open Engine
-* [Diagnose der festen Layout-Annahmen](docs/01_diagnostico_layout_fijo.md) und
-  [layout-unabhängige Bohrprofil-Extraktion](docs/02_bohrprofil_generalizacion.md)
-* [Wiederverwendung von swissgeol](docs/08_swissgeol_reutilizacion.md),
-  [Validierung/Benchmark](docs/09_validacion_benchmark.md), [Umsetzungsplan](docs/10_plan_implementacion.md)
-* Spikes: [`spikes/extraktion_v2/`](spikes/extraktion_v2/README.md) (synthetische PDFs, Prototyp v2,
-  Vergleich v1/v2/swissgeol) und [`spikes/ifc_thatopen/`](spikes/ifc_thatopen/README.md)
-
-## Performance
+### Performance (v1)
 
 Das Bohrprofil wird in < 1 s ausgewertet. Der Längsschnitt dauert ~20 s, weil
 `page.get_drawings()` auf einer Seite mit > 150 000 Vektorobjekten arbeitet; das

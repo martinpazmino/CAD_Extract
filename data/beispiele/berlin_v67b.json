@@ -1,0 +1,1788 @@
+{
+ "document": {
+  "file": "berlin_v67b.pdf",
+  "sha256": "659713acda108330cc99b7c60146b017f78908fce376ab277d2ce126790027c4",
+  "parser_version": "prototyp_v4",
+  "pages": 33
+ },
+ "boreholes": [
+  {
+   "code": "422C-460",
+   "kind": "kernbohrung",
+   "gok_nhn": 36.25,
+   "end_depth": 20.0,
+   "x": 394774.3,
+   "y": 5818338.1,
+   "crs_epsg": 25833,
+   "coord_source": "text",
+   "layers": [
+    {
+     "top_depth": 0.0,
+     "bottom_depth": 2.0,
+     "description_raw": "Sand/Auffullung/grau/trocken",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 27,
+       "method": "raster+ocr",
+       "bbox": [
+        212.5,
+        183.8,
+        241.0,
+        229.1
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 2.0,
+     "bottom_depth": 3.5,
+     "description_raw": "Sand/Boden/grau/trocken",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 27,
+       "method": "raster+ocr",
+       "bbox": [
+        212.5,
+        229.1,
+        241.0,
+        263.2
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 3.5,
+     "bottom_depth": 3.8,
+     "description_raw": "Feinsand/hellgrau/Wasseranschnitt3.8",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 27,
+       "method": "raster+ocr",
+       "bbox": [
+        212.5,
+        263.2,
+        241.0,
+        270.0
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 3.8,
+     "bottom_depth": 4.5,
+     "description_raw": "Feinsand/grau/Schichtwasser",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 27,
+       "method": "raster+ocr",
+       "bbox": [
+        212.5,
+        270.0,
+        241.0,
+        285.9
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 4.5,
+     "bottom_depth": 6.0,
+     "description_raw": "Feinsand,Mittelsand,Feinkies/grau/Schichtwasser",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 27,
+       "method": "raster+ocr",
+       "bbox": [
+        212.5,
+        285.9,
+        241.0,
+        319.9
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 6.0,
+     "bottom_depth": 7.7,
+     "description_raw": "Feinsand,MittelsandFeinkies,Feinsteinstucke/grau/Schichtwasser",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 27,
+       "method": "raster+ocr",
+       "bbox": [
+        212.5,
+        319.9,
+        241.0,
+        358.5
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 7.7,
+     "bottom_depth": 9.0,
+     "description_raw": "Feinkies,Mittelkies,Feinsteinstucke/grau/Schichtwasser",
+     "soil_class": "Kies",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 27,
+       "method": "raster+ocr",
+       "bbox": [
+        212.5,
+        358.5,
+        241.0,
+        388.0
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 9.0,
+     "bottom_depth": 10.3,
+     "description_raw": "Mittelkies,Grobkies/grau/Schichtwasser",
+     "soil_class": "Kies",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 27,
+       "method": "raster+ocr",
+       "bbox": [
+        212.5,
+        388.0,
+        241.0,
+        417.5
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 10.3,
+     "bottom_depth": 11.1,
+     "description_raw": "Feinsand(schluffig),Braunkohle/grau/Schichtwasser",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 27,
+       "method": "raster+ocr",
+       "bbox": [
+        212.5,
+        417.5,
+        241.0,
+        435.6
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 11.1,
+     "bottom_depth": 12.6,
+     "description_raw": "Feinsand,Feinsteinstucke,Braunkohle/grau/Schichtwasser",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 27,
+       "method": "raster+ocr",
+       "bbox": [
+        212.5,
+        435.6,
+        241.0,
+        469.7
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 12.6,
+     "bottom_depth": 13.8,
+     "description_raw": "Mittelsand/grau/Schichtwasser",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 27,
+       "method": "raster+ocr",
+       "bbox": [
+        212.5,
+        469.7,
+        241.0,
+        496.9
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 13.8,
+     "bottom_depth": 15.5,
+     "description_raw": "Feinsand,Braunkohle/grau/Schichtwasser",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 27,
+       "method": "raster+ocr",
+       "bbox": [
+        212.5,
+        496.9,
+        241.0,
+        535.5
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 15.5,
+     "bottom_depth": 17.0,
+     "description_raw": "Feinsand,Braunkohle/grau/Schichtwasser",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 27,
+       "method": "raster+ocr",
+       "bbox": [
+        212.5,
+        535.5,
+        241.0,
+        569.5
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 17.0,
+     "bottom_depth": 18.6,
+     "description_raw": "Feinsand,Mittelsand/grau/Schichtwasser",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 27,
+       "method": "raster+ocr",
+       "bbox": [
+        212.5,
+        569.5,
+        241.0,
+        605.8
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 18.6,
+     "bottom_depth": 20.0,
+     "description_raw": "Feinsand,Mittelsand/grau/Schichtwasser",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 27,
+       "method": "raster+ocr",
+       "bbox": [
+        212.5,
+        605.8,
+        241.0,
+        637.6
+       ]
+      }
+     ]
+    }
+   ],
+   "groundwater": [
+    {
+     "depth": 3.8,
+     "nhn": 32.45,
+     "kind": "gemessen"
+    }
+   ],
+   "groundwater_status": null,
+   "checks": {
+    "label_support": 1.0,
+    "scale": 125,
+    "mode": "direkt (15/15 Labels)",
+    "schichtenverzeichnis": null,
+    "duplicates": []
+   },
+   "issues": [],
+   "provenance": [
+    {
+     "page": 27,
+     "bbox": [
+      212.5,
+      184.0,
+      241.0,
+      637.9
+     ],
+     "method": "raster+ocr"
+    }
+   ]
+  },
+  {
+   "code": "422C-461",
+   "kind": "kernbohrung",
+   "gok_nhn": 36.25,
+   "end_depth": 20.0,
+   "x": 394770.9,
+   "y": 5818370.1,
+   "crs_epsg": 25833,
+   "coord_source": "text",
+   "layers": [
+    {
+     "top_depth": 0.0,
+     "bottom_depth": 2.0,
+     "description_raw": "Sand/Auffullung,Bauschutt/grau/trocken",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 27,
+       "method": "raster+ocr",
+       "bbox": [
+        808.5,
+        183.7,
+        837.0,
+        229.1
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 2.0,
+     "bottom_depth": 3.5,
+     "description_raw": "Sand/Auffullung,Bauschutt/grau/trocken",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 27,
+       "method": "raster+ocr",
+       "bbox": [
+        808.5,
+        229.1,
+        837.0,
+        263.1
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 3.5,
+     "bottom_depth": 3.9,
+     "description_raw": "Sand/Auffullung/grau/Wasseranschnitt3.6",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 27,
+       "method": "raster+ocr",
+       "bbox": [
+        808.5,
+        263.1,
+        837.0,
+        272.2
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 3.9,
+     "bottom_depth": 4.2,
+     "description_raw": "Feinsand/grau/feucht",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 27,
+       "method": "raster+ocr",
+       "bbox": [
+        808.5,
+        272.2,
+        837.0,
+        279.0
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 4.2,
+     "bottom_depth": 6.0,
+     "description_raw": "Feinkies/grau/Schichtwasser",
+     "soil_class": "Kies",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 27,
+       "method": "raster+ocr",
+       "bbox": [
+        808.5,
+        279.0,
+        837.0,
+        319.9
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 6.0,
+     "bottom_depth": 7.7,
+     "description_raw": "Feinsand,Mittelsand,Feinkies/braungrau/Schichtwasser",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 27,
+       "method": "raster+ocr",
+       "bbox": [
+        808.5,
+        319.9,
+        837.0,
+        358.5
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 7.7,
+     "bottom_depth": 9.3,
+     "description_raw": "Feinsand,Mittelsand,Feinkies/graubraun/Schichtwasser",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 27,
+       "method": "raster+ocr",
+       "bbox": [
+        808.5,
+        358.5,
+        837.0,
+        394.8
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 9.3,
+     "bottom_depth": 11.0,
+     "description_raw": "Grobkies,Feinsteinstucke/grau/Schichtwasser",
+     "soil_class": "Kies",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 27,
+       "method": "raster+ocr",
+       "bbox": [
+        808.5,
+        394.8,
+        837.0,
+        433.4
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 11.0,
+     "bottom_depth": 12.5,
+     "description_raw": "Feinsand,Mittelsand/grau/Schichtwasser",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 27,
+       "method": "raster+ocr",
+       "bbox": [
+        808.5,
+        433.4,
+        837.0,
+        467.4
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 12.5,
+     "bottom_depth": 14.0,
+     "description_raw": "Mittelsand,Feinkies,Braunkohle/grau/Schichtwasser",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 27,
+       "method": "raster+ocr",
+       "bbox": [
+        808.5,
+        467.4,
+        837.0,
+        501.4
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 14.0,
+     "bottom_depth": 15.3,
+     "description_raw": "Feinsand,Mittelsand,Feinkies/grau/Schichtwasser",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 27,
+       "method": "raster+ocr",
+       "bbox": [
+        808.5,
+        501.4,
+        837.0,
+        531.0
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 15.3,
+     "bottom_depth": 17.0,
+     "description_raw": "Feinsand,Mittelsand,Braunkohle/grau/Schichtwasser",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.5,
+     "label_confirmed": false,
+     "issues": [
+      "Grenze ohne bestaetigendes Label"
+     ],
+     "provenance": [
+      {
+       "page": 27,
+       "method": "raster+ocr",
+       "bbox": [
+        808.5,
+        531.0,
+        837.0,
+        569.5
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 17.0,
+     "bottom_depth": 18.5,
+     "description_raw": "Feinsand,Mittelsand,Feinsteinstucke,Braunkohle/grau/Schichtwasser",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 27,
+       "method": "raster+ocr",
+       "bbox": [
+        808.5,
+        569.5,
+        837.0,
+        603.6
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 18.5,
+     "bottom_depth": 20.0,
+     "description_raw": "Feinsand,Mittelsand,Braunkohle/grau/Schichtwasser",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.5,
+     "label_confirmed": false,
+     "issues": [
+      "Grenze ohne bestaetigendes Label"
+     ],
+     "provenance": [
+      {
+       "page": 27,
+       "method": "raster+ocr",
+       "bbox": [
+        808.5,
+        603.6,
+        837.0,
+        637.6
+       ]
+      }
+     ]
+    }
+   ],
+   "groundwater": [
+    {
+     "depth": 3.6,
+     "nhn": 32.65,
+     "kind": "gemessen"
+    }
+   ],
+   "groundwater_status": null,
+   "checks": {
+    "label_support": 1.0,
+    "scale": 125,
+    "mode": "direkt (12/12 Labels)",
+    "schichtenverzeichnis": null,
+    "duplicates": []
+   },
+   "issues": [],
+   "provenance": [
+    {
+     "page": 27,
+     "bbox": [
+      808.5,
+      184.0,
+      837.0,
+      637.6
+     ],
+     "method": "raster+ocr"
+    }
+   ]
+  },
+  {
+   "code": "422C-5525",
+   "kind": "kernbohrung",
+   "gok_nhn": 35.65,
+   "end_depth": 8.0,
+   "x": 394838.8,
+   "y": 5818468.8,
+   "crs_epsg": 25833,
+   "coord_source": "text",
+   "layers": [
+    {
+     "top_depth": 0.0,
+     "bottom_depth": 2.0,
+     "description_raw": "Sand,Feinsteinstucke,Feinsteinstucke/Auffullung/Schotter",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 28,
+       "method": "raster+ocr",
+       "bbox": [
+        204.5,
+        179.3,
+        233.5,
+        292.8
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 2.0,
+     "bottom_depth": 2.3,
+     "description_raw": "FeinsandbisMittelsand/Auffullung/gelb",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 28,
+       "method": "raster+ocr",
+       "bbox": [
+        204.5,
+        292.8,
+        233.5,
+        309.8
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 2.3,
+     "bottom_depth": 2.8,
+     "description_raw": "Sand(schwachhumos)/Auffullung",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 28,
+       "method": "raster+ocr",
+       "bbox": [
+        204.5,
+        309.8,
+        233.5,
+        338.2
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 2.8,
+     "bottom_depth": 3.2,
+     "description_raw": "Sand(starkhumos)/Boden/schwarz",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 28,
+       "method": "raster+ocr",
+       "bbox": [
+        204.5,
+        338.2,
+        233.5,
+        360.9
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 3.2,
+     "bottom_depth": 3.9,
+     "description_raw": "FeinsandbisMittelsand,Feinkies (vereinzeltvorhanden)/gelbgrau",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 28,
+       "method": "raster+ocr",
+       "bbox": [
+        204.5,
+        360.9,
+        233.5,
+        400.7
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 3.9,
+     "bottom_depth": 6.4,
+     "description_raw": "Mittelsand bisGrobsand (feinkiesigbismittelkiesig)/grau",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 28,
+       "method": "raster+ocr",
+       "bbox": [
+        204.5,
+        400.7,
+        233.5,
+        542.6
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 6.4,
+     "bottom_depth": 8.0,
+     "description_raw": "Grobsand (feinkiesig,mittelkiesig(vereinzeltvorhanden)/grau",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 28,
+       "method": "raster+ocr",
+       "bbox": [
+        204.5,
+        542.6,
+        233.5,
+        633.4
+       ]
+      }
+     ]
+    }
+   ],
+   "groundwater": [],
+   "groundwater_status": null,
+   "checks": {
+    "label_support": 1.0,
+    "scale": 50,
+    "mode": "direkt (7/7 Labels)",
+    "schichtenverzeichnis": null,
+    "duplicates": []
+   },
+   "issues": [],
+   "provenance": [
+    {
+     "page": 28,
+     "bbox": [
+      204.5,
+      179.6,
+      233.5,
+      633.6
+     ],
+     "method": "raster+ocr"
+    }
+   ]
+  },
+  {
+   "code": "422C-5526",
+   "kind": "kernbohrung",
+   "gok_nhn": 35.01,
+   "end_depth": 8.0,
+   "x": 394887.4,
+   "y": 5818449.9,
+   "crs_epsg": 25833,
+   "coord_source": "text",
+   "layers": [
+    {
+     "top_depth": 0.0,
+     "bottom_depth": 1.8,
+     "description_raw": "Sand,Feinsteinstucke,Feinsteinstucke/Auffullung/Schotter",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 28,
+       "method": "raster+ocr",
+       "bbox": [
+        567.0,
+        179.5,
+        596.0,
+        281.6
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 1.8,
+     "bottom_depth": 2.4,
+     "description_raw": "FeinsandbisMittelsand/Auffullung/gelb",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 28,
+       "method": "raster+ocr",
+       "bbox": [
+        567.0,
+        281.6,
+        596.0,
+        315.6
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 2.4,
+     "bottom_depth": 2.6,
+     "description_raw": "Schlacke/Auffullung",
+     "soil_class": "Auffuellung",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 28,
+       "method": "raster+ocr",
+       "bbox": [
+        567.0,
+        315.6,
+        596.0,
+        326.9
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 2.6,
+     "bottom_depth": 2.9,
+     "description_raw": "Sand(schwachhumos)/Auffullung",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 28,
+       "method": "raster+ocr",
+       "bbox": [
+        567.0,
+        326.9,
+        596.0,
+        343.9
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 2.9,
+     "bottom_depth": 3.2,
+     "description_raw": "Sand(starkhumos)/Boden/schwarz",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 28,
+       "method": "raster+ocr",
+       "bbox": [
+        567.0,
+        343.9,
+        596.0,
+        360.9
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 3.2,
+     "bottom_depth": 3.8,
+     "description_raw": "Feinsand (feinkiesig (vereinzeltvorhanden))/gelb",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 28,
+       "method": "raster+ocr",
+       "bbox": [
+        567.0,
+        360.9,
+        596.0,
+        394.9
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 3.8,
+     "bottom_depth": 5.1,
+     "description_raw": "Mittelsand (schwachgrobsandig)/grau",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 28,
+       "method": "raster+ocr",
+       "bbox": [
+        567.0,
+        394.9,
+        596.0,
+        468.6
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 5.1,
+     "bottom_depth": 6.8,
+     "description_raw": "Mittelsand(grobsandig).Kies(vereinzeltvorhanden)/grau",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 28,
+       "method": "raster+ocr",
+       "bbox": [
+        567.0,
+        468.6,
+        596.0,
+        564.9
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 6.8,
+     "bottom_depth": 8.0,
+     "description_raw": "Grobsand(starkfeinkiesigbisgrobkiesig)/grau",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 28,
+       "method": "raster+ocr",
+       "bbox": [
+        567.0,
+        564.9,
+        596.0,
+        633.0
+       ]
+      }
+     ]
+    }
+   ],
+   "groundwater": [],
+   "groundwater_status": null,
+   "checks": {
+    "label_support": 1.0,
+    "scale": 50,
+    "mode": "direkt (9/9 Labels)",
+    "schichtenverzeichnis": null,
+    "duplicates": []
+   },
+   "issues": [],
+   "provenance": [
+    {
+     "page": 28,
+     "bbox": [
+      567.0,
+      180.0,
+      596.0,
+      633.2
+     ],
+     "method": "raster+ocr"
+    }
+   ]
+  },
+  {
+   "code": "422C-5527",
+   "kind": "kernbohrung",
+   "gok_nhn": 34.88,
+   "end_depth": 8.0,
+   "x": 394909.3,
+   "y": 5818442.5,
+   "crs_epsg": 25833,
+   "coord_source": "text",
+   "layers": [
+    {
+     "top_depth": 0.0,
+     "bottom_depth": 1.8,
+     "description_raw": "Sand,Feinsteinstucke/Aufullung,Schlacke",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 28,
+       "method": "raster+ocr",
+       "bbox": [
+        927.5,
+        179.5,
+        956.5,
+        281.5
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 1.8,
+     "bottom_depth": 2.1,
+     "description_raw": "Feinsand bis Mittelsand (verunreinigt)/Auffullung",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 28,
+       "method": "raster+ocr",
+       "bbox": [
+        927.5,
+        281.5,
+        956.5,
+        298.6
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 2.1,
+     "bottom_depth": 2.6,
+     "description_raw": "Schlacke/Auffullung",
+     "soil_class": "Auffuellung",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 28,
+       "method": "raster+ocr",
+       "bbox": [
+        927.5,
+        298.6,
+        956.5,
+        326.9
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 2.6,
+     "bottom_depth": 2.9,
+     "description_raw": "Sand (stark humos) /Auffullung",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 28,
+       "method": "raster+ocr",
+       "bbox": [
+        927.5,
+        326.9,
+        956.5,
+        343.9
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 2.9,
+     "bottom_depth": 3.2,
+     "description_raw": "Sand(humos)/Boden/schwarz",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 28,
+       "method": "raster+ocr",
+       "bbox": [
+        927.5,
+        343.9,
+        956.5,
+        361.0
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 3.2,
+     "bottom_depth": 3.6,
+     "description_raw": "FeinsandbisMittelsand/gelb",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 28,
+       "method": "raster+ocr",
+       "bbox": [
+        927.5,
+        361.0,
+        956.5,
+        383.6
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 3.6,
+     "bottom_depth": 3.9,
+     "description_raw": "Feinsand/hellgrau",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 28,
+       "method": "raster+ocr",
+       "bbox": [
+        927.5,
+        383.6,
+        956.5,
+        400.7
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 3.9,
+     "bottom_depth": 5.8,
+     "description_raw": "Mittelsand(schwachgrobsandig),Feinkies(vereinzeltvorhanden)/grau",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 28,
+       "method": "raster+ocr",
+       "bbox": [
+        927.5,
+        400.7,
+        956.5,
+        508.4
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 5.8,
+     "bottom_depth": 7.3,
+     "description_raw": "MittelsandbisGrobsand,FeinkiesbisMittelkies",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 28,
+       "method": "raster+ocr",
+       "bbox": [
+        927.5,
+        508.4,
+        956.5,
+        593.5
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 7.3,
+     "bottom_depth": 8.0,
+     "description_raw": "Grobsand (starkfeinkiesig,grobkiesig)",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 28,
+       "method": "raster+ocr",
+       "bbox": [
+        927.5,
+        593.5,
+        956.5,
+        633.2
+       ]
+      }
+     ]
+    }
+   ],
+   "groundwater": [],
+   "groundwater_status": null,
+   "checks": {
+    "label_support": 1.0,
+    "scale": 50,
+    "mode": "direkt (10/10 Labels)",
+    "schichtenverzeichnis": null,
+    "duplicates": []
+   },
+   "issues": [],
+   "provenance": [
+    {
+     "page": 28,
+     "bbox": [
+      927.5,
+      179.6,
+      956.5,
+      633.2
+     ],
+     "method": "raster+ocr"
+    }
+   ]
+  },
+  {
+   "code": "S2a",
+   "kind": "kernbohrung",
+   "gok_nhn": 36.52,
+   "end_depth": 12.0,
+   "x": null,
+   "y": null,
+   "crs_epsg": null,
+   "coord_source": null,
+   "layers": [
+    {
+     "top_depth": 0.0,
+     "bottom_depth": 0.11,
+     "description_raw": "",
+     "soil_class": null,
+     "hatch_class": null,
+     "confidence": 0.4,
+     "label_confirmed": false,
+     "issues": [
+      "Grenze ohne bestaetigendes Label"
+     ],
+     "provenance": [
+      {
+       "page": 29,
+       "method": "raster+ocr",
+       "bbox": [
+        883.5,
+        356.9,
+        912.0,
+        360.1
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 0.11,
+     "bottom_depth": 0.7,
+     "description_raw": "",
+     "soil_class": null,
+     "hatch_class": null,
+     "confidence": 0.7,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 29,
+       "method": "raster+ocr",
+       "bbox": [
+        883.5,
+        360.1,
+        912.0,
+        376.9
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 0.7,
+     "bottom_depth": 1.41,
+     "description_raw": "Auischothung,Sand,Gleisschotter",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.5,
+     "label_confirmed": false,
+     "issues": [
+      "Grenze ohne bestaetigendes Label"
+     ],
+     "provenance": [
+      {
+       "page": 29,
+       "method": "raster+ocr",
+       "bbox": [
+        883.5,
+        376.9,
+        912.0,
+        397.1
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 1.41,
+     "bottom_depth": 2.05,
+     "description_raw": "",
+     "soil_class": null,
+     "hatch_class": null,
+     "confidence": 0.7,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 29,
+       "method": "raster+ocr",
+       "bbox": [
+        883.5,
+        397.1,
+        912.0,
+        415.3
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 2.05,
+     "bottom_depth": 3.25,
+     "description_raw": "Geschiebelehm, Autschittung, Sand,",
+     "soil_class": "Geschiebemergel",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 29,
+       "method": "raster+ocr",
+       "bbox": [
+        883.5,
+        415.3,
+        912.0,
+        449.5
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 3.25,
+     "bottom_depth": 3.7,
+     "description_raw": "Aufschottung,Feinsand, schtuffig.",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 29,
+       "method": "raster+ocr",
+       "bbox": [
+        883.5,
+        449.5,
+        912.0,
+        462.3
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 3.7,
+     "bottom_depth": 5.1,
+     "description_raw": "Feinsand",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 29,
+       "method": "raster+ocr",
+       "bbox": [
+        883.5,
+        462.3,
+        912.0,
+        502.1
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 5.1,
+     "bottom_depth": 6.15,
+     "description_raw": "Mittelsand, feinsandig, schwach",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 29,
+       "method": "raster+ocr",
+       "bbox": [
+        883.5,
+        502.1,
+        912.0,
+        532.0
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 6.15,
+     "bottom_depth": 7.25,
+     "description_raw": "Feinsand, mitlelsandig",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 29,
+       "method": "raster+ocr",
+       "bbox": [
+        883.5,
+        532.0,
+        912.0,
+        563.3
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 7.25,
+     "bottom_depth": 8.8,
+     "description_raw": "Mittelsand, feinsandig",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 29,
+       "method": "raster+ocr",
+       "bbox": [
+        883.5,
+        563.3,
+        912.0,
+        607.5
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 8.8,
+     "bottom_depth": 9.55,
+     "description_raw": "Grobaand, mittelsandig, feinsandig",
+     "soil_class": null,
+     "hatch_class": null,
+     "confidence": 0.7,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 29,
+       "method": "raster+ocr",
+       "bbox": [
+        883.5,
+        607.5,
+        912.0,
+        628.8
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 9.55,
+     "bottom_depth": 11.05,
+     "description_raw": "Grobaand, mittelsandig, feinsandig.",
+     "soil_class": null,
+     "hatch_class": null,
+     "confidence": 0.7,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 29,
+       "method": "raster+ocr",
+       "bbox": [
+        883.5,
+        628.8,
+        912.0,
+        671.5
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 11.05,
+     "bottom_depth": 11.45,
+     "description_raw": "Grobsand, mitelaandig, feinsandig,",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 29,
+       "method": "raster+ocr",
+       "bbox": [
+        883.5,
+        671.5,
+        912.0,
+        682.9
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 11.45,
+     "bottom_depth": 12.0,
+     "description_raw": "Feinsand",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 29,
+       "method": "raster+ocr",
+       "bbox": [
+        883.5,
+        682.9,
+        912.0,
+        698.6
+       ]
+      }
+     ]
+    }
+   ],
+   "groundwater": [],
+   "groundwater_status": null,
+   "checks": {
+    "label_support": 0.92,
+    "scale": 100,
+    "mode": "reihenfolge (11/12 Labels)",
+    "schichtenverzeichnis": null,
+    "duplicates": []
+   },
+   "issues": [],
+   "provenance": [
+    {
+     "page": 29,
+     "bbox": [
+      883.5,
+      356.8,
+      912.0,
+      699.5
+     ],
+     "method": "raster+ocr"
+    }
+   ]
+  },
+  {
+   "code": "B 1/17",
+   "kind": "kernbohrung",
+   "gok_nhn": 34.91,
+   "end_depth": null,
+   "x": null,
+   "y": null,
+   "crs_epsg": null,
+   "coord_source": null,
+   "layers": [],
+   "groundwater": [],
+   "groundwater_status": null,
+   "checks": {
+    "label_support": 0.0,
+    "scale": null,
+    "mode": "widerspruch (0/5 Labels)",
+    "schichtenverzeichnis": null,
+    "duplicates": []
+   },
+   "issues": [
+    "Massstabstext und Tiefenlabels widersprechen sich: Schichten nicht ausgegeben"
+   ],
+   "provenance": [
+    {
+     "page": 31,
+     "bbox": [
+      576.5,
+      174.2,
+      602.0,
+      683.6
+     ],
+     "method": "raster+ocr"
+    }
+   ]
+  }
+ ],
+ "soundings": {}
+}

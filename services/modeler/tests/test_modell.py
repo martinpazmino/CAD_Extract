@@ -182,8 +182,17 @@ def test_unter_endteufe_unbekannt_nicht_fehlend():
     kurz = Bohrung("K", 10, 0, 40, [Abschnitt("Sand", 40, 35, [])], "x")
     einheiten, zuordnung, _ = korrelieren([a, kurz])
     assert [op for op, _, _ in zuordnung["K"]] == ["M", "T"]
-    _, ops = ausrichten(kurz, einheiten, [(40, 30), (30, 20)])
+    _, ops = ausrichten(kurz, einheiten, [(40, 30, 0, 10), (30, 20, 10, 20)])
     assert ops[-1][0] == "T"
+
+
+def test_gelaendefolgende_schichten_bei_starkem_gefaelle():
+    """Auffuellung 1 m unter Gelaende in Bohrungen mit 20 m GOK-Unterschied: eine Einheit (nach Tiefe), nicht drei."""
+    def bohr(code, x, gok):
+        return Bohrung(code, x, 0, gok, [Abschnitt("Auffuellung", gok, gok - 1, []), Abschnitt("Schluff", gok - 1, gok - 4, []),
+                                         Abschnitt("Fels", gok - 4, gok - 8, [])], "x")
+    einheiten, _, _ = korrelieren([bohr("A", 0, 770), bohr("B", 40, 760), bohr("C", 80, 750)])
+    assert [e.name for e in einheiten] == ["Auffuellung", "Schluff", "Fels"]
 
 
 def test_interpolatoren_exakt():
@@ -217,6 +226,33 @@ def test_ifc_valide(tmp_path):
     assert all(fs.Closed for fs in f.by_type("IfcPolygonalFaceSet"))
     b = bericht(m)
     assert b["pruefungen"]["alle_koerper_geschlossen"] and b["vorlage_einheiten"][0]["name"] == "Auffuellung"
+
+
+def test_lokales_system_und_herkunft(tmp_path):
+    """Lage ohne EPSG (manuell/schematisch) ist ein lokales System; Herkunft von Lage und Hoehe bleibt sichtbar."""
+    import ifcopenshell
+    doc = syn.dokument(syn.geneigt())
+    for b in doc["boreholes"]:
+        b["crs_epsg"] = None
+        b["coord_source"] = "schematisch"
+    doc["boreholes"][0]["gok_source"] = "relativ"
+    m = bauen([doc])
+    assert m.epsg is None and len(m.bohrungen) == 9
+    assert any("ohne Georeferenz" in h for h in m.hinweise)
+    assert any("schematische Lage" in h for h in m.hinweise) and any("relative Hoehen" in h for h in m.hinweise)
+    ifc_schreiben(m, tmp_path / "lokal.ifc", [doc])
+    f = ifcopenshell.open(str(tmp_path / "lokal.ifc"))
+    assert not f.by_type("IfcMapConversion")
+    werte = {p.Name: p.NominalValue.wrappedValue for p in f.by_type("IfcPropertySingleValue") if p.Name in ("Lage", "Hoehe")}
+    assert werte["Lage"] == "schematisch"
+
+
+def test_mehrheit_bestimmt_das_system():
+    doc = syn.dokument(syn.geneigt())
+    doc["boreholes"][0]["crs_epsg"] = None                     # eine Bohrung lokal, acht georeferenziert
+    m = bauen([doc])
+    assert m.epsg == syn.EPSG and len(m.bohrungen) == 8
+    assert m.ausgeschlossen[0]["grund"].startswith("anderes Koordinatensystem (lokal")
 
 
 def test_ausschluss_ohne_koordinaten():

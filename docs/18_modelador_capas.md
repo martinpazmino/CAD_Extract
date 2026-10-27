@@ -21,7 +21,7 @@ PDF ─prototyp_v4─► JSON canónico ─python -m baugrundmodell─► modelo
 
 | Código | Qué |
 |---|---|
-| [`services/modeler/`](../services/modeler/README.md) | Paquete `baugrundmodell` (Python): unidades, superficies, sólidos, IFC; 28 pruebas con verdad sintética |
+| [`services/modeler/`](../services/modeler/README.md) | Paquete `baugrundmodell` (Python): unidades, superficies, sólidos, IFC; 31 pruebas con verdad sintética |
 | [`apps/web/`](../apps/web/README.md) | Visor (Vite + TypeScript + `@thatopen/components` 3.6): unidades, propiedades, cortes, exageración vertical |
 
 ![Modelo demo, corte O–W con exageración 5×: lente de Kies local y Torf que se acuña](img/18_demo_schnitt.jpg)
@@ -41,7 +41,7 @@ programación dinámica:
 
 | Operación | Significado | Coste |
 |---|---|---|
-| M | el Abschnitt pertenece a la unidad (misma clase) | hueco de cota × 1/m + distancia de centros × 0,1/m |
+| M | el Abschnitt pertenece a la unidad (misma clase) | hueco × 1/m + distancia de centros × 0,1/m, el menor entre cota NHN y profundidad bajo GOK ([19 §4](19_app_v2.md#4-correlación-con-relieve-fuerte)) |
 | S | la unidad **falta** en el sondeo (se acuña, espesor 0) | 2,0 |
 | E | el mismo Abschnitt cubre también la siguiente unidad de su clase (una lente intermedia falta) | 0,5 + coste de cota |
 | C | otro Abschnitt en la misma unidad (unidades del geotécnico con varias clases) | 0,2 + coste de cota |
@@ -119,7 +119,7 @@ carga, unidades, etiquetas, selección por lista y por clic con exageración, co
 
 ## 6. Resultados
 
-**Pruebas** (`pytest services/modeler/tests`, 28 verdes): invariantes en 6 casos × 2 métodos
+**Pruebas** (`pytest services/modeler/tests`, 31 verdes desde [19](19_app_v2.md)): invariantes en 6 casos × 2 métodos
 (contactos exactos, espesor ≥ 0, sólidos cerrados, volumen coherente), planos inclinados
 reproducidos exactamente con TPS (< 1 mm), acuñamiento, lente, censura, datos perturbados,
 geotécnico que junta clases, clase no prevista, orden de entrada indiferente, 1 y 2 sondeos,
@@ -144,6 +144,12 @@ visor). Unidades automáticas: Sand 1 (60 836 m³, en 5), **Kies 1** (lente sól
 falta en 4, 2 999 m³), Sand 2 (5), Kies 2 (2 presentes, 3 desconocidos bajo los sondeos cortos),
 Sand 3 (base = base del modelo). Malla 2,9 m, buffer 16 m, 1 705 nodos, 3 puntos de censura,
 sólidos cerrados, IFC 3,0 MB.
+
+> [!NOTE]
+> Con la extracción v4 actual (ejemplo en [`data/beispiele`](../data/beispiele/README.md)), las capas
+> de 2,1–2,6 m de 422C-5526/5527 que antes quedaban sin clase se leen como Auffüllung (OCR sin
+> diéresis, regla B de docs/16) y el modelo de Berlín tiene **6 unidades** (Auffüllung entre Kies 1 y
+> Sand 2). Las cifras de arriba son las de la extracción anterior.
 
 No hay verdad 3D del subsuelo: el modelo es tan bueno como la extracción y la densidad de
 sondeos. Lo que sí se garantiza y se prueba es que respeta cada dato, que no inventa unidades

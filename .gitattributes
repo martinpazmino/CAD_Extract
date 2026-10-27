@@ -1,0 +1,4 @@
+# Windows-Startskript mit CRLF, gebauter Viewer ohne Diffs
+*.bat text eol=crlf
+*.wasm binary
+apps/web/dist/** linguist-generated=true -diff

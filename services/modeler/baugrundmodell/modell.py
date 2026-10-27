@@ -45,6 +45,14 @@ def bauen(docs: list[dict], vorgabe: list[Einheit] | None = None, methode: str =
     if not bohrungen:
         raise ValueError("keine modellfaehige Bohrung (Koordinaten, GOK und Schichten noetig)")
     einheiten, zuordnung, hinweise = korrelieren(bohrungen, vorgabe)
+    if epsg is None:
+        hinweise.append("Lage ohne Georeferenz (lokales System)")
+    schema = [b.code for b in bohrungen if b.lage == "schematisch"]
+    if schema:
+        hinweise.append(f"schematische Lage (Abstaende nicht vermessen, nur zur Anschauung): {', '.join(schema)}")
+    relativ = [b.code for b in bohrungen if b.hoehe.startswith("relativ")]
+    if relativ:
+        hinweise.append(f"relative Hoehen (GOK unbekannt, 0 m gesetzt): {', '.join(relativ)}")
     ks = [kontakte(b, zuordnung[b.code], einheiten) for b in bohrungen]
     ursprung = (round(float(np.mean([b.x for b in bohrungen])), -1), round(float(np.mean([b.y for b in bohrungen])), -1))
     xy_b = np.array([(b.x - ursprung[0], b.y - ursprung[1]) for b in bohrungen])
@@ -135,7 +143,8 @@ def ifc_schreiben(m: Modell, pfad, docs: list[dict], bohrsaeulen: bool = True,
         "Verfahren": "Layer-Cake: Einheiten per Schichtfolgen-Korrelation, Flaechen exakt an den Bohrungen",
         "Interpolation": {"idw": "IDW p=2", "tps": "Duennplatten-Spline"}.get(p["methode"], p["methode"]),
         "Raster_m": round(p["raster_m"], 2), "Puffer_m": round(p["puffer_m"], 1),
-        "Modellbasis_NHN": round(m.basis, 2), "Bohrungen_im_Modell": ", ".join(b.code for b in m.bohrungen),
+        "Modellbasis_NHN": round(m.basis, 2), "Lagebezug": f"EPSG:{m.epsg}" if m.epsg else "lokal (ohne Georeferenz)",
+        "Bohrungen_im_Modell": ", ".join(b.code for b in m.bohrungen),
         "Nicht_im_Modell": "; ".join(f"{a['code']} ({a['grund']})" for a in m.ausgeschlossen),
         "Quellen": ", ".join(quellen), "Modellierer": f"baugrundmodell {__version__}",
         "Hinweise": "; ".join(m.hinweise)})
@@ -145,7 +154,7 @@ def ifc_schreiben(m: Modell, pfad, docs: list[dict], bohrsaeulen: bool = True,
             for b in d["boreholes"]:
                 vb = codes.get(b["code"])
                 if vb is not None and vb.dokument == d["document"]["file"] and abs(vb.x - b["x"]) < 0.5:
-                    aus.bohrung(d["document"], b, (vb.x - m.ursprung[0], vb.y - m.ursprung[1]), "georeferenziert")
+                    aus.bohrung(d["document"], b, (vb.x - m.ursprung[0], vb.y - m.ursprung[1]), vb.lage, vb.hoehe)
     aus.schreiben(pfad)
     return {"einheiten": len(einheiten), "bohrungen": len(m.bohrungen)}
 
@@ -160,6 +169,7 @@ def bericht(m: Modell) -> dict:
                            "ok_modell": round(float(m.flaechen[j][bi]), 3),
                            "uk_modell": round(float(m.flaechen[j + 1][bi]), 3)})
         bohr.append({"code": b.code, "dokument": b.dokument, "x": b.x, "y": b.y, "gok": b.gok,
+                     "lage": b.lage, "hoehe": b.hoehe,
                      "endteufe_nhn": round(b.ende, 3),
                      "abschnitte": [{"bodenart": a.klasse, "ok": round(a.ok, 3), "uk": round(a.uk, 3)} for a in b.abschnitte],
                      "einheiten": zeilen, "hinweise": b.hinweise})

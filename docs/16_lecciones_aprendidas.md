@@ -145,6 +145,8 @@ dudoso quede **marcado**, nunca escondido.
 | M12 | IDW sólo llega a 0 en los propios sondeos: una unidad vista en un sondeo se extiende fina bajo todo el solar. Limitar la extensión (indicador de presencia) | Volumen de lente ×6,3 → ×1,9 |
 | M13 | Umbrales de espesor en las **superficies**, no sólo en la malla: si no, el volumen del IFC y el del modelo difieren | La prueba de volumen lo detectó (5 m³) |
 | M14 | Para leer geología hace falta **exageración vertical** (solar 150 m × 20 m); escalar `model.object` en y alrededor de la base: el raycast de Fragments usa `matrixWorld` y sigue funcionando. Transparencia con `depthWrite: false` | Capturas del visor |
+| M15 | Con relieve (Talheim: GOK 749–772 m) la correlación por cota absoluta parte una misma capa superficial en varias unidades: comparar también la **profundidad bajo GOK** y quedarse con la menor distancia | 15 → 6 unidades ([19](19_app_v2.md)) |
+| M16 | Un modelo sin coordenadas sólo es honesto como **esquema**: decirlo en la app, en el IFC (`Lage`) y en el visor (`Lagebezug`) | App v2 |
 
 ## X. Entorno de trabajo
 
@@ -161,6 +163,9 @@ dudoso quede **marcado**, nunca escondido.
 | X9 | **web-ifc 0.0.78**: el `web-ifc.wasm` de navegador no casa con su JS (`StreamMeshes called with 4 arguments, expected 3`); en Node funciona. En el visor, 0.0.77 | `apps/web` |
 | X10 | That Open descarga por defecto WASM (`autoSetWasm`) y worker (`getWorker`) de unpkg: copiarlos a `public/vendor` (`npm run vendor`) para trabajar sin red y con versiones fijas | `apps/web` |
 | X11 | `vite preview` sirve `dist/`: un IFC copiado a `public/` después del build no se ve; el chequeo copia el IFC a `dist/` | Capturas con volúmenes viejos |
+| X12 | Streamlit recarga los módulos al cambiar archivos: recompilar el visor con la app en marcha la deja sin componente (falta `dist/index.html` un instante). Reiniciar la app tras el build | Visor sin cargar en la prueba |
+| X13 | Un elemento nuevo encima del componente (p. ej. `st.status` de la extracción) lo **vuelve a montar**: iframe nuevo, estado a cero. Las pruebas detectan el cambio de iframe | `check_app.mjs` |
+| X14 | Streamlit sirve los archivos del componente con `mimetypes`; en Windows el registro puede dar `text/plain` para `.js` y bloquear módulos/workers: registrar los tipos en la app | `ui/viewer.py` (precaución; no visto en Windows aún) |
 
 Up: [Índice](README.md)
 

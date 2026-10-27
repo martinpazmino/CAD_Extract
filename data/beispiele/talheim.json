@@ -1,0 +1,1805 @@
+{
+ "document": {
+  "file": "talheim.pdf",
+  "sha256": "50a3af268b9cc3a8205cfef3ab44cc4389af86604063f6dbc9eb51a4055ddb03",
+  "parser_version": "prototyp_v4",
+  "pages": 22
+ },
+ "boreholes": [
+  {
+   "code": "BK1",
+   "kind": "kernbohrung",
+   "gok_nhn": 770.17,
+   "end_depth": 6.0,
+   "x": null,
+   "y": null,
+   "crs_epsg": null,
+   "coord_source": null,
+   "layers": [
+    {
+     "top_depth": 0.0,
+     "bottom_depth": 0.35,
+     "description_raw": "Mutterboden",
+     "soil_class": "Mutterboden",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        216.5,
+        175.7,
+        233.5,
+        189.0
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 0.35,
+     "bottom_depth": 1.0,
+     "description_raw": "Anschüttung, Steine,",
+     "soil_class": "Auffuellung",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        216.5,
+        189.0,
+        233.5,
+        213.5
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 1.0,
+     "bottom_depth": 2.5,
+     "description_raw": "Anschüttung, Schluff, stark tonig, kiesig, stark sandig, schwach steinig, weich-steif, TA",
+     "soil_class": "Auffuellung",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        216.5,
+        213.5,
+        233.5,
+        270.2
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 2.5,
+     "bottom_depth": 2.7,
+     "description_raw": "Anschüttung, Steine 1 Std",
+     "soil_class": "Auffuellung",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        216.5,
+        270.2,
+        233.5,
+        277.8
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 2.7,
+     "bottom_depth": 2.9,
+     "description_raw": "Anschüttung, Schluff, stark tonig, sandig,",
+     "soil_class": "Auffuellung",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        216.5,
+        277.8,
+        233.5,
+        285.3
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 2.9,
+     "bottom_depth": 3.2,
+     "description_raw": "Tonstein, stark schluffig, halbfest",
+     "soil_class": "Fels (Tonstein)",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        216.5,
+        285.3,
+        233.5,
+        296.7
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 3.2,
+     "bottom_depth": 4.0,
+     "description_raw": "",
+     "soil_class": null,
+     "hatch_class": null,
+     "confidence": 0.7,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        216.5,
+        296.7,
+        233.5,
+        326.9
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 4.0,
+     "bottom_depth": 6.0,
+     "description_raw": "Tonstein, schluffig, fest, rostbn-gr, mit Toneisensteingeoden,",
+     "soil_class": "Fels (Tonstein)",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        216.5,
+        326.9,
+        233.5,
+        402.5
+       ]
+      }
+     ]
+    }
+   ],
+   "groundwater": [
+    {
+     "depth": 3.0,
+     "nhn": 767.17,
+     "kind": "gemessen"
+    }
+   ],
+   "groundwater_status": null,
+   "checks": {
+    "label_support": 1.0,
+    "scale": 75,
+    "mode": "massstab-text (10/10 Labels)",
+    "schichtenverzeichnis": null,
+    "duplicates": []
+   },
+   "issues": [],
+   "provenance": [
+    {
+     "page": 9,
+     "bbox": [
+      216.5,
+      175.7,
+      233.5,
+      402.5
+     ],
+     "method": "vector"
+    }
+   ]
+  },
+  {
+   "code": "GWM1",
+   "kind": "gwm",
+   "gok_nhn": null,
+   "end_depth": 6.5,
+   "x": null,
+   "y": null,
+   "crs_epsg": null,
+   "coord_source": null,
+   "layers": [
+    {
+     "top_depth": 0.0,
+     "bottom_depth": 1.0,
+     "description_raw": "~770,17 mNN Beton",
+     "soil_class": "Beton",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        77.0,
+        157.0,
+        133.5,
+        194.7
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 1.0,
+     "bottom_depth": 2.5,
+     "description_raw": "Ton",
+     "soil_class": "Ton",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        77.0,
+        194.7,
+        133.5,
+        251.4
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 2.5,
+     "bottom_depth": 2.8,
+     "description_raw": "Sand",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        77.0,
+        251.4,
+        133.5,
+        262.7
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 2.8,
+     "bottom_depth": 6.5,
+     "description_raw": "Kies",
+     "soil_class": "Kies",
+     "hatch_class": null,
+     "confidence": 0.5,
+     "label_confirmed": false,
+     "issues": [
+      "Grenze ohne bestaetigendes Label"
+     ],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        77.0,
+        262.7,
+        133.5,
+        402.4
+       ]
+      }
+     ]
+    }
+   ],
+   "groundwater": [],
+   "groundwater_status": null,
+   "checks": {
+    "label_support": 1.0,
+    "scale": 75,
+    "mode": "direkt (6/6 Labels)",
+    "schichtenverzeichnis": null,
+    "duplicates": []
+   },
+   "issues": [],
+   "provenance": [
+    {
+     "page": 9,
+     "bbox": [
+      77.0,
+      156.8,
+      133.5,
+      402.5
+     ],
+     "method": "vector"
+    }
+   ]
+  },
+  {
+   "code": "BK2",
+   "kind": "kernbohrung",
+   "gok_nhn": 770.62,
+   "end_depth": 8.0,
+   "x": null,
+   "y": null,
+   "crs_epsg": null,
+   "coord_source": null,
+   "layers": [
+    {
+     "top_depth": 0.0,
+     "bottom_depth": 0.15,
+     "description_raw": "Mutterboden",
+     "soil_class": "Mutterboden",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        392.0,
+        158.8,
+        409.0,
+        164.4
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 0.15,
+     "bottom_depth": 1.1,
+     "description_raw": "Anschüttung, Schluff, Steine, kiesig, sandig, stark tonig, Betonreste, weich-steif",
+     "soil_class": "Auffuellung",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        392.0,
+        164.4,
+        409.0,
+        200.3
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 1.1,
+     "bottom_depth": 1.2,
+     "description_raw": "Schluff, tonig, Tonsteinbröckchen, schwach organisch, Wurzelreste, halbfest",
+     "soil_class": "Schluff",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        392.0,
+        200.3,
+        409.0,
+        204.1
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 1.2,
+     "bottom_depth": 1.7,
+     "description_raw": "Schluff, tonig, Tonsteinbröckchen, halbfest, rostbraun-grau",
+     "soil_class": "Schluff",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        392.0,
+        204.1,
+        409.0,
+        223.0
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 1.7,
+     "bottom_depth": 2.7,
+     "description_raw": "Tonstein, stark schluffig, tonig, feinsandig, halbfest, rostbraun-grau",
+     "soil_class": "Fels (Tonstein)",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        392.0,
+        223.0,
+        409.0,
+        260.8
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 2.7,
+     "bottom_depth": 5.0,
+     "description_raw": "Tonstein, schluffig, halbfest-fest,",
+     "soil_class": "Fels (Tonstein)",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        392.0,
+        260.8,
+        409.0,
+        347.7
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 5.0,
+     "bottom_depth": 5.5,
+     "description_raw": "Tonstein, fest, grau, zerbohrt, mäßig hart",
+     "soil_class": "Fels (Tonstein)",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        392.0,
+        347.7,
+        409.0,
+        366.6
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 5.5,
+     "bottom_depth": 6.7,
+     "description_raw": "Tonstein, schluffig, fest, grau, Grundwassermessstelle",
+     "soil_class": "Fels (Tonstein)",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        392.0,
+        366.6,
+        409.0,
+        412.0
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 6.7,
+     "bottom_depth": 7.3,
+     "description_raw": "Tonstein, OK Rohr: 20 cm über OK Gelände",
+     "soil_class": "Fels (Tonstein)",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        392.0,
+        412.0,
+        409.0,
+        434.7
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 7.3,
+     "bottom_depth": 8.0,
+     "description_raw": "Tonstein, schluffig, fest, grau, sehr mürbe Rohrdurchmesser: 2 Zoll Rohrmaterial: PVC",
+     "soil_class": "Fels (Tonstein)",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        392.0,
+        434.7,
+        409.0,
+        461.1
+       ]
+      }
+     ]
+    }
+   ],
+   "groundwater": [
+    {
+     "depth": 3.8,
+     "nhn": 766.82,
+     "kind": "gemessen"
+    }
+   ],
+   "groundwater_status": null,
+   "checks": {
+    "label_support": 1.0,
+    "scale": 75,
+    "mode": "massstab-text (12/12 Labels)",
+    "schichtenverzeichnis": null,
+    "duplicates": []
+   },
+   "issues": [],
+   "provenance": [
+    {
+     "page": 9,
+     "bbox": [
+      392.0,
+      158.8,
+      409.0,
+      461.2
+     ],
+     "method": "vector"
+    }
+   ]
+  },
+  {
+   "code": "BK3",
+   "kind": "kernbohrung",
+   "gok_nhn": 771.65,
+   "end_depth": 8.0,
+   "x": null,
+   "y": null,
+   "crs_epsg": null,
+   "coord_source": null,
+   "layers": [
+    {
+     "top_depth": 0.0,
+     "bottom_depth": 0.2,
+     "description_raw": "Mutterboden",
+     "soil_class": "Mutterboden",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        725.5,
+        119.9,
+        742.5,
+        127.4
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 0.2,
+     "bottom_depth": 0.4,
+     "description_raw": "Anschüttung, Schluff, stark tonig, wenig Tstbröckchen, steif-halbfest, braun",
+     "soil_class": "Auffuellung",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        725.5,
+        127.4,
+        742.5,
+        135.0
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 0.4,
+     "bottom_depth": 0.7,
+     "description_raw": "Anschüttung, Schotter, sandig, schluffig, tonig, GU/GU*, Bankettreste?",
+     "soil_class": "Auffuellung",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        725.5,
+        135.0,
+        742.5,
+        146.3
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 0.7,
+     "bottom_depth": 1.85,
+     "description_raw": "Schluff, stark tonig, schwach kiesig, wenig Tstbröckchen, TA, halbfest",
+     "soil_class": "Schluff",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        725.5,
+        146.3,
+        742.5,
+        189.8
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 1.85,
+     "bottom_depth": 3.4,
+     "description_raw": "Schluff, stark tonig, Tstbröckchen, halbfest, braungrau",
+     "soil_class": "Schluff",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        725.5,
+        189.8,
+        742.5,
+        248.4
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 3.4,
+     "bottom_depth": 4.9,
+     "description_raw": "Tonstein, schluffig, halbfest-fest, rostbraun, sehr mürbe",
+     "soil_class": "Fels (Tonstein)",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        725.5,
+        248.4,
+        742.5,
+        305.1
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 4.9,
+     "bottom_depth": 6.0,
+     "description_raw": "Tonstein,",
+     "soil_class": "Fels (Tonstein)",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        725.5,
+        305.1,
+        742.5,
+        346.7
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 6.0,
+     "bottom_depth": 8.0,
+     "description_raw": "Tonstein, fest, grau, zerbohrt, sehr mürbe",
+     "soil_class": "Fels (Tonstein)",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        725.5,
+        346.7,
+        742.5,
+        422.2
+       ]
+      }
+     ]
+    }
+   ],
+   "groundwater": [
+    {
+     "depth": 7.3,
+     "nhn": 764.35,
+     "kind": "gemessen"
+    }
+   ],
+   "groundwater_status": null,
+   "checks": {
+    "label_support": 1.0,
+    "scale": 75,
+    "mode": "massstab-text (10/10 Labels)",
+    "schichtenverzeichnis": null,
+    "duplicates": []
+   },
+   "issues": [],
+   "provenance": [
+    {
+     "page": 9,
+     "bbox": [
+      725.5,
+      119.9,
+      742.5,
+      422.0
+     ],
+     "method": "vector"
+    }
+   ]
+  },
+  {
+   "code": "GWM3",
+   "kind": "gwm",
+   "gok_nhn": null,
+   "end_depth": 8.5,
+   "x": null,
+   "y": null,
+   "crs_epsg": null,
+   "coord_source": null,
+   "layers": [
+    {
+     "top_depth": 0.0,
+     "bottom_depth": 1.0,
+     "description_raw": "~771,65 mNN Beton",
+     "soil_class": "Beton",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        570.0,
+        100.9,
+        627.0,
+        138.6
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 1.0,
+     "bottom_depth": 2.0,
+     "description_raw": "Ton",
+     "soil_class": "Ton",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        570.0,
+        138.6,
+        627.0,
+        176.4
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 2.0,
+     "bottom_depth": 2.4,
+     "description_raw": "Sand",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        570.0,
+        176.4,
+        627.0,
+        191.5
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 2.4,
+     "bottom_depth": 8.5,
+     "description_raw": "Kies",
+     "soil_class": "Kies",
+     "hatch_class": null,
+     "confidence": 0.5,
+     "label_confirmed": false,
+     "issues": [
+      "Grenze ohne bestaetigendes Label"
+     ],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        570.0,
+        191.5,
+        627.0,
+        422.0
+       ]
+      }
+     ]
+    }
+   ],
+   "groundwater": [],
+   "groundwater_status": null,
+   "checks": {
+    "label_support": 1.0,
+    "scale": 75,
+    "mode": "direkt (6/6 Labels)",
+    "schichtenverzeichnis": null,
+    "duplicates": []
+   },
+   "issues": [],
+   "provenance": [
+    {
+     "page": 9,
+     "bbox": [
+      570.0,
+      100.9,
+      627.0,
+      422.0
+     ],
+     "method": "vector"
+    }
+   ]
+  },
+  {
+   "code": "BK4",
+   "kind": "kernbohrung",
+   "gok_nhn": 772.3,
+   "end_depth": 8.0,
+   "x": null,
+   "y": null,
+   "crs_epsg": null,
+   "coord_source": null,
+   "layers": [
+    {
+     "top_depth": 0.0,
+     "bottom_depth": 0.2,
+     "description_raw": "Mutterboden",
+     "soil_class": "Mutterboden",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        878.5,
+        95.2,
+        895.5,
+        102.8
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 0.2,
+     "bottom_depth": 0.6,
+     "description_raw": "Anschüttung, Steine, kiesig, schwach schluffig, Beton",
+     "soil_class": "Auffuellung",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        878.5,
+        102.8,
+        895.5,
+        117.9
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 0.6,
+     "bottom_depth": 2.5,
+     "description_raw": "Anschüttung, Schluff, stark tonig, kiesig, schwach steinig, steif-halbfest, braun, TM/TA",
+     "soil_class": "Auffuellung",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        878.5,
+        117.9,
+        895.5,
+        189.7
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 2.5,
+     "bottom_depth": 4.5,
+     "description_raw": "Anschüttung, Steine, kiesig, schluffig, tonig, mit Blöcken, weich-steif, gemeißelt",
+     "soil_class": "Auffuellung",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        878.5,
+        189.7,
+        895.5,
+        265.3
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 4.5,
+     "bottom_depth": 5.1,
+     "description_raw": "Anschüttung, Schluff, tonig, kiesig, schwach tst, halbfest, braun",
+     "soil_class": "Auffuellung",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        878.5,
+        265.3,
+        895.5,
+        288.0
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 5.1,
+     "bottom_depth": 6.6,
+     "description_raw": "Schluff, tonig, schwach kiesig, Tonsteinbröckchen, halbfest-fest, rostbraun",
+     "soil_class": "Schluff",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        878.5,
+        288.0,
+        895.5,
+        344.7
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 6.6,
+     "bottom_depth": 7.0,
+     "description_raw": "Tonstein, stark schluffig, halbfest-fest, ~764,00 mNN",
+     "soil_class": "Fels (Tonstein)",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        878.5,
+        344.7,
+        895.5,
+        359.8
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 7.0,
+     "bottom_depth": 7.6,
+     "description_raw": "Tonstein, schluffig, halbfest-fest, rostbraun, sehr mürbe",
+     "soil_class": "Fels (Tonstein)",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        878.5,
+        359.8,
+        895.5,
+        382.5
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 7.6,
+     "bottom_depth": 8.0,
+     "description_raw": "Tonstein, schluffig, fest, grau-rostbraun, mürbfest",
+     "soil_class": "Fels (Tonstein)",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        878.5,
+        382.5,
+        895.5,
+        397.6
+       ]
+      }
+     ]
+    }
+   ],
+   "groundwater": [],
+   "groundwater_status": null,
+   "checks": {
+    "label_support": 1.0,
+    "scale": 75,
+    "mode": "massstab-text (11/11 Labels)",
+    "schichtenverzeichnis": null,
+    "duplicates": []
+   },
+   "issues": [],
+   "provenance": [
+    {
+     "page": 9,
+     "bbox": [
+      878.5,
+      95.2,
+      895.5,
+      397.7
+     ],
+     "method": "vector"
+    }
+   ]
+  },
+  {
+   "code": "BK8",
+   "kind": "kernbohrung",
+   "gok_nhn": 764.0,
+   "end_depth": 4.0,
+   "x": null,
+   "y": null,
+   "crs_epsg": null,
+   "coord_source": null,
+   "layers": [
+    {
+     "top_depth": 0.0,
+     "bottom_depth": 0.1,
+     "description_raw": "Schwarzdecke",
+     "soil_class": "Schwarzdecke",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        1017.5,
+        409.0,
+        1034.5,
+        412.8
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 0.1,
+     "bottom_depth": 0.3,
+     "description_raw": "Anschüttung, Schotter, sandig, schwach schluffig",
+     "soil_class": "Auffuellung",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        1017.5,
+        412.8,
+        1034.5,
+        420.4
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 0.3,
+     "bottom_depth": 2.0,
+     "description_raw": "Anschüttung, Steine, Schluff, tonig, kiesig, sandig, steif-halbfest, beigebraun",
+     "soil_class": "Auffuellung",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        1017.5,
+        420.4,
+        1034.5,
+        484.6
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 2.0,
+     "bottom_depth": 2.4,
+     "description_raw": "Schluff, tonig, tstbröckchen, halbfest, rostbraun-grau",
+     "soil_class": "Schluff",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        1017.5,
+        484.6,
+        1034.5,
+        499.7
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 2.4,
+     "bottom_depth": 4.0,
+     "description_raw": "Tonstein, schluffig, halbfest-fest, rostbraun-grau, letzte 10cm grau",
+     "soil_class": "Fels (Tonstein)",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 9,
+       "method": "vector",
+       "bbox": [
+        1017.5,
+        499.7,
+        1034.5,
+        560.2
+       ]
+      }
+     ]
+    }
+   ],
+   "groundwater": [],
+   "groundwater_status": null,
+   "checks": {
+    "label_support": 1.0,
+    "scale": 75,
+    "mode": "massstab-text (7/7 Labels)",
+    "schichtenverzeichnis": null,
+    "duplicates": []
+   },
+   "issues": [],
+   "provenance": [
+    {
+     "page": 9,
+     "bbox": [
+      1017.5,
+      409.0,
+      1034.5,
+      560.1
+     ],
+     "method": "vector"
+    }
+   ]
+  },
+  {
+   "code": "BK5",
+   "kind": "kernbohrung",
+   "gok_nhn": 756.61,
+   "end_depth": 3.0,
+   "x": null,
+   "y": null,
+   "crs_epsg": null,
+   "coord_source": null,
+   "layers": [
+    {
+     "top_depth": 0.0,
+     "bottom_depth": 0.1,
+     "description_raw": "Schwarzdecke",
+     "soil_class": "Schwarzdecke",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 10,
+       "method": "vector",
+       "bbox": [
+        151.5,
+        94.4,
+        168.5,
+        98.2
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 0.1,
+     "bottom_depth": 0.35,
+     "description_raw": "Anschüttung, Schotter, sandig, schwach schluffig, schwach steinig",
+     "soil_class": "Auffuellung",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 10,
+       "method": "vector",
+       "bbox": [
+        151.5,
+        98.2,
+        168.5,
+        107.6
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 0.35,
+     "bottom_depth": 0.6,
+     "description_raw": "Anschüttung, Kies, stark schluffig, sandig, Ziegelreste, steif, GU*, Fliesenreste",
+     "soil_class": "Auffuellung",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 10,
+       "method": "vector",
+       "bbox": [
+        151.5,
+        107.6,
+        168.5,
+        117.1
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 0.6,
+     "bottom_depth": 3.0,
+     "description_raw": "Anschüttung, Kies, Grobschluff, sandig, schluffig, schwach steinig",
+     "soil_class": "Auffuellung",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 10,
+       "method": "vector",
+       "bbox": [
+        151.5,
+        117.1,
+        168.5,
+        207.8
+       ]
+      }
+     ]
+    }
+   ],
+   "groundwater": [],
+   "groundwater_status": null,
+   "checks": {
+    "label_support": 1.0,
+    "scale": 75,
+    "mode": "massstab-text (6/6 Labels)",
+    "schichtenverzeichnis": null,
+    "duplicates": []
+   },
+   "issues": [
+    "Linien ohne Label mit gleicher Schraffur ober-/unterhalb entfernt: [0.07]"
+   ],
+   "provenance": [
+    {
+     "page": 10,
+     "bbox": [
+      151.5,
+      94.4,
+      168.5,
+      207.8
+     ],
+     "method": "vector"
+    }
+   ]
+  },
+  {
+   "code": "BK6",
+   "kind": "kernbohrung",
+   "gok_nhn": 749.2,
+   "end_depth": 4.0,
+   "x": null,
+   "y": null,
+   "crs_epsg": null,
+   "coord_source": null,
+   "layers": [
+    {
+     "top_depth": 0.0,
+     "bottom_depth": 0.2,
+     "description_raw": "",
+     "soil_class": null,
+     "hatch_class": null,
+     "confidence": 0.7,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 10,
+       "method": "vector",
+       "bbox": [
+        384.5,
+        374.5,
+        401.5,
+        382.0
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 0.2,
+     "bottom_depth": 1.5,
+     "description_raw": "Anschüttung, Schluff, stark tonig, schwach organisch, TA, weich-steif, grbn, Wurzelreste",
+     "soil_class": "Auffuellung",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 10,
+       "method": "vector",
+       "bbox": [
+        384.5,
+        382.0,
+        401.5,
+        431.2
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 1.5,
+     "bottom_depth": 2.2,
+     "description_raw": "Anschüttung, Torf, Humus, schwach schluffig, weich-steif, dunkelbraun",
+     "soil_class": "Auffuellung",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 10,
+       "method": "vector",
+       "bbox": [
+        384.5,
+        431.2,
+        401.5,
+        457.6
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 2.2,
+     "bottom_depth": 2.6,
+     "description_raw": "Schluff, ta, stark tonig, organisch, weich-steif, durchwurzelt",
+     "soil_class": "Schluff",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 10,
+       "method": "vector",
+       "bbox": [
+        384.5,
+        457.6,
+        401.5,
+        472.7
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 2.6,
+     "bottom_depth": 2.9,
+     "description_raw": "Schluff, stark tonig, weich-steif, hellbraun",
+     "soil_class": "Schluff",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 10,
+       "method": "vector",
+       "bbox": [
+        384.5,
+        472.7,
+        401.5,
+        484.1
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 2.9,
+     "bottom_depth": 3.3,
+     "description_raw": "Schluff, viele Tstbröckchen,",
+     "soil_class": "Schluff",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 10,
+       "method": "vector",
+       "bbox": [
+        384.5,
+        484.1,
+        401.5,
+        499.2
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 3.3,
+     "bottom_depth": 4.0,
+     "description_raw": "Tonstein, stark schluffig, halbfest",
+     "soil_class": "Fels (Tonstein)",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 10,
+       "method": "vector",
+       "bbox": [
+        384.5,
+        499.2,
+        401.5,
+        525.6
+       ]
+      }
+     ]
+    }
+   ],
+   "groundwater": [],
+   "groundwater_status": null,
+   "checks": {
+    "label_support": 1.0,
+    "scale": 75,
+    "mode": "massstab-text (9/9 Labels)",
+    "schichtenverzeichnis": null,
+    "duplicates": []
+   },
+   "issues": [],
+   "provenance": [
+    {
+     "page": 10,
+     "bbox": [
+      384.5,
+      374.5,
+      401.5,
+      525.5
+     ],
+     "method": "vector"
+    }
+   ]
+  },
+  {
+   "code": "BK7",
+   "kind": "kernbohrung",
+   "gok_nhn": 749.1,
+   "end_depth": 4.0,
+   "x": null,
+   "y": null,
+   "crs_epsg": null,
+   "coord_source": null,
+   "layers": [
+    {
+     "top_depth": 0.0,
+     "bottom_depth": 0.1,
+     "description_raw": "Schwarzdecke",
+     "soil_class": "Schwarzdecke",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 10,
+       "method": "vector",
+       "bbox": [
+        615.0,
+        378.1,
+        632.0,
+        381.9
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 0.1,
+     "bottom_depth": 0.8,
+     "description_raw": "Anschüttung, Kies, sandig, schwach schluffig",
+     "soil_class": "Auffuellung",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 10,
+       "method": "vector",
+       "bbox": [
+        615.0,
+        381.9,
+        632.0,
+        408.4
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 0.8,
+     "bottom_depth": 1.6,
+     "description_raw": "Anschüttung, Kies, Grobschluff, sandig, schluffig, schwach steinig",
+     "soil_class": "Auffuellung",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 10,
+       "method": "vector",
+       "bbox": [
+        615.0,
+        408.4,
+        632.0,
+        438.6
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 1.6,
+     "bottom_depth": 2.0,
+     "description_raw": "Anschüttung, Schluff, stark tonig, kiesig, schluffig, TA, weich",
+     "soil_class": "Auffuellung",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 10,
+       "method": "vector",
+       "bbox": [
+        615.0,
+        438.6,
+        632.0,
+        453.7
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 2.0,
+     "bottom_depth": 2.5,
+     "description_raw": "Anschüttung, Kies, sandig, schluffig, schwach steinig",
+     "soil_class": "Auffuellung",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 10,
+       "method": "vector",
+       "bbox": [
+        615.0,
+        453.7,
+        632.0,
+        472.6
+       ]
+      }
+     ]
+    },
+    {
+     "top_depth": 2.5,
+     "bottom_depth": 4.0,
+     "description_raw": "Anschüttung, Steine, Schluff, tonig, schwach kiesig, steif-halbfest",
+     "soil_class": "Auffuellung",
+     "hatch_class": null,
+     "confidence": 0.8,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 10,
+       "method": "vector",
+       "bbox": [
+        615.0,
+        472.6,
+        632.0,
+        529.3
+       ]
+      }
+     ]
+    }
+   ],
+   "groundwater": [],
+   "groundwater_status": null,
+   "checks": {
+    "label_support": 1.0,
+    "scale": 75,
+    "mode": "massstab-text (8/8 Labels)",
+    "schichtenverzeichnis": null,
+    "duplicates": []
+   },
+   "issues": [],
+   "provenance": [
+    {
+     "page": 10,
+     "bbox": [
+      615.0,
+      378.1,
+      632.0,
+      529.5
+     ],
+     "method": "vector"
+    }
+   ]
+  }
+ ],
+ "soundings": {}
+}

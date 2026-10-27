@@ -47,6 +47,7 @@ alimente un **Baugrundmodell** (Supabase → IFC 4.3 → That Open).
 - [16 Lecciones aprendidas](16_lecciones_aprendidas.md): **memoria del proyecto**, todas las reglas explícitas (proceso, entrada, geometría, etiquetas, texto, agua, segundas fuentes, swissgeol, IFC/Supabase, entorno).
 - [17 Algoritmo de extracción v4](17_algoritmo_extraccion.md): especificación por etapas E0–E9, parámetros y su origen, confianza y salida canónica.
 - [18 Modelador de capas y visor That Open](18_modelador_capas.md): Bodenschichten automáticas (unidades por correlación, superficies, sólidos cerrados), IFC 4.3 y visor web; resultados contra verdad sintética y con Berlín.
+- [19 App v2: del PDF al Baugrundmodell](19_app_v2.md): Streamlit con subida de PDF, revisión, modelo automático y visor That Open integrado; arranque en Windows, supuestos marcados.
 - [Glosario alemán–español](glosario.md): términos geotécnicos y de swissgeol.
 
 ## Código de apoyo
@@ -57,6 +58,7 @@ alimente un **Baugrundmodell** (Supabase → IFC 4.3 → That Open).
 - [Spike Supabase](../spikes/supabase/README.md): migración probada en PostGIS y cargador del JSON canónico.
 - [Modelador `baugrundmodell`](../services/modeler/README.md): JSON canónico → unidades → sólidos → IFC 4.3 (`IfcGeomodel`), con pruebas.
 - [Visor web](../apps/web/README.md): That Open Engine; unidades, propiedades, cortes, exageración vertical.
+- [Ejemplos de la app](../data/beispiele/README.md): Berlín, Talheim, demo y PDF sintético.
 
 ## Cómo leer
 
@@ -75,6 +77,8 @@ Arquitectura ─► 11 Decisiones
       ▼                                                               │
 10 Plan                                                               ▼
                                                      18 Modelador de capas + visor That Open
+                                                                      ▼
+                                                            19 App v2 (Streamlit)
 ```
 
 Up: [README del repositorio](../README.md)

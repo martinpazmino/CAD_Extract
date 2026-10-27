@@ -3,6 +3,7 @@ import * as THREE from "three";
 import * as OBC from "@thatopen/components";
 import * as FRAGS from "@thatopen/fragments";
 import * as WEBIFC from "web-ifc";
+import workerUrl from "@thatopen/fragments/worker?url";
 import { eigenschaften, inhalt, type Inhalt, type Psets } from "./baugrund";
 
 // Geotechnik-Klassen: der IfcImporter verwirft sie sonst (Architektur 8.2)
@@ -20,7 +21,7 @@ const vendor = new URL("vendor/", new URL(import.meta.env.BASE_URL, location.hre
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
 // Status fuer automatische Pruefungen (scripts/check.mjs)
-const status = { geladen: false, einheiten: [] as string[], bohrsaeulen: 0, marken: 0, fehler: "", auswahl: "" };
+const status = { geladen: false, ladungen: 0, einheiten: [] as string[], bohrsaeulen: 0, marken: 0, fehler: "", auswahl: "", streamlit: false };
 (window as unknown as { baugrund: typeof status }).baugrund = status;
 
 // ------------------------------------------------------------------ Welt
@@ -36,8 +37,12 @@ components.get(OBC.Grids).create(world);
 const caster = components.get(OBC.Raycasters).get(world);
 
 const fragments = components.get(OBC.FragmentsManager);
-fragments.init(`${vendor}worker.mjs`);
+fragments.init(workerUrl);                             // von Vite mitgeliefert, kein unpkg
 world.camera.controls.addEventListener("rest", () => fragments.core.update(true));
+world.camera.projection.onChanged.add((kamera: THREE.PerspectiveCamera | THREE.OrthographicCamera) => {
+  for (const m of fragments.list.values()) m.useCamera(kamera);
+  fragments.core.update(true);
+});
 fragments.list.onItemSet.add(({ value: model }) => {
   model.useCamera(world.camera.three);
   world.scene.three.add(model.object);
@@ -61,6 +66,8 @@ let modell: FRAGS.FragmentsModel | null = null;
 let daten: Inhalt | null = null;
 let auswahl: number | null = null;
 let durchscheinend = false;
+let nurEinheit: number | null = null;                 // ◎: nur diese Einheit zeigen
+const sichtbar = new Map<number, boolean>();           // Kaestchen je Einheit
 let lage = { y0: 0, basis: 0 };                       // Ausgangslage fuer die Ueberhoehung
 
 function meldung(text: string, dauer = 4000) {
@@ -70,22 +77,31 @@ function meldung(text: string, dauer = 4000) {
   window.setTimeout(() => (el.hidden = true), dauer);
 }
 
+function ladeanzeige(text: string | null) {
+  $("laden").hidden = text === null;
+  if (text !== null) $("laden-text").textContent = text;
+}
+
 async function laden(bytes: Uint8Array, name: string) {
   try {
-    meldung(`${name} wird geladen …`, 60000);
+    ladeanzeige(`${name} wird geladen …`);
     for (const id of [...fragments.list.keys()]) await fragments.core.disposeModel(id);
     clipper.deleteAll();
     modell = await ifcLoader.load(bytes, true, name);
     daten = await inhalt(modell);
     lage = { y0: modell.object.position.y, basis: modell.box.min.y };
     auswahl = null;
+    nurEinheit = null;
+    sichtbar.clear();
     $("eigenschaften").hidden = true;
+    $("leer").hidden = true;
     zeigeModell(name);
     await ueberhoehen(Number($<HTMLSelectElement>("ueberhoehung").value));
     await darstellen();
     await bohrungsmarken();
-    await world.camera.fitToItems();
+    await ansicht("iso");
     status.geladen = true;
+    status.ladungen += 1;
     status.marken = marken.length;
     status.einheiten = daten.einheiten.map((e) => e.name);
     status.bohrsaeulen = daten.bohrsaeulen.length;
@@ -94,29 +110,49 @@ async function laden(bytes: Uint8Array, name: string) {
     status.fehler = String(err);
     meldung(`Fehler beim Laden: ${err}`, 10000);
     throw err;
+  } finally {
+    ladeanzeige(null);
   }
+}
+
+async function ladenUrl(url: string, titel = "") {
+  ladeanzeige("Modell wird geholt …");
+  const antwort = await fetch(url);
+  if (!antwort.ok) {
+    ladeanzeige(null);
+    status.fehler = `${url}: HTTP ${antwort.status}`;
+    meldung(status.fehler, 10000);
+    return;
+  }
+  await laden(new Uint8Array(await antwort.arrayBuffer()), titel || decodeURIComponent(url.split("/").pop() ?? url));
 }
 
 function zeigeModell(name: string) {
   if (!daten) return;
   const m = daten.modell;
-  const teile = [daten.modellname || name, `${daten.einheiten.length} Einheiten`, `${daten.bohrungen.length} Bohrungen`];
+  const teile = [daten.modellname || name, `${daten.bohrungen.length} Bohrungen`];
+  if (m.Lagebezug !== undefined) teile.push(String(m.Lagebezug));
   if (m.Modellbasis_NHN !== undefined) teile.push(`Basis ${m.Modellbasis_NHN} m NHN`);
   $("modellinfo").textContent = teile.join(" · ");
+  $("einheiten-zahl").textContent = daten.einheiten.length ? String(daten.einheiten.length) : "";
   $("ausgeschlossen").textContent = String(m.Nicht_im_Modell ?? "") || "–";
+  const hinweise = String(m.Hinweise ?? "").split(";").map((h) => h.trim()).filter(Boolean);
+  $("hinweise").replaceChildren(...hinweise.map((h) => Object.assign(document.createElement("li"), { textContent: h })));
+  $("hinweise-block").hidden = !hinweise.length;
   const liste = $("einheiten");
   liste.replaceChildren();
   if (!daten.einheiten.length) {
     liste.innerHTML = `<li class="leise">Kein IfcGeomodel im IFC – nur Bohrsäulen.</li>`;
   }
   for (const e of daten.einheiten) {
+    sichtbar.set(e.localId, true);
     const li = document.createElement("li");
     li.dataset.id = String(e.localId);
     const volumen = Number(e.psets.CPset_Modelleinheit?.Volumen_m3 ?? 0);
     const box = document.createElement("input");
     box.type = "checkbox";
     box.checked = true;
-    box.setAttribute("aria-label", "sichtbar");
+    box.setAttribute("aria-label", `${e.name} sichtbar`);
     const farbe = document.createElement("span");
     farbe.className = "farbe";
     farbe.style.background = /^#[0-9a-f]{6}$/i.test(e.farbe) ? e.farbe : "#cccccc";
@@ -125,16 +161,42 @@ function zeigeModell(name: string) {
     const wert = document.createElement("span");
     wert.className = "wert";
     wert.textContent = `${Math.round(volumen).toLocaleString("de-DE")} m³`;
-    li.append(box, farbe, name, wert);
+    const nur = document.createElement("button");
+    nur.type = "button";
+    nur.className = "nur";
+    nur.textContent = "◎";
+    nur.title = "Nur diese Einheit zeigen";
+    nur.setAttribute("aria-pressed", "false");
+    li.append(box, farbe, name, wert, nur);
     box.addEventListener("click", (ev) => ev.stopPropagation());
     box.addEventListener("change", async () => {
-      if (!modell) return;
-      await modell.setVisible([e.localId], box.checked);
-      await fragments.core.update(true);
+      sichtbar.set(e.localId, box.checked);
+      li.classList.toggle("aus", !box.checked);
+      await sichtbarkeit();
+    });
+    nur.addEventListener("click", async (ev) => {
+      ev.stopPropagation();
+      nurEinheit = nurEinheit === e.localId ? null : e.localId;
+      for (const b of liste.querySelectorAll<HTMLButtonElement>("button.nur")) b.setAttribute("aria-pressed", "false");
+      nur.setAttribute("aria-pressed", String(nurEinheit === e.localId));
+      await sichtbarkeit();
     });
     li.addEventListener("click", () => waehlen(e.localId));
     liste.append(li);
   }
+}
+
+async function sichtbarkeit() {
+  if (!modell || !daten) return;
+  const an: number[] = [];
+  const aus: number[] = [];
+  for (const e of daten.einheiten) {
+    const zeigen = nurEinheit === null ? sichtbar.get(e.localId) !== false : e.localId === nurEinheit;
+    (zeigen ? an : aus).push(e.localId);
+  }
+  if (an.length) await modell.setVisible(an, true);
+  if (aus.length) await modell.setVisible(aus, false);
+  await fragments.core.update(true);
 }
 
 // Hervorhebungen immer komplett neu: Durchscheinen der Einheiten, darueber die Auswahl
@@ -201,6 +263,34 @@ world.renderer!.onAfterUpdate.add(() => {
   }
 });
 
+// ------------------------------------------------------------------ Kamera
+// three.js: y oben, x = Osten, -z = Norden
+async function ansicht(art: string) {
+  if (!modell) return;
+  const box = new THREE.Box3().setFromObject(modell.object);
+  if (box.isEmpty()) box.copy(modell.box);
+  const c = box.getCenter(new THREE.Vector3());
+  const d = Math.max(box.getSize(new THREE.Vector3()).length(), 10);
+  const ziele: Record<string, [number, number, number]> = {
+    iso: [c.x + 0.75 * d, c.y + 0.6 * d, c.z + 0.75 * d],
+    oben: [c.x, c.y + 1.3 * d, c.z + 0.001 * d],
+    sued: [c.x, c.y + 0.05 * d, c.z + 1.3 * d],
+    west: [c.x - 1.3 * d, c.y + 0.05 * d, c.z],
+  };
+  const [x, y, z] = ziele[art] ?? ziele.iso;
+  await world.camera.controls.setLookAt(x, y, z, c.x, c.y, c.z, true);
+  await fragments.core.update(true);
+}
+
+for (const knopf of document.querySelectorAll<HTMLButtonElement>("[data-ansicht]")) {
+  knopf.addEventListener("click", () => ansicht(knopf.dataset.ansicht!));
+}
+$("ortho").addEventListener("click", async () => {
+  await world.camera.projection.toggle();
+  $("ortho").setAttribute("aria-pressed", String(world.camera.projection.current === "Orthographic"));
+});
+$("seite-umschalten").addEventListener("click", () => document.body.classList.toggle("zu"));
+
 // ------------------------------------------------------------------ Auswahl und Eigenschaften
 // Texte aus dem IFC sind Daten: immer maskieren
 const esc = (t: string) => t.replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" })[c]!);
@@ -241,12 +331,16 @@ async function waehlen(localId: number | null) {
   status.auswahl = info.name;
 }
 
-$("viewer").addEventListener("click", async () => {
+const flaeche = world.renderer!.three.domElement;
+flaeche.addEventListener("click", async () => {
   const treffer = (await caster.castRay()) as unknown as { localId?: number } | null;
   await waehlen(treffer?.localId ?? null);
 });
-$("viewer").addEventListener("dblclick", () => clipper.create(world));
+flaeche.addEventListener("dblclick", () => clipper.create(world));
 $("auswahl-zu").addEventListener("click", () => waehlen(null));
+document.addEventListener("keydown", (ev) => {
+  if (ev.key === "Escape") waehlen(null);
+});
 
 // ------------------------------------------------------------------ Ansicht
 $<HTMLInputElement>("bohrsaeulen").addEventListener("change", async (ev) => {
@@ -263,7 +357,7 @@ $<HTMLInputElement>("transparent").addEventListener("change", async (ev) => {
 $<HTMLSelectElement>("ueberhoehung").addEventListener("change", async (ev) => {
   clipper.deleteAll();
   await ueberhoehen(Number((ev.target as HTMLSelectElement).value));
-  await world.camera.fitToItems();
+  await ansicht("iso");
 });
 
 function schnitt(normale: THREE.Vector3) {
@@ -293,11 +387,33 @@ document.body.addEventListener("drop", async (ev) => {
   if (f) await laden(new Uint8Array(await f.arrayBuffer()), f.name);
 });
 
+// ------------------------------------------------------------------ Start
+// Als Streamlit-Komponente (ui/viewer.py): Protokoll von streamlit-component-lib, ohne die Bibliothek.
+// Argumente: ifc (URL relativ zur Komponente), titel, ueberhoehung, hoehe (px).
 const parameter = new URLSearchParams(location.search);
-if (parameter.get("ueberhoehung")) $<HTMLSelectElement>("ueberhoehung").value = parameter.get("ueberhoehung")!;
-const url = parameter.get("ifc");
-if (url) {
-  const antwort = await fetch(url);
-  if (antwort.ok) await laden(new Uint8Array(await antwort.arrayBuffer()), url.split("/").pop() ?? url);
-  else meldung(`${url}: HTTP ${antwort.status}`, 10000);
+const eingebettet = parameter.has("streamlitUrl");
+status.streamlit = eingebettet;
+
+function anStreamlit(type: string, daten: Record<string, unknown> = {}) {
+  window.parent.postMessage({ isStreamlitMessage: true, type, ...daten }, "*");
+}
+
+if (eingebettet) {
+  document.body.classList.add("eingebettet");
+  let aktuell = "";
+  window.addEventListener("message", async (ev) => {
+    if (ev.data?.type !== "streamlit:render") return;
+    const args = (ev.data.args ?? {}) as { ifc?: string; titel?: string; ueberhoehung?: number; hoehe?: number };
+    anStreamlit("streamlit:setFrameHeight", { height: Number(args.hoehe ?? 720) });
+    if (args.ifc && args.ifc !== aktuell) {
+      aktuell = args.ifc;
+      if (args.ueberhoehung) $<HTMLSelectElement>("ueberhoehung").value = String(args.ueberhoehung);
+      await ladenUrl(args.ifc, args.titel);
+    }
+  });
+  anStreamlit("streamlit:componentReady", { apiVersion: 1 });
+} else {
+  if (parameter.get("ueberhoehung")) $<HTMLSelectElement>("ueberhoehung").value = parameter.get("ueberhoehung")!;
+  const url = parameter.get("ifc");
+  if (url) await ladenUrl(url);
 }

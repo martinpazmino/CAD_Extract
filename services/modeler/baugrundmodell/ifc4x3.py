@@ -101,7 +101,7 @@ class IfcAusgabe:
             ps = api.pset.add_pset(self.f, product=produkt, name=name)
             api.pset.edit_pset(self.f, pset=ps, properties=werte)
 
-    def bohrung(self, dokument: dict, b: dict, xy: tuple[float, float], lage: str):
+    def bohrung(self, dokument: dict, b: dict, xy: tuple[float, float], lage: str, hoehe: str | None = None):
         """IfcBorehole mit Schichten als Prismen (N1); xy lokal."""
         f = self.f
         ent = api.root.create_entity(f, ifc_class="IfcBorehole", name=b["code"])
@@ -113,7 +113,7 @@ class IfcAusgabe:
         self._pset(ent, "CPset_Herkunft", {
             "Dokument": dokument["file"], "SHA256": dokument.get("sha256"), "Parser": dokument.get("parser_version"),
             "Seite": int(prov["page"]) + 1 if prov.get("page") is not None else None, "Methode": prov.get("method"),
-            "Lage": lage, "Hoehe": "m NHN" if b.get("gok_nhn") is not None else "relativ (GOK unbekannt)",
+            "Lage": lage, "Hoehe": hoehe or ("m NHN" if b.get("gok_nhn") is not None else "relativ (GOK unbekannt)"),
             "Grundwasserstatus": b.get("groundwater_status"),
             "Abgleich_SV": (b.get("checks") or {}).get("schichtenverzeichnis"),
             "Labelbestaetigung": float((b.get("checks") or {}).get("label_support") or 0.0)})

@@ -20,8 +20,14 @@ npm run dev                                 # http://localhost:5173/?ifc=modelle
 npm run build && node scripts/check.mjs <modelo.ifc> <carpeta_capturas> 5   # prueba sin pantalla (Playwright)
 ```
 
-- `npm run vendor` (lo llaman `dev` y `build`) copia `web-ifc.wasm` y el worker de Fragments a
-  `public/vendor/`: el visor no descarga nada de unpkg.
+- **Dentro de Streamlit** ([`ui/viewer.py`](../../ui/viewer.py)) es un componente: la app sirve
+  `dist/`, escribe el IFC en `dist/modelle/<hash>.ifc` y pasa `ifc`, `titel`, `ueberhoehung`,
+  `hoehe`; el visor habla el protocolo `streamlit:render` sin librería. Por eso **`dist/` está en el
+  repo**: después de cambiar el visor, `npm run build` y subir `dist/` ([19](../../docs/19_app_v2.md)).
+- `npm run vendor` (lo llaman `dev` y `build`) copia `web-ifc.wasm` a `public/vendor/`; el worker de
+  Fragments lo empaqueta Vite (`@thatopen/fragments/worker?url`): nada se descarga de unpkg.
+- Barra de herramientas sobre el 3D: vistas Iso / Oben / Süd / West, ortográfica, cortes,
+  sondeos, translúcido, exageración; ◎ en la lista muestra sólo esa unidad; Esc quita la selección.
 - **web-ifc fijado en 0.0.77**: el `web-ifc.wasm` de navegador de 0.0.78 no casa con su propio JS
   (`StreamMeshes called with 4 arguments, expected 3`); en Node 0.0.78 funciona
   ([lección X9](../../docs/16_lecciones_aprendidas.md#x-entorno-de-trabajo)).
