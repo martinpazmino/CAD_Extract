@@ -3,10 +3,9 @@
 Wo die Einheit ausduennt (Maechtigkeit < MIN_MAECHTIGKEIT), fallen Dach- und Sohlknoten zusammen;
 Dreiecke, die dadurch doppelt und flach werden, entfallen. So bleibt die Huelle geschlossen
 (jede Kante gleich oft in beide Richtungen), ohne Flaechen der Dicke 0 zu exportieren.
+Alles vektorisiert (numpy): Trassen ueber 5 km haben 20-30 Tausend Knoten je Flaeche.
 """
 from __future__ import annotations
-
-from collections import Counter
 
 import numpy as np
 
@@ -14,45 +13,52 @@ from .flaechen import MIN_MAECHTIGKEIT
 
 
 def koerper(punkte: np.ndarray, dreiecke: np.ndarray, rand: np.ndarray, z_oben: np.ndarray,
-            z_unten: np.ndarray) -> tuple[list[tuple[float, float, float]], list[list[int]]] | None:
-    """Knoten und Flaechen (Dreiecke, Waende als Drei-/Vierecke, nach aussen orientiert); None ohne Volumen."""
+            z_unten: np.ndarray) -> tuple[np.ndarray, np.ndarray] | None:
+    """Knoten (K,3, auf mm gerundet) und Dreiecke (F,3, nach aussen orientiert); None ohne Volumen."""
     n = len(punkte)
     duenn = (z_oben - z_unten) < MIN_MAECHTIGKEIT
     oben = np.arange(n)
     unten = np.where(duenn, oben, n + oben)
-    flaechen: list[list[int]] = []
-    for a, b, c in dreiecke:
-        if duenn[a] and duenn[b] and duenn[c]:
-            continue
-        flaechen.append([oben[a], oben[b], oben[c]])
-        flaechen.append([unten[a], unten[c], unten[b]])
-    for a, b in rand:                                  # Gebiet links von a->b, Wand schaut nach rechts
-        f = [unten[a], unten[b], oben[b], oben[a]]
-        f = [v for k, v in enumerate(f) if v != f[k - 1]]
-        if len(f) >= 3:
-            flaechen.append(f)
-    if not flaechen:
+    behalten = ~duenn[dreiecke].all(1)
+    dach = oben[dreiecke[behalten]]
+    sohle = unten[dreiecke[behalten]][:, [0, 2, 1]]
+    a, b = rand[:, 0], rand[:, 1]                          # Gebiet links von a->b, Wand schaut nach rechts
+    wand = np.vstack([np.c_[unten[a], unten[b], oben[b]], np.c_[unten[a], oben[b], oben[a]]])
+    alle = np.vstack([dach, sohle, wand])
+    gueltig = (alle[:, 0] != alle[:, 1]) & (alle[:, 1] != alle[:, 2]) & (alle[:, 0] != alle[:, 2])
+    alle = alle[gueltig]
+    if not len(alle):
         return None
-    benutzt = sorted({v for f in flaechen for v in f})
-    neu = {v: k for k, v in enumerate(benutzt)}
-    knoten = [(float(punkte[v % n, 0]), float(punkte[v % n, 1]),
-               float(z_oben[v] if v < n else z_unten[v - n])) for v in benutzt]
-    return knoten, [[neu[v] for v in f] for f in flaechen]
+    benutzt, neu = np.unique(alle, return_inverse=True)
+    xy = punkte[benutzt % n]
+    z = np.where(benutzt < n, z_oben[np.minimum(benutzt, n - 1)], z_unten[np.maximum(benutzt - n, 0)])
+    knoten = np.round(np.c_[xy, z], 3)                     # mm: kleineres IFC, Kontakte sind auf cm angegeben
+    return knoten, neu.reshape(-1, 3)
 
 
-def pruefen(knoten: list[tuple[float, float, float]], flaechen: list[list[int]]) -> dict:
+def dreiecke_aus(flaechen) -> np.ndarray:
+    """Vielecke (Listen von Knotenindizes) als Faecher in Dreiecke zerlegen; (F,3)-Arrays bleiben, wie sie sind."""
+    if isinstance(flaechen, np.ndarray) and flaechen.ndim == 2 and flaechen.shape[1] == 3:
+        return flaechen
+    out = [(f[0], f[k], f[k + 1]) for f in flaechen for k in range(1, len(f) - 1)]
+    return np.array(out, dtype=np.int64).reshape(-1, 3)
+
+
+def pruefen(knoten, flaechen) -> dict:
     """Geschlossenheit (jede Kante gleich oft hin und zurueck), nicht-mannigfaltige Kanten, Volumen."""
-    kanten: Counter = Counter()
-    for f in flaechen:
-        for k in range(len(f)):
-            kanten[(f[k], f[(k + 1) % len(f)])] += 1
-    offen = sum(1 for (u, v), c in kanten.items() if kanten.get((v, u), 0) != c)
-    mehrfach = sum(1 for (u, v), c in kanten.items() if u < v and c > 1)
-    p = np.array(knoten)
-    vol = 0.0
-    for f in flaechen:
-        for k in range(1, len(f) - 1):
-            vol += np.dot(p[f[0]], np.cross(p[f[k]], p[f[k + 1]])) / 6.0
+    p = np.asarray(knoten, dtype=float)
+    f = dreiecke_aus(flaechen)
+    n = len(p) + 1
+    u = f.ravel()
+    v = np.roll(f, -1, axis=1).ravel()
+    hin, anzahl = np.unique(u * n + v, return_counts=True)
+    zurueck = (hin % n) * n + hin // n
+    pos = np.clip(np.searchsorted(hin, zurueck), 0, len(hin) - 1)
+    gegen = np.where(hin[pos] == zurueck, anzahl[pos], 0)
+    offen = int((gegen != anzahl).sum())
+    mehrfach = int(((anzahl > 1) & (hin // n < hin % n)).sum())
+    a, b, c = p[f[:, 0]], p[f[:, 1]], p[f[:, 2]]
+    vol = float(np.einsum("ij,ij->i", a, np.cross(b, c)).sum() / 6.0)
     return {"geschlossen": offen == 0, "offene_kanten": offen, "nicht_mannigfaltig": mehrfach, "volumen": vol}
 
 

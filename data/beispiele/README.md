@@ -14,8 +14,9 @@ PDF de terceros **no** están en el repo (fuente y `sha256` abajo).
 | Archivo | Qué es | Lo que enseña |
 |---|---|---|
 | [`berlin_v67b.json`](berlin_v67b.json) | Extracción v4 (JSON canónico) del geotechnischer Bericht B-Plan V-67b-VE, Berlín: Anlage 3 en raster, leída con OCR | Modelo **georreferenciado** (EPSG:25833) con 5 sondeos; 2 sondeos de archivo sin coordenadas quedan fuera y marcados |
-| [`talheim.json`](talheim.json) | Extracción v4 del informe de la Sickerwasserleitung Talheim (perfiles vectoriales) | PDF **sin coordenadas**: sondeos en fila esquemática, marcado en el IFC y en el visor |
+| [`talheim.json`](talheim.json) | Extracción v4 del informe de la Sickerwasserleitung Talheim (perfiles vectoriales) | PDF **sin coordenadas**: sondeos en fila (distancias propias o arrastrados en el Längsschnitt), marcado en el IFC y en el visor |
 | [`demo_synthetisch.json`](demo_synthetisch.json) | Caso sintético `demo` de [`baugrundmodell.synthetisch`](../../services/modeler/baugrundmodell/synthetisch.py) | 12 sondeos, lente de Kies, Torf que se acuña, sondeos cortos |
+| [`trasse_synthetisch.json`](trasse_synthetisch.json) | Caso sintético `trasse` del mismo módulo | **Trasse de 6 km**, 51 sondeos cada 120 m: cámara, delimitación y rendimiento para modelos > 5 km ([20](../../docs/20_lage_pruefung_viewer.md)) |
 | [`synthetisch_bohrprofil.pdf`](synthetisch_bohrprofil.pdf) | PDF generado por [`synth_bohrprofil.py`](../../spikes/extraktion_v2/synth_bohrprofil.py) (layout A) | **Subida de PDF** de punta a punta: extracción → modelo en coordenadas locales del Lageplan |
 
 Fuentes de los PDF reales (no incluidos):

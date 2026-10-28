@@ -31,6 +31,12 @@ Sólo quien cambie el visor necesita `npm install && npm run build` y subir el `
 
 ## 2. La página *Baugrundmodell*
 
+> [!NOTE]
+> Desde [20](20_lage_pruefung_viewer.md) el orden es otro: **tablas primero** (Bohrungen, Schichten,
+> Lage & Unterlage), sondeos ya visibles en el visor, botón *Baugrundmodell erzeugen*, después el
+> modelo se ajusta solo a cada cambio; Prüfstand con *Einchecken*; Lage sobre el PDF del plano;
+> estado del proyecto guardado automáticamente. Lo de abajo es la primera versión.
+
 1. **Entrada** (barra lateral): uno o varios PDF, o un [ejemplo](../data/beispiele/README.md)
    (Berlín georreferenciado, Talheim sin coordenadas, demo sintética, PDF sintético).
 2. **Extracción** con barra de progreso por página y clase de página (vector / raster / OCR). El
@@ -75,10 +81,11 @@ unidades que antes del cambio.
 |---|---|
 | [`app.py`](../app.py) | Entrada: navegación entre *Baugrundmodell* y *Excel nach Vorlage (v1)* |
 | [`ui/baugrundmodell.py`](../ui/baugrundmodell.py) | Página v2 |
-| [`ui/pipeline.py`](../ui/pipeline.py) | Sin interfaz: extracción con progreso y caché, tabla de sondeos, correcciones, esquemático/GOK, modelo |
+| [`ui/pipeline.py`](../ui/pipeline.py) | Sin interfaz: extracción con progreso y caché, modelo (`modell_bauen`, `ifc_bytes`), imagen del plano |
+| [`ui/projekt.py`](../ui/projekt.py) | Estado del proyecto: correcciones, Reihe, Lage, eventos del visor, Prüfstand ([20](20_lage_pruefung_viewer.md)) |
 | [`ui/viewer.py`](../ui/viewer.py) | Componente Streamlit con `apps/web/dist`; el IFC se escribe como `modelle/<hash>.ifc` y se pasa por URL |
 | [`ui/excel_v1.py`](../ui/excel_v1.py) | Página v1 sin cambios funcionales |
-| [`tests/test_app_pipeline.py`](../tests/test_app_pipeline.py) | 6 pruebas de la capa de la app |
+| [`tests/test_app_pipeline.py`](../tests/test_app_pipeline.py) | 15 pruebas de la capa de la app (desde [20](20_lage_pruefung_viewer.md)) |
 | [`scripts/check_app.mjs`](../scripts/check_app.mjs) | Prueba de punta a punta en Chromium (ejemplos o `--pdf`) |
 
 Decisiones técnicas:
@@ -96,7 +103,7 @@ Decisiones técnicas:
 
 ## 6. Verificación
 
-- `pytest tests` (app, 6) y `pytest services/modeler/tests` (modelador, 31): verdes.
+- `pytest tests` (app, 6) y `pytest services/modeler/tests` (modelador, 31): verdes (hoy 15 y 36, [20 §9](20_lage_pruefung_viewer.md#9-verificación)).
 - `scripts/check_app.mjs` con Streamlit sin pantalla: Berlín (6 unidades, EPSG:25833, 5 sondeos),
   Talheim (6 unidades, esquemático, 8 sondeos, 2 fuera sin GOK), demo (7 unidades) y **subida del
   PDF sintético** (extracción → 6 unidades, sistema local del Lageplan): visor cargado en los
@@ -108,11 +115,13 @@ Decisiones técnicas:
 
 1. La extracción con OCR tarda (Berlín 16 s con caché OCR, Wachenroth ~5 min la primera vez): un
    worker en segundo plano (arquitectura §4) evitaría bloquear la página.
-2. Sin coordenadas sólo hay fila esquemática; leer el Lageplan (docs/07) o el Längsschnitt (N2)
-   daría la disposición real.
+2. ~~Sin coordenadas sólo hay fila esquemática~~ → distancias propias en la fila y sondeos colocados a
+   mano sobre el Lageplan o el Längsschnitt en PDF ([20](20_lage_pruefung_viewer.md)); leerlos
+   automáticamente sigue pendiente (docs/07).
 3. Clic en el visor → página del PDF con la caja de la capa (procedencia visual).
-4. Guardar proyectos (Supabase, docs/ARQUITECTURA §5) en lugar de sólo descargas.
+4. Guardar proyectos (Supabase, docs/ARQUITECTURA §5) en lugar de sólo descargas: hoy el estado se
+   guarda en el disco local ([20 §5](20_lage_pruefung_viewer.md#5-tablas-antes-del-modelo-generar-y-nachführen)).
 
 Up: [Índice](README.md)
 
-Related: [18 Modelador de capas](18_modelador_capas.md) · [17 Algoritmo de extracción](17_algoritmo_extraccion.md) · [Ejemplos](../data/beispiele/README.md) · [11 Decisiones](11_decisiones.md) · [16 Lecciones](16_lecciones_aprendidas.md)
+Related: [20 Lage y Prüfstand](20_lage_pruefung_viewer.md) · [18 Modelador de capas](18_modelador_capas.md) · [17 Algoritmo de extracción](17_algoritmo_extraccion.md) · [Ejemplos](../data/beispiele/README.md) · [11 Decisiones](11_decisiones.md) · [16 Lecciones](16_lecciones_aprendidas.md)

@@ -44,7 +44,8 @@ def test_invarianten(name, methode):
     assert np.all(m.flaechen >= m.basis - 1e-9)
     for k in m.koerper:
         assert k["pruefung"]["geschlossen"], k["name"]
-        assert k["pruefung"]["volumen"] == pytest.approx(k["volumen_m3"], rel=1e-6, abs=1e-6)
+        # Knoten auf mm gerundet: hoechstens 1 mm x Grundflaeche Unterschied
+        assert k["pruefung"]["volumen"] == pytest.approx(k["volumen_m3"], abs=1e-3 * m.parameter["flaeche_m2"])
         assert k["volumen_m3"] >= 0
 
 
@@ -223,7 +224,12 @@ def test_ifc_valide(tmp_path):
     assert len(gm) == 1 and len(f.by_type("IfcBorehole")) == len(m.bohrungen)
     einheiten = [s for s in f.by_type("IfcGeotechnicalStratum") if (s.Description or "").startswith("Modelleinheit")]
     assert [s.Name for s in einheiten] == namen(m)
-    assert all(fs.Closed for fs in f.by_type("IfcPolygonalFaceSet"))
+    assert all(fs.Closed for fs in f.by_type("IfcTriangulatedFaceSet"))
+    # Laengeneinheit Meter: Koordinaten, Tiefen und Georeferenz sind in m geschrieben
+    import ifcopenshell.util.unit
+    assert ifcopenshell.util.unit.calculate_unit_scale(f) == 1.0
+    mc = f.by_type("IfcMapConversion")[0]
+    assert (mc.Eastings, mc.Northings) == tuple(m.ursprung)
     b = bericht(m)
     assert b["pruefungen"]["alle_koerper_geschlossen"] and b["vorlage_einheiten"][0]["name"] == "Auffuellung"
 
@@ -253,6 +259,44 @@ def test_mehrheit_bestimmt_das_system():
     m = bauen([doc])
     assert m.epsg == syn.EPSG and len(m.bohrungen) == 8
     assert m.ausgeschlossen[0]["grund"].startswith("anderes Koordinatensystem (lokal")
+
+
+def test_trasse_ueber_5_km():
+    """Grosse Modelle: Knotenzahl begrenzt, Puffer waechst mit dem Bohrabstand, Laufzeit und IFC klein genug."""
+    import time
+    from baugrundmodell.modell import MAX_KNOTEN
+    t = time.time()
+    m, docs = modell(syn.trasse())
+    assert time.time() - t < 20
+    xy = m.punkte
+    assert np.ptp(xy[:, 0]) > 5000 and len(xy) <= 1.1 * MAX_KNOTEN
+    assert 30 <= m.parameter["puffer_m"] <= 100
+    assert m.max_abweichung < 1e-6 and all(k["pruefung"]["geschlossen"] for k in m.koerper)
+
+
+def test_grosse_modellgrenze_von_hand():
+    """Puffer 500 m und Raster 0.5 m von Hand: das Raster wird vergroebert (Knotenbudget), mit Hinweis."""
+    from baugrundmodell.modell import MAX_KNOTEN
+    m = bauen([syn.dokument(syn.demo())], raster=0.5, puffer=500.0)
+    assert m.parameter["puffer_m"] == 500.0 and m.parameter["raster_m"] > 0.5
+    assert len(m.punkte) <= 1.1 * MAX_KNOTEN and any("vergroebert" in h for h in m.hinweise)
+    assert all(k["pruefung"]["geschlossen"] for k in m.koerper)
+
+
+def test_fester_ursprung_und_pruefstand(tmp_path):
+    import ifcopenshell
+    doc = syn.dokument(syn.geneigt())
+    doc["boreholes"][0]["geprueft"] = True
+    doc["boreholes"][0]["layers"][0].update(geprueft=True, korrigiert=True, konfidenz_extraktion=0.4)
+    m = bauen([doc], ursprung=(565000.0, 5933000.0))
+    assert m.ursprung == (565000.0, 5933000.0)
+    ifc_schreiben(m, tmp_path / "p.ifc", [doc], pruefstand="v1 · 9/9 Bohrungen geprueft")
+    f = ifcopenshell.open(str(tmp_path / "p.ifc"))
+    werte = {}
+    for pv in f.by_type("IfcPropertySingleValue"):
+        werte.setdefault(pv.Name, []).append(pv.NominalValue.wrappedValue if pv.NominalValue else None)
+    assert werte["Pruefstand"] == ["v1 · 9/9 Bohrungen geprueft"] and werte["Ursprung_Rechtswert"] == [565000.0]
+    assert werte["Geprueft"].count(True) == 2 and werte["Korrigiert"] == [True]
 
 
 def test_ausschluss_ohne_koordinaten():

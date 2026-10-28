@@ -20,6 +20,8 @@ import ifcopenshell.api.spatial  # noqa: F401
 import ifcopenshell.api.style  # noqa: F401
 import ifcopenshell.api.unit  # noqa: F401
 
+from .koerper import dreiecke_aus
+
 FARBEN = {"Mutterboden": (0.45, 0.3, 0.15), "Auffuellung": (0.6, 0.6, 0.6), "Sand": (1.0, 0.8, 0.3),
           "Kies": (0.95, 0.6, 0.2), "Schluff": (0.7, 0.75, 0.4), "Ton": (0.55, 0.75, 0.9),
           "Torf": (0.35, 0.25, 0.15), "Mudde": (0.3, 0.35, 0.3), "Steine": (0.5, 0.45, 0.4),
@@ -61,7 +63,10 @@ class IfcAusgabe:
     def __init__(self, projekt: str, epsg: int | None, ursprung: tuple[float, float]):
         f = self.f = api.project.create_file(version="IFC4X3")
         self.projekt = api.root.create_entity(f, ifc_class="IfcProject", name=projekt)
-        api.unit.assign_unit(f)
+        # Meter ausdruecklich: assign_unit ohne Angaben setzt Millimeter, alle Koordinaten sind aber in m
+        # (sonst zeigt jeder Viewer das Modell 1000-fach verkleinert und die Georeferenz stimmt nicht).
+        api.unit.assign_unit(f, units=[api.unit.add_si_unit(f, unit_type=t)
+                                       for t in ("LENGTHUNIT", "AREAUNIT", "VOLUMEUNIT")])
         model3d = api.context.add_context(f, context_type="Model")
         self.body = api.context.add_context(f, context_type="Model", context_identifier="Body",
                                             target_view="MODEL_VIEW", parent=model3d)
@@ -86,10 +91,14 @@ class IfcAusgabe:
         return self._stile[schluessel]
 
     def _geometrie(self, produkt, knoten, flaechen, rgb, stilname, geschlossen=False):
-        rep = api.geometry.add_mesh_representation(self.f, context=self.body, vertices=[knoten], faces=[flaechen])
-        if geschlossen:
-            for item in rep.Items:
-                item.Closed = True
+        """IfcTriangulatedFaceSet: zwei Entitaeten je Koerper statt einer je Flaeche (Trassen: 80k Flaechen)."""
+        dreiecke = dreiecke_aus(flaechen) + 1                        # IFC zaehlt ab 1
+        punkte = self.f.create_entity("IfcCartesianPointList3D",
+                                      CoordList=[tuple(map(float, k)) for k in np.asarray(knoten, dtype=float)])
+        flaeche = self.f.create_entity("IfcTriangulatedFaceSet", Coordinates=punkte, Closed=bool(geschlossen),
+                                       CoordIndex=[tuple(map(int, d)) for d in dreiecke])
+        rep = self.f.create_entity("IfcShapeRepresentation", ContextOfItems=self.body,
+                                   RepresentationIdentifier="Body", RepresentationType="Tessellation", Items=[flaeche])
         api.style.assign_representation_styles(self.f, shape_representation=rep,
                                                styles=[self._stil(rgb, stilname)])
         api.geometry.assign_representation(self.f, product=produkt, representation=rep)
@@ -116,7 +125,9 @@ class IfcAusgabe:
             "Lage": lage, "Hoehe": hoehe or ("m NHN" if b.get("gok_nhn") is not None else "relativ (GOK unbekannt)"),
             "Grundwasserstatus": b.get("groundwater_status"),
             "Abgleich_SV": (b.get("checks") or {}).get("schichtenverzeichnis"),
-            "Labelbestaetigung": float((b.get("checks") or {}).get("label_support") or 0.0)})
+            "Labelbestaetigung": float((b.get("checks") or {}).get("label_support") or 0.0),
+            # Pruefung durch den Nutzer (App): nur wenn der Schluessel gesetzt ist
+            "Geprueft": bool(b["geprueft"]) if "geprueft" in b else None})
         z0 = b["gok_nhn"] if b.get("gok_nhn") is not None else 0.0
         strata = []
         for ly in b["layers"]:
@@ -134,6 +145,9 @@ class IfcAusgabe:
                 "Tiefe_OK_m": float(ly["top_depth"]), "Tiefe_UK_m": float(ly["bottom_depth"]),
                 "Konfidenz": float(ly.get("confidence") or 0.0), "Label_bestaetigt": bool(ly.get("label_confirmed")),
                 "Quelle": f"{dokument['file']} S.{int(pv.get('page') or 0) + 1} {pv.get('method')} bbox {pv.get('bbox')}",
+                "Geprueft": bool(ly["geprueft"]) if "geprueft" in ly else None,
+                "Korrigiert": bool(ly["korrigiert"]) if ly.get("korrigiert") else None,
+                "Konfidenz_Extraktion": float(ly["konfidenz_extraktion"]) if ly.get("konfidenz_extraktion") is not None else None,
                 "Hinweise": "; ".join(ly.get("issues") or [])})
             strata.append(s)
         if strata:

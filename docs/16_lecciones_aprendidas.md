@@ -147,6 +147,15 @@ dudoso quede **marcado**, nunca escondido.
 | M14 | Para leer geología hace falta **exageración vertical** (solar 150 m × 20 m); escalar `model.object` en y alrededor de la base: el raycast de Fragments usa `matrixWorld` y sigue funcionando. Transparencia con `depthWrite: false` | Capturas del visor |
 | M15 | Con relieve (Talheim: GOK 749–772 m) la correlación por cota absoluta parte una misma capa superficial en varias unidades: comparar también la **profundidad bajo GOK** y quedarse con la menor distancia | 15 → 6 unidades ([19](19_app_v2.md)) |
 | M16 | Un modelo sin coordenadas sólo es honesto como **esquema**: decirlo en la app, en el IFC (`Lage`) y en el visor (`Lagebezug`) | App v2 |
+| M17 | `ifcopenshell.api.unit.assign_unit()` **sin argumentos pone milímetros**: con coordenadas en metros el modelo sale 1000× pequeño en cualquier visor y la `IfcMapConversion` queda mal. Unidades explícitas y prueba `calculate_unit_scale == 1` | Trasse de 6 km medía 6 m ([20 §2](20_lage_pruefung_viewer.md#2-mover-la-geometría-y-modelos-de-más-de-5-km)) |
+| M18 | Cámara de That Open: perspectiva near 1 / far 1000, ortográfica 0,1 / 1000 a 200 m del objetivo: **todo lo > 1 km desaparece**. Recalcular near/far en cada movimiento con el tamaño de la escena (ortográfica: near negativo) | Trasse: far 24,6 km, near 0,02 m de cerca |
+| M19 | Un IFC ya local al origen del proyecto se carga **sin `COORDINATE_TO_ORIGIN`** (web-ifc lo desplaza por defecto): así IFC y escena comparten coordenadas. Para IFC con coordenadas globales grandes hay que dejarlo activo | Chinchetas = IFC al cm |
+| M20 | Calibrar un plano con 2 puntos: Lageplan = **semejanza** (complejos, `q = u − i·v` porque las filas bajan); Längsschnitt = **escalas propias** en estación y altura (la exageración del dibujo se deshace). Mostrar escala y giro resultantes para que el usuario detecte un mal punto | 1:500 / 10,0°; 1:500 / 1:100 |
+| M21 | BUI 3.4: `Component.create` decide con/sin estado por la **aridad** de la plantilla (`() =>` devuelve un elemento, no `[el, update]`); tooltips con `<bim-tooltip>` dentro del botón (`tooltip-title` obsoleto); `bim-label` corta a una línea (usar `<p>`); `bim-dropdown` necesita `.value` (no sigue a `checked` de las opciones tras el primer render) | Errores y avisos del primer arranque |
+| M22 | camera-controls aplica `fitToSphere(…, false)` en el siguiente `update()`: llamar `controls.update(0)` antes de medir la escala de la vista | El desplazamiento junto al panel salía de la pantalla |
+| M23 | CSS: un hijo con `display:none` en una rejilla hace que el siguiente ocupe su columna (de 0 px): fijar `grid-column`; y `[hidden]` pierde contra `display:grid/flex` (`[hidden]{display:none!important}`) | Visor de 0 px al plegar el panel; aviso de carga que no se iba |
+| M24 | El IFC de ifcopenshell lleva **fecha y hora en la cabecera**: el mismo modelo da otro hash tras reiniciar. Como huella del modelo (einchecken, cachés) usar la **clave de sus entradas**, no los bytes del IFC | *seitdem geändert* falso tras reiniciar la app |
+| M25 | Dentro de Streamlit el iframe mide **0 px** hasta que llega `setFrameHeight`: un encuadre en ese momento da aspecto 0/0 y `fitToSphere` deja la cámara en **NaN** sin vuelta atrás (visor negro, marcas ocultas). Encuadrar sólo con tamaño (ResizeObserver, encuadre pendiente) y reparar una cámara no finita | Arranque en frío de la app ([20](20_lage_pruefung_viewer.md)) |
 
 ## X. Entorno de trabajo
 
@@ -166,6 +175,11 @@ dudoso quede **marcado**, nunca escondido.
 | X12 | Streamlit recarga los módulos al cambiar archivos: recompilar el visor con la app en marcha la deja sin componente (falta `dist/index.html` un instante). Reiniciar la app tras el build | Visor sin cargar en la prueba |
 | X13 | Un elemento nuevo encima del componente (p. ej. `st.status` de la extracción) lo **vuelve a montar**: iframe nuevo, estado a cero. Las pruebas detectan el cambio de iframe | `check_app.mjs` |
 | X14 | Streamlit sirve los archivos del componente con `mimetypes`; en Windows el registro puede dar `text/plain` para `.js` y bloquear módulos/workers: registrar los tipos en la app | `ui/viewer.py` (precaución; no visto en Windows aún) |
+| X15 | Con SwiftShader (Chromium sin GPU) un fotograma con posproducción tarda ~1 s: lo que se actualiza "en cada fotograma" (marcas DOM, estado) va con retraso y los iframes del mismo origen bloquean la página. Las pruebas esperan fotogramas (`requestAnimationFrame` ×2) y leen el estado en el momento; el render bajo demanda lo alivia | `check.mjs`, `check_app.mjs` |
+| X16 | `vite build` **vacía `dist/`** (también los IFC de prueba copiados); y un archivo que falta lo contesta el servidor con `index.html`: comprobar el `content-type` antes de pasarlo a web-ifc | `OpenModel … reading 'arguments'` |
+| X17 | El guardado automático del proyecto hace que una prueba repetida empiece con el estado anterior: las pruebas de la app pulsan *Korrekturen verwerfen* al elegir un ejemplo | `check_app.mjs` |
+| X18 | Playwright: `page.mouse` usa coordenadas de la ventana; un iframe bajo el pliegue hay que traerlo a la vista (p. ej. clic en un elemento suyo) antes de arrastrar | Arrastre sin efecto en la app |
+| X19 | X3 también vale para `pgrep -f patrón \| xargs kill`: el comando que lo contiene coincide consigo mismo | Exit 144 |
 
 Up: [Índice](README.md)
 

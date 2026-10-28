@@ -93,7 +93,8 @@ Kies 1 **falta** (se acuña a 31,15 m NHN, la mitad de la lente de 422C-461), Sa
 
 ## 4. IFC 4.3
 
-- `IfcGeomodel` ⊃ un `IfcGeotechnicalStratum` (SOLID, `IfcPolygonalFaceSet` con `Closed`) por
+- `IfcGeomodel` ⊃ un `IfcGeotechnicalStratum` (SOLID, `IfcTriangulatedFaceSet` con `Closed`; antes
+  `IfcPolygonalFaceSet`, una entidad por cara: con trasses de 80 000 caras el IFC triplicaba) por
   unidad, `Description = "Modelleinheit k/n"`; `CPset_Modelleinheit`: unidad, orden, clases, color,
   volumen, espesor máx./medio, distancia máxima a un sondeo (incertidumbre), sondeos con la unidad
   presente / ausente / desconocida, cerrado, avisos.
@@ -102,10 +103,17 @@ Kies 1 **falta** (se acuña a 31,15 m NHN, la mitad de la lente de 422C-461), Sa
 - `IfcBorehole` ⊃ estratos del sondeo (prismas, `Description = "Bohrsaeule"`) con la procedencia de
   siempre (`CPset_Schichtenverzeichnis`, `CPset_Herkunft`). El exportador N1 del spike usa ahora el
   mismo escritor.
-- Georreferencia `IfcMapConversion` + EPSG del JSON, origen = centroide redondeado. Validación de
-  esquema: **0 errores** (demo, Berlín, todos los casos de prueba).
+- Georreferencia `IfcMapConversion` + EPSG del JSON, origen = centroide redondeado (o el origen fijo
+  del proyecto que pasa la app). **Unidad de longitud METRE explícita** (antes mm por defecto de
+  ifcopenshell: el modelo salía 1000× pequeño, [M17](16_lecciones_aprendidas.md#m-modelo-ifc-y-that-open)).
+  Validación de esquema: **0 errores** (demo, Berlín, todos los casos de prueba).
 
 ## 5. Visor (`apps/web`)
+
+> [!NOTE]
+> Desde [20](20_lage_pruefung_viewer.md) el visor tiene los controles del TwinBimM (BUI, ViewCube,
+> posproducción, Highlighter/Hider, coordenadas), cámara para modelos de más de 5 km y el editor de
+> Lage sobre el PDF del plano. Lo de abajo describe la primera versión.
 
 Carga por `?ifc=`, selector de archivo o arrastrar; añade `IFCBOREHOLE`, `IFCGEOMODEL`,
 `IFCGEOSLICE`, `IFCGEOTECHNICALSTRATUM` al importer ([M2](16_lecciones_aprendidas.md#m-modelo-ifc-y-that-open)).
@@ -119,7 +127,7 @@ carga, unidades, etiquetas, selección por lista y por clic con exageración, co
 
 ## 6. Resultados
 
-**Pruebas** (`pytest services/modeler/tests`, 31 verdes desde [19](19_app_v2.md)): invariantes en 6 casos × 2 métodos
+**Pruebas** (`pytest services/modeler/tests`, 36 verdes desde [20](20_lage_pruefung_viewer.md); incluyen la trasse de 6 km y la unidad METRE): invariantes en 6 casos × 2 métodos
 (contactos exactos, espesor ≥ 0, sólidos cerrados, volumen coherente), planos inclinados
 reproducidos exactamente con TPS (< 1 mm), acuñamiento, lente, censura, datos perturbados,
 geotécnico que junta clases, clase no prevista, orden de entrada indiferente, 1 y 2 sondeos,
@@ -166,7 +174,7 @@ fuera de lo observado y que todo lo supuesto (censura, extensión, unidades fuer
 | `FREI_RAND` | 0,1 m | Límite libre no pegado al techo/base del Abschnitt |
 | `MIN_MAECHTIGKEIT` | 5 mm | Profundidades en cm |
 | `PRAESENZ_SCHWELLE` | 0,5 | La unidad termina a medio camino de los sondeos sin ella |
-| Buffer, malla | ½ dist. mediana (5–25 m); √área / 40 (0,5–10 m) | Tamaño del solar |
+| Buffer, malla | ½ dist. mediana (5–100 m, a mano hasta 5 km); √área / 40 (0,5–10 m), siempre ≤ 30 000 nodos | Tamaño del solar; trasses > 5 km ([20 §2](20_lage_pruefung_viewer.md#2-mover-la-geometría-y-modelos-de-más-de-5-km)) |
 | Base | Endteufe más profunda | No modelar bajo lo explorado |
 
 ## 8. Límites y siguientes pasos
@@ -188,4 +196,4 @@ fuera de lo observado y que todo lo supuesto (censura, extensión, unidades fuer
 
 Up: [Índice](README.md)
 
-Related: [Arquitectura §7](ARQUITECTURA_BAUGRUNDMODELL.md#7-baugrundmodell-generación-de-geometrías) · [17 Algoritmo de extracción](17_algoritmo_extraccion.md) · [16 Lecciones](16_lecciones_aprendidas.md) · [11 Decisiones](11_decisiones.md) · [07 Coordenadas](07_coordenadas.md)
+Related: [20 Lage y Prüfstand](20_lage_pruefung_viewer.md) · [Arquitectura §7](ARQUITECTURA_BAUGRUNDMODELL.md#7-baugrundmodell-generación-de-geometrías) · [17 Algoritmo de extracción](17_algoritmo_extraccion.md) · [16 Lecciones](16_lecciones_aprendidas.md) · [11 Decisiones](11_decisiones.md) · [07 Coordenadas](07_coordenadas.md)

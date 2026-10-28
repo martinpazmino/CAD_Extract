@@ -64,15 +64,26 @@ equipo; "Verificado" = respaldado por una prueba en este repo.
 | D50 | **Correlación por el menor entre distancia en cota y en profundidad** | Con relieve las capas superficiales siguen el terreno | Talheim 15 → 6 unidades; sintéticos sin cambio | Verificado |
 | D51 | **Extracción cacheada en disco** por `sha256` + OCR + huella del extractor; progreso envolviendo `primitives()` | Rerun inmediato sin tocar el extractor de referencia | `ui/pipeline.py` | Decidido |
 | D52 | **Arranque en Windows con `start.bat`** (venv, requisitos, OCR opcional, navegador) | El usuario trabaja en Windows; nada de pasos manuales | No probado en Windows desde aquí | Propuesta (a validar) |
+| D53 | **Visor con los controles del TwinBimM del usuario** (BUI oscuro W&F, barra Sichtbarkeit/Auswahl, ViewCube, engranaje, ⌖ Koord., Highlighter/Hider, posproducción) | Lo que el usuario ya maneja; misma librería That Open | [20 §1](20_lage_pruefung_viewer.md#1-controles-del-visor-como-twinbimm) | Decidido |
+| D54 | **IFC en metros con unidad explícita** (`assign_unit` sin argumentos pone mm) | El modelo salía 1000× pequeño en todo visor y la georreferencia mal | Prueba `calculate_unit_scale == 1` | Verificado |
+| D55 | **Cámara para modelos grandes**: near/far en cada movimiento, rejilla según escena, render bajo demanda con posproducción sólo en reposo | near/far fijos 1/1000 cortaban todo lo > 1 km; navegación fluida | Trasse 6 km: far 24,6 km, near 0,02 m de cerca | Verificado |
+| D56 | **Marco del visor = IFC local al origen fijo del proyecto**, cargado sin `COORDINATE_TO_ORIGIN` | Chinchetas, plano e IFC deben coincidir al cm | BK 1 de la trasse exacto | Verificado |
+| D57 | **Lage a mano en el visor sobre el PDF del plano** (imagen PyMuPDF), calibración por 2 puntos (semejanza / afín por ejes), eventos numerados con firma de proyecto | Casi ningún Gutachten trae coordenadas en el perfil; sí un Lageplan o un Längsschnitt | Plano: ≤ 0,45 m; Schnitt: ≤ 0,01 m ([20 §3](20_lage_pruefung_viewer.md#3-lage-sondeos-sobre-el-plano-antes-de-modelar)) | Verificado |
+| D58 | **Estado del proyecto aparte de la extracción** (`ui/projekt.py`) y guardado automático por firma | Trazabilidad (qué vino del PDF, qué puso una persona) y no perder horas de revisión | 15 pruebas de la app | Decidido |
+| D59 | **Tablas antes del modelo, botón *Erzeugen*, después nachführen automático**; las marcas de revisión no entran en la clave de geometría | Petición del usuario; marcar 50 capas no debe recalcular 50 veces | E2E 7/7 | Verificado |
+| D60 | **Prüfstand + Einchecken** con contadores y huella del modelo; IFC con `Geprueft`/`Korrigiert`/`Pruefstand` generado al descargar | "Einchecken de la confidence": estado de revisión fechado y comprobable | `test_einchecken`, E2E | Decidido |
+| D61 | **Delimitación = envolvente convexa + buffer** (auto 5–100 m, a mano hasta 5 km) con presupuesto de 30 000 nodos también para raster manual | Modelos > 5 km sin agotar memoria | `test_grosse_modellgrenze_von_hand` | Decidido |
+| D62 | **Página con esqueleto fijo de contenedores** | Un elemento nuevo encima del componente lo volvía a montar (X13) | E2E: *Erzeugen* sin remontar | Verificado |
 
 ## Preguntas abiertas
 
 1. ~~¿Quién aporta muestras?~~ → corpus público ([12](12_corpus_publico.md), D16). 3 recibidos
    ([15](15_resultados_pdfs_reales.md)); faltan 5–7 no vistos (subirlos o permitir los dominios).
 2. ~~¿Uso interno o terceros?~~ → interno primero, terceros más adelante (D17, D18, [14](14_licencias_terceros.md)).
-3. ¿Hay Lageplan, tabla de coordenadas o LandXML del eje en los proyectos? ([07](07_coordenadas.md))
+3. ¿Hay Lageplan, tabla de coordenadas o LandXML del eje en los proyectos? ([07](07_coordenadas.md)) → con
+   Lageplan o Längsschnitt en PDF ya se colocan en el visor ([20](20_lage_pruefung_viewer.md), D57).
 4. ¿Quién envía los issues y el correo a swisstopo, y en nombre de qué organización? ([13](13_colaboracion_swisstopo.md))
 
 Up: [Índice](README.md)
 
-Related: [Arquitectura](ARQUITECTURA_BAUGRUNDMODELL.md) · [10 Plan](10_plan_implementacion.md) · [09 Validación](09_validacion_benchmark.md) · [18 Modelador de capas](18_modelador_capas.md)
+Related: [Arquitectura](ARQUITECTURA_BAUGRUNDMODELL.md) · [10 Plan](10_plan_implementacion.md) · [09 Validación](09_validacion_benchmark.md) · [18 Modelador de capas](18_modelador_capas.md) · [20 Lage y Prüfstand](20_lage_pruefung_viewer.md)

@@ -39,8 +39,25 @@ class Modell:
     ausgeduennt: list[int] = field(default_factory=list)   # Knoten je Einheit, an denen die Ausdehnung endet
 
 
+# Grosse Modelle (Trassen > 5 km): Knotenzahl begrenzen statt Raster fest; Puffer waechst mit dem Bohrabstand
+MAX_KNOTEN = 30000
+RASTER_GRENZEN = (0.5, 10.0)          # m, solange die Knotenzahl reicht
+PUFFER_GRENZEN = (5.0, 100.0)         # m
+
+
+def standard_puffer(nn: float) -> float:
+    return float(np.clip(0.5 * nn, *PUFFER_GRENZEN))
+
+
+def standard_raster(flaeche: float) -> float:
+    """Raster ~ Gebietsgroesse/40, mindestens so grob, dass MAX_KNOTEN nicht ueberschritten werden."""
+    return float(max(np.clip(math.sqrt(flaeche) / 40.0, *RASTER_GRENZEN), math.sqrt(flaeche / MAX_KNOTEN)))
+
+
 def bauen(docs: list[dict], vorgabe: list[Einheit] | None = None, methode: str = "idw",
-          raster: float | None = None, puffer: float | None = None, basis: float | None = None) -> Modell:
+          raster: float | None = None, puffer: float | None = None, basis: float | None = None,
+          ursprung: tuple[float, float] | None = None) -> Modell:
+    """ursprung: fester lokaler Nullpunkt (App: bleibt beim Verschieben von Bohrungen stehen, die Ansicht springt nicht)."""
     bohrungen, ausgeschlossen, epsg = bohrungen_aus_extraktion(docs)
     if not bohrungen:
         raise ValueError("keine modellfaehige Bohrung (Koordinaten, GOK und Schichten noetig)")
@@ -54,16 +71,24 @@ def bauen(docs: list[dict], vorgabe: list[Einheit] | None = None, methode: str =
     if relativ:
         hinweise.append(f"relative Hoehen (GOK unbekannt, 0 m gesetzt): {', '.join(relativ)}")
     ks = [kontakte(b, zuordnung[b.code], einheiten) for b in bohrungen]
-    ursprung = (round(float(np.mean([b.x for b in bohrungen])), -1), round(float(np.mean([b.y for b in bohrungen])), -1))
+    if ursprung is None:
+        ursprung = (round(float(np.mean([b.x for b in bohrungen])), -1), round(float(np.mean([b.y for b in bohrungen])), -1))
+    ursprung = (float(ursprung[0]), float(ursprung[1]))
     xy_b = np.array([(b.x - ursprung[0], b.y - ursprung[1]) for b in bohrungen])
     if len(bohrungen) > 1:
         nn = float(np.median(cKDTree(xy_b).query(xy_b, k=2)[0][:, 1]))
     else:
         nn = 20.0
-    puffer = puffer if puffer is not None else float(np.clip(0.5 * nn, 5.0, 25.0))
+    puffer = puffer if puffer is not None else standard_puffer(nn)
     polygon = gebiet(xy_b, puffer)
     flaeche = 0.5 * abs(np.dot(polygon[:, 0], np.roll(polygon[:, 1], 1)) - np.dot(polygon[:, 1], np.roll(polygon[:, 0], 1)))
-    raster = raster if raster is not None else float(np.clip(math.sqrt(flaeche) / 40.0, 0.5, 10.0))
+    if raster is None:
+        raster = standard_raster(flaeche)
+    elif raster < math.sqrt(flaeche / MAX_KNOTEN):          # grosse Modellgrenze von Hand: Knotenzahl begrenzen
+        grob = math.sqrt(flaeche / MAX_KNOTEN)
+        hinweise.append(f"Raster {raster:.2f} m auf {grob:.2f} m vergroebert (hoechstens {MAX_KNOTEN} Knoten "
+                        f"fuer {flaeche / 1e6:.2f} km2)")
+        raster = grob
     punkte, dreiecke, rand = netz(polygon, xy_b, raster)
     tiefste = min(b.ende for b in bohrungen)
     if basis is None:
@@ -115,8 +140,11 @@ def _koerper(m: Modell) -> None:
 
 
 def ifc_schreiben(m: Modell, pfad, docs: list[dict], bohrsaeulen: bool = True,
-                  projekt: str = "Baugrundmodell aus Gutachten") -> dict:
-    """IfcGeomodel (Einheiten) + IfcBorehole (Bohrsaeulen der modellierten Bohrungen)."""
+                  projekt: str = "Baugrundmodell aus Gutachten", pruefstand: str | None = None) -> dict:
+    """IfcGeomodel (Einheiten) + IfcBorehole (Bohrsaeulen der modellierten Bohrungen).
+
+    pruefstand: Stand der Pruefung durch den Nutzer (App: "Einchecken"), steht im CPset_Baugrundmodell.
+    """
     aus = IfcAusgabe(projekt, m.epsg, m.ursprung)
     quellen = sorted({d["document"]["file"] for d in docs})
     n = len(m.einheiten)
@@ -147,7 +175,8 @@ def ifc_schreiben(m: Modell, pfad, docs: list[dict], bohrsaeulen: bool = True,
         "Bohrungen_im_Modell": ", ".join(b.code for b in m.bohrungen),
         "Nicht_im_Modell": "; ".join(f"{a['code']} ({a['grund']})" for a in m.ausgeschlossen),
         "Quellen": ", ".join(quellen), "Modellierer": f"baugrundmodell {__version__}",
-        "Hinweise": "; ".join(m.hinweise)})
+        "Ursprung_Rechtswert": m.ursprung[0], "Ursprung_Hochwert": m.ursprung[1],
+        "Pruefstand": pruefstand, "Hinweise": "; ".join(m.hinweise)})
     if bohrsaeulen:
         codes = {b.code: b for b in m.bohrungen}
         for d in docs:

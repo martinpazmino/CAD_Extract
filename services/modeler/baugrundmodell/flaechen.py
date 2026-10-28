@@ -155,10 +155,13 @@ def schichtmodell(bohrungen: list[Bohrung], kontakte: list[list[Kontakt]], punkt
         vorl.append(flaeche(d)[:nb])
     frei = _freie_grenzen(bohrungen, kontakte, vorl)
     zensur: list[dict[int, float]] = [{} for _ in range(n)]
+    roh: list[np.ndarray | None] = [None] * n
+    geaendert = set(range(n))
     for _ in range(ZENSUR_RUNDEN):
-        daten = [{**exakt[j], **{bi: z for (bi, jj), z in frei.items() if jj == j}, **zensur[j]} for j in range(n)]
-        flaechen = verschneiden(oben, [flaeche(d) for d in daten], basis)
-        neu = False
+        for j in geaendert:                               # nur Flaechen mit neuen Stuetzpunkten neu rechnen
+            roh[j] = flaeche({**exakt[j], **{bi: z for (bi, jj), z in frei.items() if jj == j}, **zensur[j]})
+        flaechen = verschneiden(oben, roh, basis)
+        geaendert = set()
         for bi in range(nb):
             for j, k in enumerate(kontakte[bi]):
                 if k.art != "zensiert" or bi in zensur[j]:
@@ -166,8 +169,8 @@ def schichtmodell(bohrungen: list[Bohrung], kontakte: list[list[Kontakt]], punkt
                 grenze = max(k.hi - ZENSUR_MARGE, basis)
                 if flaechen[j + 1][bi] > grenze + 1e-6:
                     zensur[j][bi] = grenze
-                    neu = True
-        if not neu:
+                    geaendert.add(j)
+        if not geaendert:
             break
     ausgeduennt = _ausdehnung(flaechen, kontakte, punkte, xy_b)
     abweichung = 0.0

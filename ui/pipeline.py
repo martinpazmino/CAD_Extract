@@ -6,7 +6,6 @@ Fortschritt; jede Korrektur wird im JSON markiert (coord_source/gok_source), nie
 """
 from __future__ import annotations
 
-import copy
 import hashlib
 import importlib.util
 import json
@@ -14,7 +13,7 @@ import os
 import re
 import sys
 import tempfile
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
@@ -24,7 +23,6 @@ BEISPIELE = REPO / "data" / "beispiele"
 sys.path.insert(0, str(REPO / "services" / "modeler"))
 
 from baugrundmodell.einheiten import einheiten_aus_vorgabe  # noqa: E402
-from baugrundmodell.ifc4x3 import farbe, farbschluessel, hexfarbe  # noqa: E402
 from baugrundmodell.modell import bauen, bericht, ifc_schreiben  # noqa: E402
 
 ARBEIT = Path(tempfile.gettempdir()) / "geo_agent"
@@ -103,108 +101,6 @@ def ist_extrahiert(daten: bytes, ocr: bool) -> bool:
     return (ARBEIT / "json" / f"{sha[:24]}_{int(bool(ocr))}_{_extraktor_stand()}.json").exists()
 
 
-# ---------------------------------------------------------------- Pruefung und Korrekturen
-@dataclass
-class Einstellungen:
-    ohne_lage: str = "schematisch"           # schematisch | weglassen
-    abstand_m: float = 20.0                  # Abstand der schematischen Reihe
-    gok_relativ: bool = True                 # fehlt die GOK bei allen: 0 m (relativ, markiert)
-    methode: str = "idw"
-
-
-@dataclass
-class Vorbereitung:
-    docs: list[dict]                         # Eingabe fuer den Modellierer
-    hinweise: list[str] = field(default_factory=list)
-    nicht_im_modell: list[dict] = field(default_factory=list)
-
-
-def _natuerlich(code: str):
-    return [int(t) if t.isdigit() else t.lower() for t in re.split(r"(\d+)", code)]
-
-
-def zeilen(docs: list[dict]) -> list[dict]:
-    """Eine Tabellenzeile je Bohrung (Schluessel 'd:b'); Doppelte (gleicher Code) standardmaessig aus."""
-    out, gesehen = [], {}
-    for di, d in enumerate(docs):
-        for bi, b in enumerate(d["boreholes"]):
-            schichten = b.get("layers") or []
-            konf = [ly.get("confidence") or 0 for ly in schichten]
-            doppelt = gesehen.get(b["code"])
-            hinweise = list(b.get("issues") or [])
-            if doppelt:
-                hinweise.insert(0, f"doppelt (auch in {doppelt})")
-            gesehen.setdefault(b["code"], d["document"]["file"])
-            out.append({
-                "id": f"{di}:{bi}", "Bohrung": b["code"], "Dokument": d["document"]["file"],
-                "Seite": int((b.get("provenance") or [{}])[0].get("page", 0) or 0) + 1,
-                "Modell": bool(schichten) and not doppelt,
-                "GOK [m NHN]": b.get("gok_nhn"), "Endteufe [m]": b.get("end_depth"),
-                "Rechtswert": b.get("x"), "Hochwert": b.get("y"), "EPSG": b.get("crs_epsg"),
-                "Lage aus": b.get("coord_source") or "", "Schichten": len(schichten),
-                "Konfidenz": round(sum(konf) / len(konf), 2) if konf else None,
-                "Grundwasser": ", ".join(f"{g['depth']:.2f} m" for g in b.get("groundwater") or []) or
-                               (b.get("groundwater_status") or ""),
-                "Hinweise": "; ".join(hinweise),
-            })
-    return out
-
-
-def _zahl(v) -> float | None:
-    try:
-        f = float(v)
-    except (TypeError, ValueError):
-        return None
-    return None if f != f else f                     # NaN aus der Tabelle -> None
-
-
-def vorbereiten(docs: list[dict], tabelle: list[dict], e: Einstellungen) -> Vorbereitung:
-    """Korrekturen aus der Tabelle anwenden; fehlende Lage/GOK nach den Einstellungen behandeln."""
-    neu = copy.deepcopy(docs)
-    hinweise: list[str] = []
-    raus: list[dict] = []
-    gewaehlt = []
-    for z in tabelle:
-        di, bi = map(int, z["id"].split(":"))
-        b = neu[di]["boreholes"][bi]
-        if not z.get("Modell"):
-            raus.append({"code": b["code"], "dokument": neu[di]["document"]["file"], "grund": "abgewaehlt"})
-            continue
-        x, y, gok = _zahl(z.get("Rechtswert")), _zahl(z.get("Hochwert")), _zahl(z.get("GOK [m NHN]"))
-        epsg = _zahl(z.get("EPSG"))
-        if (x, y) != (_zahl(b.get("x")), _zahl(b.get("y"))) or (epsg or None) != (b.get("crs_epsg") or None):
-            b["x"], b["y"] = x, y
-            b["crs_epsg"] = int(epsg) if epsg else None
-            b["coord_source"] = "manuell" if x is not None else None
-        if gok != _zahl(b.get("gok_nhn")):
-            b["gok_nhn"], b["gok_source"] = gok, "manuell"
-        gewaehlt.append(b)
-    for d in neu:                                          # abgewaehlte gar nicht erst an den Modellierer
-        d["boreholes"] = [b for b in d["boreholes"] if any(b is g for g in gewaehlt)]
-
-    ohne_gok = [b for b in gewaehlt if b.get("gok_nhn") is None]
-    if ohne_gok and e.gok_relativ and len(ohne_gok) == len(gewaehlt):
-        for b in ohne_gok:
-            b["gok_nhn"], b["gok_source"] = 0.0, "relativ"
-        hinweise.append("Keine Ansatzhoehen (GOK) im PDF: Hoehen relativ, Gelaende = 0 m.")
-    elif ohne_gok:
-        hinweise.append(f"{len(ohne_gok)} Bohrungen ohne GOK bleiben draussen (GOK in der Tabelle eintragen).")
-
-    # Lage: schematische Reihe nur fuer modellierbare Bohrungen (mit GOK) und nur ohne echte Koordinaten
-    modellierbar = [b for b in gewaehlt if b.get("gok_nhn") is not None]
-    ohne_lage = [b for b in modellierbar if b.get("x") is None or b.get("y") is None]
-    mit_lage = [b for b in modellierbar if b.get("x") is not None and b.get("y") is not None]
-    if ohne_lage and e.ohne_lage == "schematisch" and not mit_lage:
-        for k, b in enumerate(sorted(ohne_lage, key=lambda b: _natuerlich(b["code"]))):
-            b["x"], b["y"], b["crs_epsg"], b["coord_source"] = k * e.abstand_m, 0.0, None, "schematisch"
-        hinweise.append(f"Keine Koordinaten im PDF: {len(ohne_lage)} Bohrungen schematisch in einer Reihe "
-                        f"({e.abstand_m:g} m Abstand, nach Code) – Lage nicht vermessen, nur zur Anschauung.")
-    elif ohne_lage:
-        hinweise.append(f"{len(ohne_lage)} Bohrungen ohne Koordinaten bleiben draussen "
-                        f"(in der Tabelle eintragen, um sie zu modellieren).")
-    return Vorbereitung(neu, hinweise, raus)
-
-
 # ---------------------------------------------------------------- Modell
 @dataclass
 class Ergebnis:
@@ -213,22 +109,55 @@ class Ergebnis:
     farben: dict[str, str]
 
 
-def modell_rechnen(docs: list[dict], vorgabe: list[dict] | None = None, methode: str = "idw") -> Ergebnis:
-    m = bauen(docs, einheiten_aus_vorgabe(vorgabe) if vorgabe else None, methode)
+def modell_bauen(docs: list[dict], vorgabe: list[dict] | None = None, methode: str = "idw",
+                 puffer: float | None = None, raster: float | None = None, basis: float | None = None,
+                 ursprung: tuple[float, float] | None = None):
+    """Nur die Geometrie (teuer bei Trassen); das IFC schreibt ifc_bytes."""
+    return bauen(docs, einheiten_aus_vorgabe(vorgabe) if vorgabe else None, methode, raster, puffer, basis, ursprung)
+
+
+def ifc_bytes(m, docs: list[dict], pruefstand: str | None = None) -> bytes:
     ARBEIT.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile(suffix=".ifc", dir=ARBEIT, delete=False) as fh:
         pfad = Path(fh.name)
     try:
-        ifc_schreiben(m, pfad, docs)
-        daten = pfad.read_bytes()
+        ifc_schreiben(m, pfad, docs, pruefstand=pruefstand)
+        return pfad.read_bytes()
     finally:
         pfad.unlink(missing_ok=True)
+
+
+def modell_rechnen(docs: list[dict], vorgabe: list[dict] | None = None, methode: str = "idw",
+                   puffer: float | None = None, raster: float | None = None, basis: float | None = None,
+                   ursprung: tuple[float, float] | None = None, pruefstand: str | None = None) -> Ergebnis:
+    m = modell_bauen(docs, vorgabe, methode, puffer, raster, basis, ursprung)
     b = bericht(m)
-    return Ergebnis(daten, b, {e["name"]: e["farbe"] for e in b["einheiten"]})
+    return Ergebnis(ifc_bytes(m, docs, pruefstand), b, {e["name"]: e["farbe"] for e in b["einheiten"]})
 
 
-def bodenart_farbe(klasse: str | None) -> str:
-    return hexfarbe(farbe(klasse)) if farbschluessel(klasse) else "#d9d9d9"
+def ohne_pruefvermerke(docs: list[dict]) -> list[dict]:
+    """Kopie ohne geprueft-Haken: Schluessel fuer die Geometrie (Haken setzen rechnet das Modell nicht neu)."""
+    neu = json.loads(json.dumps(docs))
+    for d in neu:
+        for b in d["boreholes"]:
+            b.pop("geprueft", None)
+            for ly in b.get("layers") or []:
+                ly.pop("geprueft", None)
+    return neu
+
+
+def unterlage_rendern(pdf: bytes, seite: int = 0, max_px: int = 6000) -> dict:
+    """Plan-Seite (Lageplan oder Laengsschnitt) als PNG fuer den Viewer: laengste Seite hoechstens max_px,
+    hoechstens 300 dpi. Rueckgabe: png (bytes), breite, hoehe (px), seiten, mm_pro_px."""
+    import pymupdf
+    doc = pymupdf.open(stream=pdf, filetype="pdf")
+    seite = max(0, min(int(seite), doc.page_count - 1))
+    page = doc[seite]
+    r = page.rect                                   # pt (1/72 inch), Ansicht nach /Rotate
+    skala = min(max_px / max(r.width, r.height), 300 / 72)
+    pix = page.get_pixmap(matrix=pymupdf.Matrix(skala, skala), alpha=False)
+    return {"png": pix.tobytes("png"), "breite": pix.width, "hoehe": pix.height, "seiten": doc.page_count,
+            "mm_pro_px": 25.4 / 72 / skala}
 
 
 def json_bytes(obj) -> bytes:

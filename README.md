@@ -3,13 +3,15 @@
 Herramienta local (Streamlit, sólo `localhost`) para informes geotécnicos alemanes en PDF:
 
 * **Baugrundmodell (v2, página principal):** se suben los PDF → se reconocen los sondeos
-  (vector o escaneo con OCR) → se revisan y corrigen en una tabla → las **Bodenschichten se generan
-  automáticamente** como modelo 3D (IFC 4.3: `IfcGeomodel` + `IfcBorehole`) y se ven en el visor
-  **That Open** integrado: unidades, propiedades con procedencia, cortes, exageración vertical.
-  Export: IFC, informe de control, JSON.
+  (vector o escaneo con OCR) → **tablas** para revisar y corregir sondeos y capas → los sondeos se
+  colocan sobre el **PDF del Lageplan o del Längsschnitt** en el visor (o en fila con distancias
+  propias) → *Baugrundmodell erzeugen*: las **Bodenschichten se generan** como modelo 3D (IFC 4.3:
+  `IfcGeomodel` + `IfcBorehole`) y **se ajustan solas a cada cambio** → el estado de revisión se
+  **eincheckt**. Visor **That Open** con los controles del TwinBimM, también para trasses de más de
+  5 km. Export: IFC con estado de revisión, informe de control, JSON.
 * **Excel nach Vorlage (v1):** Bohrprofil + Längsschnitt (layout Hamburgo) → `.xlsx` de 4 hojas.
 
-![App v2: ejemplo de Talheim con la fila esquemática en el visor That Open](docs/img/19_app_talheim.jpg)
+![Lageplan sintético calibrado en el visor: sondeos arrastrados a su símbolo](docs/img/20_lageplan_kalibriert.jpg)
 
 ## Arrancar
 
@@ -26,7 +28,7 @@ streamlit run app.py
 
 No hace falta Node: el visor compilado está en `apps/web/dist`. Sin PDF propio, la barra lateral
 ofrece [ejemplos](data/beispiele/README.md) (Berlín georreferenciado, Talheim sin coordenadas,
-demo sintética y un PDF sintético para probar la subida).
+demo sintética, trasse sintética de 6 km y un PDF sintético para probar la subida).
 
 Si la instalación se quedó a medias: borrar la carpeta `.venv` y volver a ejecutar `start.bat`.
 
@@ -35,16 +37,22 @@ Si la instalación se quedó a medias: borrar la carpeta `.venv` y volver a ejec
 1. **Extracción v4** ([docs/17](docs/17_algoritmo_extraccion.md)): clase de página, columnas,
    escala, límites, Bodenart, nivel freático, Schichtenverzeichnis, coordenadas; cada capa con
    confianza y procedencia (página, bbox).
-2. **Revisión**: tabla editable (incluir, GOK, Rechts-/Hochwert, EPSG), perfiles de todos los
-   sondeos, lageplan. Todo lo corregido o supuesto queda **marcado** (manuell, schematisch, relativ).
+2. **Revisión antes del modelo** ([docs/20](docs/20_lage_pruefung_viewer.md)): tablas editables de
+   sondeos (incluir, revisado, GOK, Rechts-/Hochwert, EPSG) y de capas (von/bis, Bodenart, revisado),
+   **Lage** sobre el PDF del plano (calibrado con dos puntos) o fila con distancias propias
+   (BK1 → BK2 10 m …), **Prüfstand** con *Einchecken*. Todo lo corregido o supuesto queda **marcado**
+   (manuell, Plan, Reihe, schematisch, relativ) y el estado del proyecto se guarda solo.
 3. **Modelo de capas** ([docs/18](docs/18_modelador_capas.md)): unidades por correlación de las
    secuencias (clase + cota/profundidad, acuñamientos, lentes, sondeos cortos), superficies que
    respetan cada contacto, sólidos cerrados, IFC 4.3 válido. Las unidades se pueden fijar a mano.
-4. **Visor That Open** ([apps/web](apps/web/README.md)) dentro de la página.
+4. **Visor That Open** ([apps/web](apps/web/README.md)) dentro de la página, con los controles del
+   TwinBimM (barra inferior, ViewCube, engranaje, coordenadas reales) y el editor de Lage; tras
+   *Erzeugen* el modelo se recalcula con cada cambio.
 
-Detalle de la app: [docs/19](docs/19_app_v2.md). Sin coordenadas en el PDF los sondeos se colocan
-en una **fila esquemática** (avisado en la app, el IFC y el visor): sirve para ver la secuencia,
-no para medir.
+Detalle de la app: [docs/19](docs/19_app_v2.md) y [docs/20](docs/20_lage_pruefung_viewer.md). Sin
+coordenadas ni plano, los sondeos van en una **fila** (esquemática con la distancia estándar,
+avisado en la app, el IFC y el visor; con distancias propias o estaciones del Längsschnitt, marcada
+como tal).
 
 ## Estructura
 
@@ -62,8 +70,9 @@ docs/                       notas enlazadas (español): índice en docs/README.m
 spikes/                     corpus, regresión, IFC, Supabase
 ```
 
-Pruebas: `pytest tests`, `cd services/modeler && pytest tests`, y con la app en marcha
-`node scripts/check_app.mjs http://localhost:8501 capturas "<ejemplo>"`.
+Pruebas: `pytest tests`, `cd services/modeler && pytest tests`; visor:
+`python scripts/testplan.py planes && cd apps/web && node scripts/check.mjs <modelo.ifc> ../../planes capturas`;
+con la app en marcha: `node scripts/check_app.mjs http://localhost:8501 capturas --plan planes`.
 
 Documentación: [`docs/README.md`](docs/README.md) (arquitectura, decisiones, lecciones, resultados).
 

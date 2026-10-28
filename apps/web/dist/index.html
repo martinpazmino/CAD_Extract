@@ -1,79 +1,36 @@
 <!doctype html>
-<html lang="de">
+<html lang="de" class="bim-ui-dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Baugrundmodell</title>
-    <script type="module" crossorigin src="./assets/index-B67rwk0W.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-DhK4R7Lf.css">
+    <script type="module" crossorigin src="./assets/index-Bev_COqd.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/three.core-c97gszZw.js">
+    <link rel="modulepreload" crossorigin href="./assets/three.module-BmYFL2qb.js">
+    <link rel="stylesheet" crossorigin href="./assets/index-L1U3psqb.css">
   </head>
   <body>
-    <aside id="seite">
-      <header>
-        <h1>Baugrundmodell</h1>
-        <p id="modellinfo" class="leise">IFC4X3 laden (Datei, Ablegen oder <code>?ifc=</code>)</p>
-      </header>
-      <label class="datei" id="datei-feld">
-        <input id="datei" type="file" accept=".ifc" />
-        <span>IFC-Datei öffnen …</span>
-      </label>
-
-      <section>
-        <h2>Einheiten <span id="einheiten-zahl" class="zahl"></span></h2>
-        <ul id="einheiten" class="liste"></ul>
-        <p class="leise">Kästchen: sichtbar · ◎: nur diese Einheit · Name: Eigenschaften</p>
-      </section>
-
-      <section id="hinweise-block" hidden>
-        <h2>Hinweise</h2>
-        <ul id="hinweise" class="hinweise"></ul>
-      </section>
-
-      <section>
-        <h2>Nicht im Modell</h2>
-        <p id="ausgeschlossen" class="leise">–</p>
-      </section>
-
-      <p class="leise fuss">Klick ins Modell: Eigenschaften · Doppelklick: Schnittebene · Esc: Auswahl aufheben</p>
-    </aside>
-
-    <main id="viewer">
-      <div class="werkzeuge" role="toolbar" aria-label="Ansicht">
-        <button id="seite-umschalten" type="button" title="Seitenleiste ein/aus" aria-label="Seitenleiste">☰</button>
-        <span class="trenner"></span>
-        <button type="button" data-ansicht="iso" title="Isometrische Ansicht">Iso</button>
-        <button type="button" data-ansicht="oben" title="Draufsicht">Oben</button>
-        <button type="button" data-ansicht="sued" title="Ansicht von Süden">Süd</button>
-        <button type="button" data-ansicht="west" title="Ansicht von Westen">West</button>
-        <button id="ortho" type="button" class="umschalter" aria-pressed="false" title="Orthografische Projektion">Ortho</button>
-        <span class="trenner"></span>
-        <button id="schnitt-ow" type="button" title="Senkrechter Schnitt in Ost-West-Richtung">Schnitt O–W</button>
-        <button id="schnitt-ns" type="button" title="Senkrechter Schnitt in Nord-Süd-Richtung">Schnitt N–S</button>
-        <button id="schnitt-weg" type="button" title="Alle Schnitte löschen">Schnitte ✕</button>
-        <span class="trenner"></span>
-        <label class="umschalter"><input id="bohrsaeulen" type="checkbox" checked /> Bohrungen</label>
-        <label class="umschalter"><input id="transparent" type="checkbox" /> Durchscheinend</label>
-        <label class="umschalter">Überhöhung
-          <select id="ueberhoehung">
-            <option value="1">1×</option>
-            <option value="2">2×</option>
-            <option value="5">5×</option>
-            <option value="10">10×</option>
-          </select>
-        </label>
-      </div>
-      <div id="leer" class="leer">Noch kein Modell geladen.</div>
-      <div id="laden" class="laden" hidden><div class="kreisel"></div><span id="laden-text">Lade …</span></div>
-    </main>
-
-    <section id="eigenschaften" hidden>
-      <header>
-        <h2 id="auswahl-name"></h2>
-        <button id="auswahl-zu" type="button" aria-label="Schließen">×</button>
-      </header>
-      <div id="auswahl-inhalt"></div>
-    </section>
-
-    <div id="meldung" hidden></div>
+    <div id="app">
+      <aside id="seitenleiste"></aside>
+      <bim-viewport id="viewer">
+        <button id="seite-umschalten" class="ecke" type="button" title="Seitenleiste ein/aus" aria-label="Seitenleiste">☰</button>
+        <div id="leiste" class="leiste-unten"></div>
+        <div id="hud" class="hud" hidden>–</div>
+        <div id="leer" class="leer">
+          <strong>Noch kein Modell.</strong>
+          <span>In der App ein Gutachten-PDF hochladen – oder hier eine IFC-Datei ablegen.</span>
+        </div>
+        <div id="laden" class="laden" hidden><div class="kreisel"></div><span id="laden-text">Lade …</span></div>
+        <section id="eigenschaften" hidden>
+          <header>
+            <h2 id="auswahl-name"></h2>
+            <button id="auswahl-zu" type="button" aria-label="Schließen">×</button>
+          </header>
+          <div id="auswahl-knoepfe"></div>
+          <div id="auswahl-inhalt"></div>
+        </section>
+        <div id="meldung" hidden></div>
+      </bim-viewport>
+    </div>
   </body>
 </html>
