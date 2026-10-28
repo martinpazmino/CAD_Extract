@@ -94,6 +94,8 @@ dudoso quede **marcado**, nunca escondido.
 | L16 | Si no hay sustantivo, usar la **abreviatura** DIN 4023 / EN ISO 14688 del inicio (`U, t, s´` → Schluff; `fS` → Sand; `A (S, u´)` → Auffüllung; `Gr`, `Sa`, `Si`, `Cl`) | Triefenstein, Marl |
 | B1 | El texto puede venir con **líneas de referencia** (no centrado en la capa): asignar por la convención de etiquetas o por la línea guía, no sólo por la `y` | Marl BS 10: 5 capas sin Bodenart |
 | B2 | Guardar siempre el **texto original** junto a la clase | Trazabilidad (modelo §5.1) |
+| B3 | Leer la descripción por **norma** con evidencia por dato (DIN 4023 / ISO 14688-1 / DIN 18196 / práctica / sólo color): preparar el texto (coma decimal ≠ separador, palabras pegadas `FeinsandbisMittelsand`, apóstrofos y sobrerrayas), principal = primer sustantivo o Kurzzeichen, *Auffüllung*/*Mutterboden*/nombre geológico + suelo = material; materiales extraños por **inicio de palabra** (`Toneisenstein` no es hierro) | [21 §3](21_app_schritte_normen.md#3-mini-base-de-datos-de-normas) |
+| B4 | Lo que la norma lee distinto que la extracción se **marca**, no se cambia: "Sand/Auffullung" es relleno (13 capas de Berlín); `Mg` es ambiguo (Geschiebemergel / made ground); la Bodengruppe sólo si está escrita | Berlín, `test_normen.py` |
 
 ## W. Agua
 
@@ -156,6 +158,9 @@ dudoso quede **marcado**, nunca escondido.
 | M23 | CSS: un hijo con `display:none` en una rejilla hace que el siguiente ocupe su columna (de 0 px): fijar `grid-column`; y `[hidden]` pierde contra `display:grid/flex` (`[hidden]{display:none!important}`) | Visor de 0 px al plegar el panel; aviso de carga que no se iba |
 | M24 | El IFC de ifcopenshell lleva **fecha y hora en la cabecera**: el mismo modelo da otro hash tras reiniciar. Como huella del modelo (einchecken, cachés) usar la **clave de sus entradas**, no los bytes del IFC | *seitdem geändert* falso tras reiniciar la app |
 | M25 | Dentro de Streamlit el iframe mide **0 px** hasta que llega `setFrameHeight`: un encuadre en ese momento da aspecto 0/0 y `fitToSphere` deja la cámara en **NaN** sin vuelta atrás (visor negro, marcas ocultas). Encuadrar sólo con tamaño (ResizeObserver, encuadre pendiente) y reparar una cámara no finita | Arranque en frío de la app ([20](20_lage_pruefung_viewer.md)) |
+| M26 | BUI: `bim-toolbar-section` pone el `label-hidden` de sus botones según su `vertical` al montarse (y lit no lo vuelve a poner si el valor no cambia): para una barra sólo de iconos, grupos propios (`div`) dentro de `bim-toolbar` | Barra con etiquetas pese a `label-hidden` |
+| M27 | Una app lit con un componente ajeno persistente (el visor): dejarlo en un elemento fijo de la plantilla y **no moverlo** de padre (los componentes web se desmontan y vuelven a montar); mostrarlo u ocultarlo con CSS; con `display:none` el encuadre espera al tamaño (M25) | Visor que no se recarga entre *Lage* y *Modell* |
+| M28 | Calibrar con **escala (distancia medida o 1:n) + punto de referencia + giro** es tan exacto como dos puntos de pase y más fácil de comprobar; bloquear el plano antes de arrastrar evita mover sondeos sin querer | 1:500 · 10,0° desde la UI; D67 |
 
 ## X. Entorno de trabajo
 
@@ -177,10 +182,12 @@ dudoso quede **marcado**, nunca escondido.
 | X14 | Streamlit sirve los archivos del componente con `mimetypes`; en Windows el registro puede dar `text/plain` para `.js` y bloquear módulos/workers: registrar los tipos en la app | `ui/viewer.py` (precaución; no visto en Windows aún) |
 | X15 | Con SwiftShader (Chromium sin GPU) un fotograma con posproducción tarda ~1 s: lo que se actualiza "en cada fotograma" (marcas DOM, estado) va con retraso y los iframes del mismo origen bloquean la página. Las pruebas esperan fotogramas (`requestAnimationFrame` ×2) y leen el estado en el momento; el render bajo demanda lo alivia | `check.mjs`, `check_app.mjs` |
 | X16 | `vite build` **vacía `dist/`** (también los IFC de prueba copiados); y un archivo que falta lo contesta el servidor con `index.html`: comprobar el `content-type` antes de pasarlo a web-ifc | `OpenModel … reading 'arguments'` |
-| X17 | El guardado automático del proyecto hace que una prueba repetida empiece con el estado anterior: las pruebas de la app pulsan *Korrekturen verwerfen* al elegir un ejemplo | `check_app.mjs` |
+| X17 | El guardado automático del proyecto hace que una prueba repetida empiece con el estado anterior: las pruebas de la app pulsan *Alle Korrekturen verwerfen* (menú ⋯) al abrir cada proyecto | `check_app.mjs` |
 | X18 | Playwright: `page.mouse` usa coordenadas de la ventana; un iframe bajo el pliegue hay que traerlo a la vista (p. ej. clic en un elemento suyo) antes de arrastrar | Arrastre sin efecto en la app |
 | X19 | X3 también vale para `pgrep -f patrón \| xargs kill`: el comando que lo contiene coincide consigo mismo | Exit 144 |
+| X20 | Atajos de teclado: ignorarlos sólo en campos de texto, **no** con el foco en un botón (tras pulsar *Nächste* el foco queda en él y ↓ dejaba de funcionar); cerrar los menús tras una acción | `check_app.mjs` A |
+| X21 | Playwright: el valor de un `<input>` no forma parte del texto de su fila (`hasText` no lo encuentra): buscar el índice por `value` con `evaluate` | Prueba de *Einheiten* |
 
 Up: [Índice](README.md)
 
-Related: [15 Resultados reales](15_resultados_pdfs_reales.md) · [11 Decisiones](11_decisiones.md) · [09 Validación](09_validacion_benchmark.md) · [Arquitectura](ARQUITECTURA_BAUGRUNDMODELL.md) · [18 Modelador de capas](18_modelador_capas.md)
+Related: [15 Resultados reales](15_resultados_pdfs_reales.md) · [11 Decisiones](11_decisiones.md) · [09 Validación](09_validacion_benchmark.md) · [Arquitectura](ARQUITECTURA_BAUGRUNDMODELL.md) · [18 Modelador de capas](18_modelador_capas.md) · [21 App por pasos y normas](21_app_schritte_normen.md)

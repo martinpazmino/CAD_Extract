@@ -4,7 +4,7 @@ Lageplan: Demo-Fall (services/modeler, 12 Bohrungen) im Massstab 1:500, um 10 Gr
 Kreise mit Code. Zwei Bohrungen verlieren ihre Koordinaten (muessen im Viewer gesetzt werden).
 Laengsschnitt: sechs Bohrungen in einer Reihe mit Stationen 0/10/25/45/60/80 m, Laenge 1:500, Hoehe 1:100.
 Ausgabe je Fall: <name>.pdf, <name>.png (ueber ui.pipeline.unterlage_rendern wie in der App), args_<name>.json
-(Viewer-Argumente wie aus ui/baugrundmodell.py) und wahrheit_<name>.json.
+(Viewer-Argumente wie aus der App), <name>_extraktion.json (zum Hochladen in die App) und wahrheit_<name>.json.
 
     python scripts/testplan.py <ausgabeordner> [--ifc-plan modelle/demo.ifc]
 """
@@ -70,6 +70,7 @@ def lageplan(aus: Path) -> None:
         if b["code"] in OHNE_LAGE:
             b["x"] = b["y"] = None
             b["coord_source"] = None
+    (aus / "plan_extraktion.json").write_text(json.dumps(doc, ensure_ascii=False), encoding="utf-8")   # fuer die App
     args = viewer_args(doc, "plan", bild, "plan.png", "Lageplan.pdf", "koordinaten")
     (aus / "args_plan.json").write_text(json.dumps(args, ensure_ascii=False), encoding="utf-8")
     (aus / "wahrheit_plan.json").write_text(json.dumps({"bohrungen": wahr, "ohne_lage": OHNE_LAGE,
@@ -114,6 +115,7 @@ def laengsschnitt(aus: Path) -> None:
     for w in wahr.values():
         w["px_top"] = [v * skala for v in w.pop("px_top_pt")]
         w["px_unten"] = [v * skala for v in w.pop("px_unten_pt")]
+    (aus / "schnitt_extraktion.json").write_text(json.dumps(doc, ensure_ascii=False), encoding="utf-8")
     args = viewer_args(doc, "schnitt", bild, "schnitt.png", "Laengsschnitt.pdf", "reihe")
     (aus / "args_schnitt.json").write_text(json.dumps(args, ensure_ascii=False), encoding="utf-8")
     (aus / "wahrheit_schnitt.json").write_text(json.dumps({"bohrungen": wahr, "massstab_laenge": m_l,

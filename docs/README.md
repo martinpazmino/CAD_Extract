@@ -49,6 +49,7 @@ alimente un **Baugrundmodell** (Supabase → IFC 4.3 → That Open).
 - [18 Modelador de capas y visor That Open](18_modelador_capas.md): Bodenschichten automáticas (unidades por correlación, superficies, sólidos cerrados), IFC 4.3 y visor web; resultados contra verdad sintética y con Berlín.
 - [19 App v2: del PDF al Baugrundmodell](19_app_v2.md): Streamlit con subida de PDF, revisión, modelo automático y visor That Open integrado; arranque en Windows, supuestos marcados.
 - [20 Visor con controles de TwinBimM, Lage sobre plano y Prüfstand](20_lage_pruefung_viewer.md): controles del TwinBimM, cámara para modelos > 5 km, sondeos colocados sobre el PDF del Lageplan/Längsschnitt, distancias propias en la fila, tablas antes del modelo, nachführen automático y einchecken del estado de revisión.
+- [21 App por pasos, normas y nueva calibración](21_app_schritte_normen.md): la app a pantalla completa (Gutachten → Bohrungen → Lage → Einheiten → Modell, FastAPI + visor integrado), avisos por capas sin clasificar, mini base de datos DIN 4023 / EN ISO 14688-1 / DIN 18196 con colores, calibración por distancia + punto de referencia + candado, diámetro de las columnas, descripción y norma en cada capa del IFC.
 - [Glosario alemán–español](glosario.md): términos geotécnicos y de swissgeol.
 
 ## Código de apoyo

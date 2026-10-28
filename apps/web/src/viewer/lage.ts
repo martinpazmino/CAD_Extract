@@ -1,21 +1,18 @@
 // Lage-Editor: jede Bohrung als Stecknadel (Saeule aus den Schichten + ziehbare Marke), dazu eine
-// PDF-Unterlage als Bild in der Szene - Lageplan (Draufsicht) oder Laengsschnitt (Seitenansicht) -,
-// kalibriert ueber zwei Passpunkte. Ziehen setzt die Lage vor dem Modellieren; Python (ui/projekt.py)
-// bekommt jede Aenderung als Ereignis und rechnet das Modell neu. Beschreibung: docs/20.
-//
-// Lageplan: Bild -> (Rechtswert, Hochwert) als Aehnlichkeit (Massstab, Drehung, Verschiebung).
-// Laengsschnitt: Bild -> (Station, Hoehe m NHN) achsparallel mit eigenem Hoehenmassstab (Ueberhoehung
-// der Zeichnung). Ohne Kalibrierung liegt das Bild mit 1:1000 bzw. 1:1000/1:100 bei den Bohrungen.
+// PDF-Unterlage als Bild in der Szene - Lageplan (Draufsicht) oder Laengsschnitt (Seitenansicht).
+// Kalibrierung (docs/21 §4): Massstab aus einer gemessenen Strecke (zwei Bildpunkte + wahre Laenge) oder 1:n,
+// ein Bezugspunkt im Bild mit seiner Koordinate, beim Lageplan die Drehung, beim Schnitt der Hoehenmassstab.
+// Ist der Plan gesperrt, werden die Bohrungen gezogen: auf dem Plan nur in x/y, im Schnitt entlang der
+// Station und in der Hoehe nur, wenn das PDF keine GOK hat. Jede Aenderung geht als Ereignis an die App.
 import * as THREE from "three";
 import * as OBC from "@thatopen/components";
-import * as BUI from "@thatopen/ui";
 import { ausSzene, hoeheZuSzene, rahmen, zuSzene } from "./rahmen";
-import { eingebettet, ereignis, type Nadel, type Passpunkt, type Unterlage } from "./streamlit";
+import { ereignis, mitApp, type Kalibrierung, type Massstab, type Nadel, type Unterlage } from "./kanal";
 import { huelleMelden, szeneAktualisieren } from "./kamera";
-import { tipp } from "./tipp";
 
 type Welt = OBC.SimpleWorld<OBC.SimpleScene, OBC.OrthoPerspectiveCamera, OBC.BaseRenderer>;
 type Abbildung = (u: number, v: number) => [number, number];
+export interface Bildpunkt { u: number; v: number }
 
 interface Stecknadel {
   daten: Nadel;
@@ -31,57 +28,59 @@ export interface LageRueckrufe {
   modusGeaendert: (aktiv: boolean) => void;
 }
 
-const UNSICHER = 0.6;
+export interface Hilfsmarken {
+  strecke?: (Bildpunkt | null)[];       // gemessene Strecke (Massstab)
+  hoehe?: (Bildpunkt | null)[];         // Schnitt: gemessene Hoehe
+  bezug?: Bildpunkt | null;             // Bezugspunkt
+}
+
 const esc = (t: string) => t.replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" })[c]!);
 const zahlText = (v: number, stellen = 2) =>
   v.toLocaleString("de-DE", { minimumFractionDigits: stellen, maximumFractionDigits: stellen });
 
-// ------------------------------------------------------------------ Kalibrierung (rein rechnerisch, getestet in check.mjs)
-/** Bild -> Welt fuer die Unterlage; mitte/hoehe nur fuer den unkalibrierten Startwert. */
-export function abbildung(u: Unterlage, mitte: [number, number], oben = 0): Abbildung {
-  const p = u.kalibrierung?.punkte ?? [];
-  const m = u.mm_pro_px;                                // m je Pixel bei 1:1000
-  if (u.art === "plan") {
-    if (p.length >= 2) {
-      const [a, b] = aehnlichkeit(p[0], p[1]);
-      return (uu, vv) => [a[0] * uu - a[1] * -vv + b[0], a[0] * -vv + a[1] * uu + b[1]];
+// ------------------------------------------------------------------ Kalibrierung (rein rechnerisch, geprueft in check.mjs)
+/** Massstab in m je Bildpixel: aus der Strecke oder aus 1:n und dem Papiermass des Bilds (mm je Pixel). */
+export function meterJePixel(m: Massstab, mmProPx: number) {
+  if ("n" in m) return (m.n * mmProPx) / 1000;
+  return m.meter / (Math.hypot(m.u2 - m.u1, m.v2 - m.v1) || 1);
+}
+
+/** Massstabszahl n (1:n) einer Kalibrierung. */
+export function massstabszahl(m: Massstab, mmProPx: number) {
+  return meterJePixel(m, mmProPx) / (mmProPx / 1000);
+}
+
+/** Bild -> Welt fuer die Unterlage; gleiche Formel wie ui/projekt.bild_zu_welt. mitte/oben nur unkalibriert. */
+export function abbildung(u: Unterlage, mitte: [number, number], oben = 0, k: Kalibrierung | null = u.kalibrierung): Abbildung {
+  if (k?.massstab && k.bezug) {
+    const s = meterJePixel(k.massstab, u.mm_pro_px);
+    const b = k.bezug;
+    if (u.art === "plan") {
+      const t = -THREE.MathUtils.degToRad(k.drehung ?? 0);       // Plan gegen Gitternord gedreht: Welt dreht zurueck
+      const c = Math.cos(t);
+      const sn = Math.sin(t);
+      return (uu, vv) => {
+        const a = (uu - b.u) * s;
+        const d = -(vv - b.v) * s;
+        return [b.x + a * c - d * sn, b.y + a * sn + d * c];
+      };
     }
-    return (uu, vv) => [mitte[0] + (uu - u.breite / 2) * m, mitte[1] - (vv - u.hoehe / 2) * m];
+    const sh = k.hoehe ? meterJePixel(k.hoehe, u.mm_pro_px) : s;
+    return (uu, vv) => [b.x + (uu - b.u) * s, b.y - (vv - b.v) * sh];
   }
-  if (p.length >= 2 && p[0].u !== p[1].u && p[0].v !== p[1].v) {
-    const sx = (p[1].x - p[0].x) / (p[1].u - p[0].u);
-    const sy = (p[1].y - p[0].y) / (p[1].v - p[0].v);
-    return (uu, vv) => [p[0].x + (uu - p[0].u) * sx, p[0].y + (vv - p[0].v) * sy];
-  }
-  return (uu, vv) => [mitte[0] + (uu - u.breite / 2) * m, oben - vv * m / 10];
+  const m = u.mm_pro_px;                                // m je Pixel bei 1:1000
+  if (u.art === "plan") return (uu, vv) => [mitte[0] + (uu - u.breite / 2) * m, mitte[1] - (vv - u.hoehe / 2) * m];
+  return (uu, vv) => [mitte[0] + (uu - u.breite / 2) * m, oben - (vv * m) / 10];
 }
 
-/** Komplex: w = A q + B mit q = u - i v (Bildzeilen laufen nach unten), w = x + i y. */
-function aehnlichkeit(p1: Passpunkt, p2: Passpunkt): [[number, number], [number, number]] {
-  const dq = [p2.u - p1.u, -(p2.v - p1.v)];
-  const dw = [p2.x - p1.x, p2.y - p1.y];
-  const n = dq[0] ** 2 + dq[1] ** 2 || 1;
-  const a: [number, number] = [(dw[0] * dq[0] + dw[1] * dq[1]) / n, (dw[1] * dq[0] - dw[0] * dq[1]) / n];
-  const q1 = [p1.u, -p1.v];
-  const b: [number, number] = [p1.x - (a[0] * q1[0] - a[1] * q1[1]), p1.y - (a[0] * q1[1] + a[1] * q1[0])];
-  return [a, b];
-}
-
-/** Massstab und Drehung einer Kalibrierung als Text. */
-export function kalibrierungText(u: Unterlage): string {
-  const p = u.kalibrierung?.punkte ?? [];
-  if (p.length < 2) return "nicht kalibriert";
-  const papier = u.mm_pro_px / 1000;                    // m Papier je Pixel
-  if (u.art === "plan") {
-    const [a] = aehnlichkeit(p[0], p[1]);
-    const s = Math.hypot(a[0], a[1]);
-    // Drehung des Plans gegen Gitternord, gegen den Uhrzeigersinn positiv (Bild -> Welt dreht entgegen)
-    const dreh = -THREE.MathUtils.radToDeg(Math.atan2(a[1], a[0]));
-    return `kalibriert · 1:${Math.round(s / papier).toLocaleString("de-DE")} · Drehung ${zahlText(dreh, 1)}°`;
-  }
-  const sx = Math.abs((p[1].x - p[0].x) / (p[1].u - p[0].u));
-  const sy = Math.abs((p[1].y - p[0].y) / (p[1].v - p[0].v));
-  return `kalibriert · Länge 1:${Math.round(sx / papier).toLocaleString("de-DE")} · Höhe 1:${Math.round(sy / papier).toLocaleString("de-DE")} (Überhöhung ${zahlText(sx / sy, 1)}×)`;
+/** Massstab, Drehung bzw. Ueberhoehung einer Kalibrierung als Text. */
+export function kalibrierungText(u: Unterlage, k: Kalibrierung | null = u.kalibrierung): string {
+  if (!k?.massstab || !k.bezug) return "nicht kalibriert";
+  const n = Math.round(massstabszahl(k.massstab, u.mm_pro_px)).toLocaleString("de-DE");
+  if (u.art === "plan") return `1:${n} · Drehung ${zahlText(k.drehung ?? 0, 1)}°`;
+  const h = k.hoehe ? massstabszahl(k.hoehe, u.mm_pro_px) : massstabszahl(k.massstab, u.mm_pro_px);
+  const ueber = massstabszahl(k.massstab, u.mm_pro_px) / h;
+  return `Länge 1:${n} · Höhe 1:${Math.round(h).toLocaleString("de-DE")} (Überhöhung ${zahlText(ueber, 1)}×)`;
 }
 
 // ------------------------------------------------------------------ Editor
@@ -96,27 +95,28 @@ export class LageEditor {
   ausgewaehlt: string | null = null;
 
   private readonly ebene = document.createElement("div");
+  private readonly linien = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   private readonly materialien = new Map<string, THREE.MeshLambertMaterial>();
-  private radius = 0.5;
+  private radiusAuto = 0.5;
   private unterlage: Unterlage | null = null;
+  private entwurf: Kalibrierung | null | undefined = undefined;   // Vorschau einer noch nicht uebernommenen Kalibrierung
   private bild: THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial> | null = null;
   private texturUrl = "";
   private abb: Abbildung | null = null;
-  private passpunkte: (Partial<Passpunkt> & { u?: number; v?: number })[] = [{}, {}];
-  private passMarken: HTMLDivElement[] = [];
-  private epsg: number | null = null;
-  private waehle: number | null = null;                 // Passpunkt, der gerade im Bild gesetzt wird
+  private hilfe: Hilfsmarken = {};
+  private hilfeMarken: HTMLDivElement[] = [];
+  private waehlen: ((p: Bildpunkt | null) => void) | null = null;
   private schnittTiefe = 2;
   private ziehen: { id: string; versatz: THREE.Vector3; ebene: THREE.Plane; start: [number, number]; bewegt: boolean;
                     neu: boolean; hoehe: boolean } | null = null;
   private readonly caster = new THREE.Raycaster();
-  readonly panel: HTMLElement;
-  private readonly panelNeu: () => void;
 
   constructor(private readonly welt: Welt, huelle: HTMLElement, private readonly r: LageRueckrufe) {
     this.gruppe.name = "Bohrungen (Lage)";
     welt.scene.three.add(this.gruppe);
     this.ebene.className = "marken";
+    this.linien.classList.add("hilfslinien");
+    this.ebene.append(this.linien);
     huelle.append(this.ebene);
     huelleMelden(() => this.kiste());
     welt.renderer!.onAfterUpdate.add(() => this.markenSetzen());
@@ -124,18 +124,12 @@ export class LageEditor {
     flaeche.addEventListener("click", (ev) => this.bildKlick(ev));
     window.addEventListener("pointermove", (ev) => this.ziehenBewegen(ev));
     window.addEventListener("pointerup", (ev) => this.ziehenEnde(ev));
-    const [panel, neu] = BUI.Component.create<BUI.Panel, Record<string, never>>((_zustand) => this.panelVorlage(), {});
-    this.panel = panel;
-    this.panelNeu = () => neu();
-    panel.classList.add("lage-panel");
-    panel.hidden = true;
   }
 
   // ---------------------------------------------------------------- Daten
   setzen(nadeln: Nadel[], unterlage: Unterlage | null) {
     const alt = new Set(this.nadeln.keys());
-    const ausdehnung = this.ausdehnung(nadeln);
-    this.radius = THREE.MathUtils.clamp(ausdehnung / 600, 0.4, 6);
+    this.radiusAuto = THREE.MathUtils.clamp(this.ausdehnung(nadeln) / 600, 0.4, 6);
     for (const n of nadeln) {
       alt.delete(n.id);
       let s = this.nadeln.get(n.id);
@@ -150,9 +144,11 @@ export class LageEditor {
       this.markeBeschriften(s);
     }
     for (const id of alt) this.entfernen(id);
+    if (unterlage?.url !== this.unterlage?.url || JSON.stringify(unterlage?.kalibrierung) !== JSON.stringify(this.unterlage?.kalibrierung)) {
+      this.entwurf = undefined;                         // gespeicherter Stand gilt
+    }
     this.unterlageSetzen(unterlage);
     szeneAktualisieren();
-    this.panelNeu();
     this.r.neuZeichnen();
   }
 
@@ -161,6 +157,10 @@ export class LageEditor {
     const ys = nadeln.filter((n) => n.y !== null).map((n) => n.y!);
     if (!xs.length) return 50;
     return Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys), 20);
+  }
+
+  private radius(n: Nadel) {
+    return n.durchmesser && n.durchmesser > 0 ? n.durchmesser / 2 : this.radiusAuto;
   }
 
   private lageAus(s: Stecknadel) {
@@ -203,11 +203,12 @@ export class LageEditor {
     s.saeule.visible = s.oben !== null && this.sichtbar;
     if (!s.oben) return;
     const blass = !s.daten.im_modell;
+    const r = this.radius(s.daten);
     const schichten = s.daten.schichten.length ? s.daten.schichten : [[0, s.daten.ende || 1, "#9aa0a6"]];
     for (const [oben, unten, farbe] of schichten) {
       const h = (Number(unten) - Number(oben)) * rahmen.faktor;
       if (!(h > 0)) continue;
-      const m = new THREE.Mesh(new THREE.CylinderGeometry(this.radius, this.radius, h, 16), this.material(String(farbe), blass));
+      const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 16), this.material(String(farbe), blass));
       m.position.y = -Number(oben) * rahmen.faktor - h / 2;
       m.userData.nadel = s.daten.id;
       s.saeule.add(m);
@@ -217,16 +218,18 @@ export class LageEditor {
 
   kiste(): THREE.Box3 | null {
     const b = new THREE.Box3();
+    let rmax = 0;
     for (const s of this.nadeln.values()) {
       if (!s.oben) continue;
       b.expandByPoint(s.oben);
       b.expandByPoint(new THREE.Vector3(s.oben.x, s.oben.y - (s.daten.ende || 1) * rahmen.faktor, s.oben.z));
+      rmax = Math.max(rmax, this.radius(s.daten));
     }
     if (this.bild?.visible) {
       this.bild.geometry.computeBoundingBox();
       b.union(this.bild.geometry.boundingBox!);
     }
-    if (!b.isEmpty()) b.expandByScalar(this.radius * 2);
+    if (!b.isEmpty()) b.expandByScalar(rmax * 2);
     return b.isEmpty() ? null : b;
   }
 
@@ -243,22 +246,28 @@ export class LageEditor {
 
   private markeBeschriften(s: Stecknadel) {
     const n = s.daten;
-    const unsicher = n.konfidenz !== null && n.konfidenz < UNSICHER && !n.geprueft;
+    const offen = (n.offen ?? 0) > 0 && !n.geprueft;
     s.marke.querySelector("span")!.textContent = n.code;
     s.marke.classList.toggle("geprueft", n.geprueft);
-    s.marke.classList.toggle("unsicher", unsicher);
+    s.marke.classList.toggle("offen", offen);
     s.marke.classList.toggle("raus", !n.im_modell);
     s.marke.classList.toggle("gewaehlt", this.ausgewaehlt === n.id);
     const zeilen = [n.code, n.quelle ? `Lage: ${n.quelle}` : "ohne Lage",
-                    `GOK ${n.gok_bekannt ? `${zahlText(n.gok)} m NHN` : "unbekannt (relativ)"} · Endteufe ${zahlText(n.ende)} m`,
+                    `GOK ${n.gok_bekannt ? `${zahlText(n.gok)} m NHN` : "unbekannt (relativ)"}${n.gok_pdf ? " (PDF)" : ""} · Endteufe ${zahlText(n.ende)} m`,
                     `Schichten geprüft ${n.schichten_geprueft}/${n.schichten_n}` +
-                    (n.konfidenz !== null ? ` · min. Konfidenz ${zahlText(n.konfidenz)}` : "")];
+                    (n.unklassifiziert ? ` · ${n.unklassifiziert} nicht klassifiziert` : "")];
     if (!n.im_modell) zeilen.push(`nicht im Modell${n.grund ? `: ${n.grund}` : ""}`);
-    if (this.aktiv) zeilen.push(rahmen.modus === "reihe" ? "Ziehen: Station · Umschalt+Ziehen: GOK" : "Ziehen: Lage setzen");
+    if (this.aktiv) zeilen.push(this.ziehHinweis(n));
     s.marke.title = zeilen.join("\n");
   }
 
-  waehlen(id: string | null) {
+  private ziehHinweis(n: Nadel) {
+    if (!this.ziehenErlaubt()) return "Erst die Unterlage kalibrieren und sperren, dann ziehen";
+    if (rahmen.modus === "reihe") return n.gok_pdf ? "Ziehen: Station (GOK aus dem PDF bleibt)" : "Ziehen: Station und GOK";
+    return "Ziehen: Lage (Rechts-/Hochwert)";
+  }
+
+  waehlenNadel(id: string | null) {
     this.ausgewaehlt = id;
     for (const s of this.nadeln.values()) s.marke.classList.toggle("gewaehlt", s.daten.id === id);
   }
@@ -288,10 +297,15 @@ export class LageEditor {
       belegt.add(k);
       s.marke.classList.toggle("ohne-text", !frei);
     }
-    this.passMarkenSetzen(w, h);
+    this.hilfeSetzen(w, h);
   }
 
   // ---------------------------------------------------------------- Ziehen
+  /** Ohne Unterlage frei; mit Unterlage erst, wenn sie kalibriert und gesperrt ist (der Plan bewegt sich nicht mehr). */
+  ziehenErlaubt() {
+    return !this.unterlage || !!this.unterlage.kalibrierung?.gesperrt;
+  }
+
   private ndc(ev: { clientX: number; clientY: number }) {
     const r = this.welt.renderer!.three.domElement.getBoundingClientRect();
     return new THREE.Vector2(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
@@ -309,23 +323,25 @@ export class LageEditor {
       : new THREE.Plane(new THREE.Vector3(0, 1, 0), -oben.y);
   }
 
-  /** Start: Marke in der Szene (neu = false) oder Bohrung ohne Lage aus der Liste (neu = true). */
+  /** Start: Marke in der Szene (neu = false) oder Bohrung ohne Lage aus der Liste der App (neu = true). */
   ziehenStart(ev: PointerEvent, id: string, neu: boolean) {
-    if (ev.button !== 0) return;
+    if (ev.button !== 0 || this.waehlen) return;
     const s = this.nadeln.get(id);
     if (!s) return;
     ev.preventDefault();
     ev.stopPropagation();
-    if (!this.aktiv || (!s.oben && !neu)) {
+    if (!this.aktiv || (!s.oben && !neu) || !this.ziehenErlaubt()) {
       this.ziehen = { id, versatz: new THREE.Vector3(), ebene: new THREE.Plane(), start: [ev.clientX, ev.clientY],
                       bewegt: false, neu: false, hoehe: false };
+      if (this.aktiv && !this.ziehenErlaubt()) this.r.meldung("Erst die Unterlage kalibrieren und sperren (Schloss), dann Bohrungen ziehen.", 5000);
       return;                                            // nur Klick (Auswahl)
     }
     const oben = s.oben ?? this.startpunkt(s.daten);
     const ebene = this.ziehEbene(oben);
     const treffer = neu ? oben.clone() : this.schnittpunkt(ev, ebene);
     this.ziehen = { id, versatz: treffer ? oben.clone().sub(treffer) : new THREE.Vector3(), ebene,
-                    start: [ev.clientX, ev.clientY], bewegt: false, neu, hoehe: ev.shiftKey && rahmen.modus === "reihe" };
+                    start: [ev.clientX, ev.clientY], bewegt: false, neu,
+                    hoehe: rahmen.modus === "reihe" && !s.daten.gok_pdf };
     this.welt.camera.controls.enabled = false;
     document.body.classList.add("zieht");
   }
@@ -343,16 +359,16 @@ export class LageEditor {
     if (!z.bewegt && weg < 4) return;
     z.bewegt = true;
     const s = this.nadeln.get(z.id);
-    if (!s || !this.aktiv) return;
+    if (!s || !this.aktiv || !this.ziehenErlaubt()) return;
     const p = this.schnittpunkt(ev, z.ebene);
     if (!p) return;
     p.add(z.versatz);
     const alt = s.oben ?? this.startpunkt(s.daten);
     if (rahmen.modus === "reihe") {
       p.z = alt.z;
-      if (!(z.hoehe || ev.shiftKey)) p.y = alt.y;
+      if (!z.hoehe) p.y = alt.y;                         // GOK aus dem PDF: nur entlang der Station
     } else {
-      p.y = alt.y;
+      p.y = alt.y;                                       // Lageplan: nur x/y
     }
     s.oben = p;
     s.saeule.visible = this.sichtbar;
@@ -373,7 +389,7 @@ export class LageEditor {
       if (!z.neu) this.r.auswahl(z.id);
       return;
     }
-    if (!this.aktiv || !s.oben) return;
+    if (!this.aktiv || !s.oben || !this.ziehenErlaubt()) return;
     if (z.neu && !this.ueberSzene(ev)) {             // ausserhalb losgelassen: bleibt ohne Lage
       s.oben = null;
       this.saeuleBauen(s);
@@ -381,25 +397,24 @@ export class LageEditor {
     }
     const { e, n, h } = ausSzene(s.oben);
     const runden = (v: number) => Math.round(v * 100) / 100;
-    if (rahmen.modus === "reihe") {
+    const reihe = rahmen.modus === "reihe";
+    if (reihe) {
       ereignis({ typ: "station", id: z.id, station: runden(e) });
-      if (Math.abs(h - s.daten.gok) > 0.005) ereignis({ typ: "gok", id: z.id, gok: runden(h) });
+      if (z.hoehe && Math.abs(h - s.daten.gok) > 0.005) ereignis({ typ: "gok", id: z.id, gok: runden(h) });
     } else {
       ereignis({ typ: "lage", id: z.id, x: runden(e), y: runden(n) });
     }
-    const reihe = rahmen.modus === "reihe";
-    s.daten = { ...s.daten, x: runden(e), y: reihe ? 0 : runden(n), gok: reihe ? runden(h) : s.daten.gok,
+    s.daten = { ...s.daten, x: runden(e), y: reihe ? 0 : runden(n), gok: reihe && z.hoehe ? runden(h) : s.daten.gok,
                 quelle: reihe ? "Reihe (Station im Schnitt gesetzt)" : this.unterlage?.kalibrierung ? "Plan (kalibriert)" : "manuell (Viewer)" };
     this.markeBeschriften(s);
     szeneAktualisieren();
-    this.panelNeu();
-    this.r.meldung(`${s.daten.code} gesetzt: ${this.lageText(s.oben)}${eingebettet ? " – Modell wird angepasst …" : ""}`, 3000);
+    this.r.meldung(`${s.daten.code} gesetzt: ${this.lageText(s.oben)}${mitApp() ? " – Modell wird angepasst …" : ""}`, 3000);
   }
 
   private ueberSzene(ev: PointerEvent) {
     const r = this.welt.renderer!.three.domElement.getBoundingClientRect();
     return ev.clientX >= r.left && ev.clientX <= r.right && ev.clientY >= r.top && ev.clientY <= r.bottom &&
-      !(ev.target as HTMLElement | null)?.closest?.(".lage-panel");
+      !(ev.target as HTMLElement | null)?.closest?.(".app-panel, .lage-panel");
   }
 
   private lageText(p: THREE.Vector3) {
@@ -410,13 +425,11 @@ export class LageEditor {
   // ---------------------------------------------------------------- Modus
   async umschalten(aktiv: boolean) {
     this.aktiv = aktiv;
-    this.panel.hidden = !aktiv;
     document.body.classList.toggle("lage-aktiv", aktiv);
-    this.waehle = null;
+    if (!aktiv) this.waehlenAbbrechen();
     for (const s of this.nadeln.values()) this.markeBeschriften(s);
     this.bildSichtbarkeit();
     szeneAktualisieren();
-    this.panelNeu();
     this.r.modusGeaendert(aktiv);
   }
 
@@ -441,10 +454,6 @@ export class LageEditor {
       this.abb = null;
       return;
     }
-    if (u.kalibrierung?.epsg) this.epsg = u.kalibrierung.epsg;
-    if (u.kalibrierung?.punkte?.length === 2 && this.waehle === null) {
-      this.passpunkte = u.kalibrierung.punkte.map((p) => ({ ...p }));
-    }
     if (!this.bild) {
       const mat = new THREE.MeshBasicMaterial({ transparent: true, opacity: this.deckkraft, side: THREE.DoubleSide,
                                                  depthWrite: false, toneMapped: false });
@@ -468,6 +477,19 @@ export class LageEditor {
     this.bildSichtbarkeit();
   }
 
+  /** Kalibrierung, die gerade gilt: Vorschau (Entwurf in der App) oder gespeichert. */
+  kalibrierung(): Kalibrierung | null {
+    return this.entwurf !== undefined ? this.entwurf : this.unterlage?.kalibrierung ?? null;
+  }
+
+  /** Vorschau einer Kalibrierung, bevor sie uebernommen ist (undefined = gespeicherte gilt wieder). */
+  vorschau(k: Kalibrierung | null | undefined) {
+    this.entwurf = k;
+    this.bildGeometrie();
+    szeneAktualisieren();
+    this.r.neuZeichnen();
+  }
+
   /** Vier Ecken des Bilds ueber die Abbildung in die Szene (affin: Dreiecke bleiben exakt). */
   private bildGeometrie() {
     const u = this.unterlage;
@@ -477,13 +499,13 @@ export class LageEditor {
       ? [mit.reduce((a, s) => a + s.daten.x!, 0) / mit.length, mit.reduce((a, s) => a + s.daten.y!, 0) / mit.length]
       : [rahmen.e0, rahmen.n0];
     const oben = mit.length ? Math.max(...mit.map((s) => s.daten.gok)) + 5 : 10;
-    this.abb = abbildung(u, mitte, oben);
+    this.abb = abbildung(u, mitte, oben, this.kalibrierung());
     const ecken: [number, number][] = [[0, 0], [u.breite, 0], [u.breite, u.hoehe], [0, u.hoehe]];
     const pos: number[] = [];
     let yPlan = -Infinity;
     for (const s of this.nadeln.values()) if (s.oben) yPlan = Math.max(yPlan, s.oben.y);
     if (!Number.isFinite(yPlan)) yPlan = hoeheZuSzene(oben);
-    yPlan += Math.max(0.2, this.radius * 0.5);
+    yPlan += Math.max(0.2, this.radiusAuto * 0.5);
     for (const [uu, vv] of ecken) {
       const [x, y] = this.abb(uu, vv);
       const p = u.art === "plan" ? zuSzene(x, y, 0).setY(yPlan) : zuSzene(x, 0, y).setZ(-this.schnittTiefe);
@@ -503,54 +525,88 @@ export class LageEditor {
     this.bildGeometrie();
   }
 
-  private bildSichtbarkeit() {
+  bildSichtbarkeit() {
     if (!this.bild) return;
     this.bild.visible = this.aktiv || this.unterlageImModell;
     this.bild.material.opacity = this.deckkraft;
     this.r.neuZeichnen();
   }
 
-  // ---------------------------------------------------------------- Passpunkte
+  // ---------------------------------------------------------------- Bildpunkte waehlen (Strecke, Bezugspunkt)
+  /** Naechster Klick auf die Unterlage liefert den Bildpunkt (Pixel); Esc oder ein neuer Aufruf bricht ab (null). */
+  bildpunktWaehlen(): Promise<Bildpunkt | null> {
+    this.waehlenAbbrechen();
+    if (!this.bild || !this.unterlage) return Promise.resolve(null);
+    document.body.classList.add("waehlt");
+    return new Promise((fertig) => {
+      this.waehlen = fertig;
+    });
+  }
+
+  waehlenAbbrechen() {
+    const f = this.waehlen;
+    this.waehlen = null;
+    document.body.classList.remove("waehlt");
+    f?.(null);
+  }
+
   private bildKlick(ev: MouseEvent) {
-    if (this.waehle === null || !this.bild || !this.unterlage) return;
+    if (!this.waehlen || !this.bild || !this.unterlage) return;
     this.caster.setFromCamera(this.ndc(ev), this.welt.camera.three);
     const [t] = this.caster.intersectObject(this.bild, false);
     if (!t?.uv) {
-      this.r.meldung("Passpunkt: bitte auf die Unterlage klicken.", 3000);
+      this.r.meldung("Bitte auf die Unterlage klicken.", 3000);
       return;
     }
-    const k = this.waehle;
-    this.passpunkte[k] = { ...this.passpunkte[k], u: t.uv.x * this.unterlage.breite, v: (1 - t.uv.y) * this.unterlage.hoehe };
-    this.waehle = null;
+    const f = this.waehlen;
+    this.waehlen = null;
     document.body.classList.remove("waehlt");
-    this.panelNeu();
-    this.r.meldung(`Passpunkt ${k + 1} gesetzt – jetzt seine Koordinaten eintragen oder eine Bohrung wählen.`, 4000);
+    f({ u: t.uv.x * this.unterlage.breite, v: (1 - t.uv.y) * this.unterlage.hoehe });
   }
 
-  private passMarkenSetzen(w: number, h: number) {
-    const sichtbar = this.aktiv && !!this.abb && !!this.bild?.visible;
-    this.passpunkte.forEach((p, k) => {
-      let el = this.passMarken[k];
+  /** Hilfsmarken der Kalibrierung: gemessene Strecke(n) und Bezugspunkt. */
+  hilfsmarken(h: Hilfsmarken) {
+    this.hilfe = h;
+    this.r.neuZeichnen();
+  }
+
+  private hilfeSetzen(w: number, h: number) {
+    const sichtbar = this.aktiv && !!this.bild?.visible;
+    const punkte: [string, Bildpunkt | null | undefined, string][] = [
+      ["1", this.hilfe.strecke?.[0], "strecke"], ["2", this.hilfe.strecke?.[1], "strecke"],
+      ["H1", this.hilfe.hoehe?.[0], "hoehe"], ["H2", this.hilfe.hoehe?.[1], "hoehe"], ["B", this.hilfe.bezug, "bezug"]];
+    const schirm: (THREE.Vector2 | null)[] = [];
+    punkte.forEach(([text, p, art], k) => {
+      let el = this.hilfeMarken[k];
       if (!el) {
-        el = this.passMarken[k] = document.createElement("div");
-        el.className = "passpunkt";
-        el.textContent = String(k + 1);
+        el = this.hilfeMarken[k] = document.createElement("div");
+        el.className = `passpunkt ${art}`;
+        el.textContent = text;
         this.ebene.append(el);
       }
-      if (!sichtbar || p.u === undefined || p.v === undefined || !this.bild) {
+      const q = sichtbar && p ? this.bildPunkt(p.u, p.v) : null;
+      if (!q) {
         el.hidden = true;
+        schirm.push(null);
         return;
       }
-      this.punkt.copy(this.bildPunkt(p.u, p.v)!).project(this.welt.camera.three);
-      el.hidden = this.punkt.z > 1;
-      el.style.transform = `translate(${(((this.punkt.x + 1) / 2) * w).toFixed(1)}px, ${(((1 - this.punkt.y) / 2) * h).toFixed(1)}px)`;
+      q.project(this.welt.camera.three);
+      el.hidden = q.z > 1;
+      const x = ((q.x + 1) / 2) * w;
+      const y = ((1 - q.y) / 2) * h;
+      el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
+      schirm.push(new THREE.Vector2(x, y));
     });
+    const linie = (a: THREE.Vector2 | null, b: THREE.Vector2 | null, art: string) =>
+      a && b ? `<line class="${art}" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}"/>` : "";
+    this.linien.innerHTML = linie(schirm[0], schirm[1], "strecke") + linie(schirm[2], schirm[3], "hoehe");
   }
 
   /** Bildpixel (u nach rechts, v nach unten) -> Szenenpunkt auf der Unterlage (Parallelogramm aus den Ecken). */
   bildPunkt(u: number, v: number) {
     if (!this.bild || !this.unterlage) return null;
     const pos = this.bild.geometry.getAttribute("position");
+    if (!pos) return null;
     const a = new THREE.Vector3().fromBufferAttribute(pos, 0);
     const b = new THREE.Vector3().fromBufferAttribute(pos, 1).sub(a);
     const d = new THREE.Vector3().fromBufferAttribute(pos, 3).sub(a);
@@ -566,114 +622,15 @@ export class LageEditor {
     return { x: r.left + ((p.x + 1) / 2) * r.width, y: r.top + ((1 - p.y) / 2) * r.height };
   }
 
-  private passBohrung(k: number, id: string) {
-    const s = this.nadeln.get(id);
-    if (!s || s.daten.x === null) return;
-    const p = this.passpunkte[k];
-    if (this.unterlage?.art === "schnitt") Object.assign(p, { x: s.daten.x, y: s.daten.gok });
-    else Object.assign(p, { x: s.daten.x, y: s.daten.y! });
-    this.panelNeu();
-  }
-
-  private kalibrieren() {
-    const u = this.unterlage;
-    const p = this.passpunkte;
-    const voll = p.every((q) => [q.u, q.v, q.x, q.y].every((v) => typeof v === "number" && Number.isFinite(v)));
-    if (!u || !voll) {
-      this.r.meldung("Für beide Passpunkte Bildpunkt und Koordinaten setzen.", 5000);
-      return;
-    }
-    const punkte = p.map((q) => ({ u: q.u!, v: q.v!, x: q.x!, y: q.y! }));
-    if (Math.hypot(punkte[1].u - punkte[0].u, punkte[1].v - punkte[0].v) < 20) {
-      this.r.meldung("Passpunkte liegen zu dicht beieinander.", 5000);
-      return;
-    }
-    if (u.art === "schnitt" && (Math.abs(punkte[1].u - punkte[0].u) < 20 || Math.abs(punkte[1].v - punkte[0].v) < 20)) {
-      this.r.meldung("Längsschnitt: die Passpunkte müssen sich in Station und Höhe unterscheiden.", 6000);
-      return;
-    }
-    u.kalibrierung = { punkte, epsg: u.art === "plan" ? this.epsg : null };
-    ereignis({ typ: "kalibrierung", art: u.art, punkte, epsg: u.kalibrierung.epsg ?? null });
-    this.bildGeometrie();
-    szeneAktualisieren();
-    this.panelNeu();
-    this.r.meldung(`Unterlage ${kalibrierungText(u)}.`, 5000);
-  }
-
-  // ---------------------------------------------------------------- Panel
-  private panelVorlage() {
-    const u = this.unterlage;
-    const reihe = rahmen.modus === "reihe";
-    const ohne = this.ohneLage();
-    const mitLage = [...this.nadeln.values()].filter((s) => s.daten.x !== null &&
-      !/Plan|Viewer|Reihe|schematisch/.test(s.daten.quelle));
-    const hilfe = reihe
-      ? "Marken entlang der Reihe ziehen: Station. Mit Umschalttaste: Ansatzhöhe (GOK)."
-      : "Marken ziehen: Lage setzen. Klick: Bohrung zeigen.";
-    const passpunkt = (k: number) => {
-      const p = this.passpunkte[k];
-      const gesetzt = p.u !== undefined;
-      const eingabe = (schluessel: "x" | "y", titel: string) => BUI.html`
-        <label class="feld">${titel}<input type="number" step="0.01" .value=${p[schluessel] === undefined ? "" : String(p[schluessel])}
-          @change=${(e: Event) => { const v = parseFloat((e.target as HTMLInputElement).value); p[schluessel] = Number.isFinite(v) ? v : undefined; }}></label>`;
-      return BUI.html`
-        <div class="passzeile">
-          <bim-button label=${`Punkt ${k + 1}`} icon="mdi:crosshairs-gps" ?active=${this.waehle === k}
-            @click=${() => { this.waehle = this.waehle === k ? null : k; document.body.classList.toggle("waehlt", this.waehle !== null); this.panelNeu(); }}>${tipp("Passpunkt im Bild setzen", "Danach auf die Unterlage klicken.")}</bim-button>
-          <span class="leise">${gesetzt ? `Bild ${Math.round(p.u!)}, ${Math.round(p.v!)} px` : "Bildpunkt fehlt"}</span>
-        </div>
-        <div class="passzeile">
-          ${eingabe("x", reihe || u?.art === "schnitt" ? "Station [m]" : "Rechtswert")}
-          ${eingabe("y", reihe || u?.art === "schnitt" ? "Höhe [m NHN]" : "Hochwert")}
-          <label class="feld">Bohrung
-            <select @change=${(e: Event) => this.passBohrung(k, (e.target as HTMLSelectElement).value)}>
-              <option value="">–</option>
-              ${(u?.art === "schnitt" ? [...this.nadeln.values()].filter((s) => s.daten.x !== null && s.daten.gok_bekannt) : mitLage)
-                .map((s) => BUI.html`<option value=${s.daten.id}>${s.daten.code}</option>`)}
-            </select>
-          </label>
-        </div>`;
-    };
-    return BUI.html`
-      <bim-panel label="Lage bearbeiten" icon="mdi:map-marker-radius">
-        <bim-panel-section label="Bohrungen" icon="mdi:map-marker-radius">
-          <p class="text">${hilfe}</p>
-          ${ohne.length ? BUI.html`
-            <p class="text">Ohne Lage (${ohne.length}) – in die Ansicht ziehen:</p>
-            <div class="parkplatz">
-              ${ohne.map((s) => BUI.html`<span class="park" title="In die Ansicht ziehen"
-                @pointerdown=${(e: PointerEvent) => this.ziehenStart(e, s.daten.id, true)}>${s.daten.code}</span>`)}
-            </div>` : BUI.html`<p class="text leise">Alle Bohrungen haben eine Lage.</p>`}
-        </bim-panel-section>
-        <bim-panel-section label="Unterlage (PDF)" icon="mdi:file-pdf-box">
-          ${u ? BUI.html`
-            <p class="text leise">${u.name} · ${u.art === "plan" ? "Lageplan (Draufsicht)" : "Längsschnitt (Seitenansicht)"}</p>
-            <label class="feld">Deckkraft
-              <input type="range" min="0.1" max="1" step="0.05" .value=${String(this.deckkraft)}
-                @input=${(e: Event) => { this.deckkraft = parseFloat((e.target as HTMLInputElement).value); this.bildSichtbarkeit(); }}>
-            </label>
-            <bim-checkbox label="Auch in der Modellansicht zeigen" ?checked=${this.unterlageImModell}
-              @change=${(e: Event) => { this.unterlageImModell = (e.target as BUI.Checkbox).checked; this.bildSichtbarkeit(); }}></bim-checkbox>
-            <p class=${`text ${u.kalibrierung ? "ok" : "warn"}`}>${kalibrierungText(u)}</p>
-            <p class="text leise">Zwei Passpunkte: im Bild anklicken (vorher heranzoomen), Koordinaten eintragen oder von einer Bohrung übernehmen.</p>
-            ${passpunkt(0)}${passpunkt(1)}
-            ${u.art === "plan" ? BUI.html`
-              <label class="feld">EPSG (optional)<input type="number" step="1" .value=${this.epsg ? String(this.epsg) : ""}
-                @change=${(e: Event) => { const v = parseInt((e.target as HTMLInputElement).value, 10); this.epsg = Number.isFinite(v) ? v : null; }}></label>` : ""}
-            <bim-button label="Kalibrierung übernehmen" icon="mdi:check" @click=${() => this.kalibrieren()}></bim-button>`
-          : BUI.html`<p class="text leise">Keine Unterlage. Lageplan oder Längsschnitt als PDF in der App unter „Lage & Unterlage“ hochladen.</p>`}
-        </bim-panel-section>
-      </bim-panel>`;
-  }
-
   /** Info fuer die Pruefungen (check.mjs). */
   status() {
+    const u = this.unterlage;
     return {
       nadeln: this.nadeln.size,
       ohneLage: this.ohneLage().length,
-      unterlage: this.unterlage ? { art: this.unterlage.art, kalibriert: !!this.unterlage.kalibrierung, sichtbar: !!this.bild?.visible } : null,
-      radius: this.radius,
-      text: this.unterlage ? kalibrierungText(this.unterlage) : "",
+      unterlage: u ? { art: u.art, kalibriert: !!u.kalibrierung, gesperrt: !!u.kalibrierung?.gesperrt, sichtbar: !!this.bild?.visible } : null,
+      radius: this.radiusAuto,
+      text: u ? kalibrierungText(u, this.kalibrierung()) : "",
     };
   }
 
@@ -690,10 +647,8 @@ export class LageEditor {
   }
 
   escape() {
-    if (this.waehle !== null) {
-      this.waehle = null;
-      document.body.classList.remove("waehlt");
-      this.panelNeu();
+    if (this.waehlen) {
+      this.waehlenAbbrechen();
       return true;
     }
     return false;

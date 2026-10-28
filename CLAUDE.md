@@ -9,10 +9,11 @@ La app actual (`app.py`, `geo_agent/`, Streamlit) es v1: posiciones fijas, 0/58 
 - `docs/16_lecciones_aprendidas.md`: reglas explícitas (proceso P1–P12, entrada E, geometría G, etiquetas L/T, texto B, agua W, segundas fuentes S, swissgeol R, modelo M, entorno X). Respetarlas.
 - `docs/17_algoritmo_extraccion.md`: especificación del algoritmo (etapas, parámetros, confianza).
 - `docs/15_resultados_pdfs_reales.md`: resultados ciegos y de entrenamiento.
-- `docs/11_decisiones.md`: decisiones D1–D62.
+- `docs/11_decisiones.md`: decisiones D1–D72.
 - `docs/18_modelador_capas.md`: modelo de capas (N3) y visor That Open.
-- `docs/19_app_v2.md`: app Streamlit v2 (PDF → revisión → modelo → visor).
+- `docs/19_app_v2.md`: app Streamlit v2 (historia; sustituida por la 21).
 - `docs/20_lage_pruefung_viewer.md`: visor con controles de TwinBimM, modelos > 5 km, Lage sobre plano, Prüfstand.
+- `docs/21_app_schritte_normen.md`: app por pasos (FastAPI + visor), normas de la descripción, calibración nueva.
 
 ## Reglas de trabajo
 - **Prueba ciega**: con un PDF nuevo, congelar predicciones (`spikes/korpus/blind_test.py freeze`)
@@ -28,20 +29,22 @@ La app actual (`app.py`, `geo_agent/`, Streamlit) es v1: posiciones fijas, 0/58 
 - Documentación en español, notas enlazadas (Up/Related, frontmatter). Código y comentarios en alemán.
 
 ## App, modelo y visor
-- App: `streamlit run app.py` (Windows: `start.bat`). Página v2 en `ui/baugrundmodell.py`; estado del proyecto
-  (correcciones, Reihe, Lage, eventos del visor, Prüfstand, einchecken) en `ui/projekt.py`; extracción/modelo en
-  `ui/pipeline.py` (pruebas: `pytest tests`). La extracción se usa desde `spikes/extraktion_v2/prototyp_v4.py` sin tocarla.
-- Flujo (docs/20): tablas antes del modelo → Lage sobre PDF del plano (2 puntos) o fila con distancias propias →
-  *Baugrundmodell erzeugen* → nachführen automático → Einchecken. Eventos del visor con `nr` + firma de proyecto.
+- App por pasos (docs/21): `python -m server` (Windows: `start.bat`, puerto 8500) = FastAPI (`server/`) + página
+  `apps/web/dist` (lit + visor). Streamlit (`app.py`, `start_excel.bat`) sólo para Excel v1.
+- Reglas del proyecto en `ui/projekt.py` (`aendern(op)`): avisos = capas **unklassifiziert** (no confianza), todo
+  revisado, quitar/restaurar, Ø de columnas, calibración (escala por distancia o 1:n + punto de referencia + giro /
+  escala vertical + candado), arrastre sólo con candado (plano x/y; sección: altura sólo sin GOK del PDF).
+  Extracción/modelo en `ui/pipeline.py`; la extracción se usa desde `spikes/extraktion_v2/prototyp_v4.py` sin tocarla.
+- Normas (DIN 4023 / EN ISO 14688-1 / DIN 18196): `services/modeler/baugrundmodell/normen.json` + `normen.py`, con
+  evidencia por dato; leer, nunca aplicar en silencio (propuesta con clic). IFC: `CPset_Bodenansprache` por capa.
 - `services/modeler` (paquete `baugrundmodell`): `python -m baugrundmodell modelo.ifc a.json [...] --bericht informe.json`;
   pruebas `cd services/modeler && python -m pytest tests`. Todo cambio: contactos exactos, sólidos cerrados, IFC sin
   errores, **unidad METRE** (M17).
-- `apps/web` (controles del TwinBimM, editor de Lage): tras cambiar el visor `npm run build` y **subir `apps/web/dist`**
-  (la app lo usa sin Node); web-ifc 0.0.77 (X9). Prueba: `python scripts/testplan.py <planes>` y en `apps/web`
-  `node scripts/check.mjs <modelo.ifc> <planes> <capturas>` (17 comprobaciones).
-- Punta a punta: app sin pantalla en un puerto y `node scripts/check_app.mjs http://localhost:<puerto> <capturas>
-  --plan <planes>` (o `--pdf <archivo>`). Reiniciar la app después de compilar el visor (X12); `pkill`/`pgrep -f` en un
-  comando aparte (X3, X19).
+- `apps/web` (app por pasos `src/app`, visor `src/viewer`: controles del TwinBimM, editor de Lage): tras cambiar algo
+  `npm run build` y **subir `apps/web/dist`** (el servidor lo usa sin Node); web-ifc 0.0.77 (X9). Prueba:
+  `python scripts/testplan.py <planes>` y en `apps/web` `node scripts/check.mjs <modelo.ifc> <planes> <capturas>` (18).
+- Punta a punta: `python -m server --port <p> --kein-browser --arbeit <vacía>` y `node scripts/check_app.mjs
+  http://localhost:<p> <planes> <capturas>` (19 comprobaciones). `pkill`/`pgrep -f` en un comando aparte (X3, X19).
 
 ## Entorno (sesiones en la nube)
 - Webs municipales bloqueadas por la política de red; pypi y GitHub accesibles. Los PDFs los sube el usuario.

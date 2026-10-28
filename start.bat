@@ -1,5 +1,6 @@
 @echo off
 REM Geo_Agent starten (Windows): Doppelklick oder "start.bat" in der Eingabeaufforderung.
+REM Baugrundmodell-App (Schritt-App im Browser): http://localhost:8500 - der Browser oeffnet sich selbst.
 REM Beim ersten Start wird .venv angelegt und alles installiert (einige Minuten).
 cd /d "%~dp0"
 if not exist ".venv\Scripts\python.exe" (
@@ -14,7 +15,7 @@ if not exist ".venv\Scripts\python.exe" (
   ".venv\Scripts\python" -m pip install -r requirements.txt || (pause & exit /b 1)
   ".venv\Scripts\python" -m pip install -r requirements-ocr.txt || echo OCR nicht installiert: Scans werden nicht gelesen.
 )
-REM headless: keine E-Mail-Abfrage beim ersten Start; der Browser oeffnet sich nach ein paar Sekunden
-start "" /b cmd /c "timeout /t 5 /nobreak >nul & start http://localhost:8501"
-".venv\Scripts\python" -m streamlit run app.py --server.headless true --server.port 8501
+REM fehlende Pakete einer neueren Version nachinstallieren (z. B. fastapi nach einem Update)
+".venv\Scripts\python" -c "import fastapi, uvicorn, multipart" 2>nul || ".venv\Scripts\python" -m pip install -r requirements.txt
+".venv\Scripts\python" -m server --port 8500
 pause

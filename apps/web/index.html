@@ -3,32 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Baugrundmodell</title>
-    <link rel="stylesheet" href="./src/style.css" />
+    <title>Geo_Agent – Baugrundmodell</title>
   </head>
-  <body>
-    <div id="app">
-      <aside id="seitenleiste"></aside>
-      <bim-viewport id="viewer">
-        <button id="seite-umschalten" class="ecke" type="button" title="Seitenleiste ein/aus" aria-label="Seitenleiste">☰</button>
-        <div id="leiste" class="leiste-unten"></div>
-        <div id="hud" class="hud" hidden>–</div>
-        <div id="leer" class="leer">
-          <strong>Noch kein Modell.</strong>
-          <span>In der App ein Gutachten-PDF hochladen – oder hier eine IFC-Datei ablegen.</span>
-        </div>
-        <div id="laden" class="laden" hidden><div class="kreisel"></div><span id="laden-text">Lade …</span></div>
-        <section id="eigenschaften" hidden>
-          <header>
-            <h2 id="auswahl-name"></h2>
-            <button id="auswahl-zu" type="button" aria-label="Schließen">×</button>
-          </header>
-          <div id="auswahl-knoepfe"></div>
-          <div id="auswahl-inhalt"></div>
-        </section>
-        <div id="meldung" hidden></div>
-      </bim-viewport>
-    </div>
-    <script type="module" src="./src/main.ts"></script>
+  <body data-schritt="gutachten">
+    <div id="app"></div>
+    <script type="module" src="./src/app/start.ts"></script>
   </body>
 </html>

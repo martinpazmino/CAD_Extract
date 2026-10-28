@@ -21,23 +21,29 @@ import ifcopenshell.api.style  # noqa: F401
 import ifcopenshell.api.unit  # noqa: F401
 
 from .koerper import dreiecke_aus
+from .normen import KLASSEN, UNKLASSIFIZIERT, bekannt, deuten, farbinfo, ifc_eigenschaften
 
-FARBEN = {"Mutterboden": (0.45, 0.3, 0.15), "Auffuellung": (0.6, 0.6, 0.6), "Sand": (1.0, 0.8, 0.3),
-          "Kies": (0.95, 0.6, 0.2), "Schluff": (0.7, 0.75, 0.4), "Ton": (0.55, 0.75, 0.9),
-          "Torf": (0.35, 0.25, 0.15), "Mudde": (0.3, 0.35, 0.3), "Steine": (0.5, 0.45, 0.4),
-          "Beton": (0.8, 0.8, 0.8), "Schwarzdecke": (0.15, 0.15, 0.15), "Fels": (0.6, 0.35, 0.35),
-          "Geschiebemergel": (0.55, 0.7, 0.45), "": (0.9, 0.9, 0.9)}
+
+def rgb_aus(hexwert: str) -> tuple[float, float, float]:
+    return tuple(int(hexwert[i:i + 2], 16) / 255 for i in (1, 3, 5))
+
+
+# Farben der Bodenarten nach DIN 4023 (Normen-Datenbank normen.json; "" = unklassifiziert)
+FARBEN = {k: rgb_aus(e["farbe"]) for k, e in KLASSEN.items() if k != UNKLASSIFIZIERT}
+FARBEN[""] = rgb_aus(KLASSEN[UNKLASSIFIZIERT]["farbe"])
 # Wiederholungen derselben Bodenart unterscheidbar: Anteil Weiss (+) bzw. Schwarz (-) je Nummer
 ABTOENUNG = (0.0, 0.5, -0.35, 0.75, -0.55)
+# Lange Texte als IfcText (IfcLabel ist fuer kurze Bezeichnungen gedacht, 255 Zeichen)
+TEXTE = ("Beschreibung", "Beschreibungen", "Benennungen", "Hinweise", "Hinweise_Deutung", "Quelle")
 
 
 def farbschluessel(klasse: str | None) -> str:
-    klasse = klasse or ""
-    return "Fels" if klasse.startswith("Fels") else (klasse if klasse in FARBEN else "")
+    """Klasse mit eigener Farbe (auch 'Fels (Tonstein)'), sonst '' (unklassifiziert)."""
+    return klasse if bekannt(klasse) else ""
 
 
 def farbe(klasse: str | None, nummer: int = 1) -> tuple[float, float, float]:
-    rgb = np.array(FARBEN[farbschluessel(klasse)])
+    rgb = np.array(rgb_aus(farbinfo(farbschluessel(klasse) or None)["hex"]))
     t = ABTOENUNG[(nummer - 1) % len(ABTOENUNG)]
     rgb = rgb + (1.0 - rgb) * t if t >= 0 else rgb * (1.0 + t)
     return tuple(float(c) for c in np.clip(rgb, 0.0, 1.0))
@@ -105,13 +111,15 @@ class IfcAusgabe:
         api.geometry.edit_object_placement(self.f, product=produkt)
 
     def _pset(self, produkt, name: str, werte: dict):
-        werte = {k: v for k, v in werte.items() if v is not None and v != ""}
+        werte = {k: (self.f.create_entity("IfcText", v) if isinstance(v, str) and (k in TEXTE or len(v) > 255) else v)
+                 for k, v in werte.items() if v is not None and v != ""}
         if werte:                                       # leere Psets sind ungueltiges IFC
             ps = api.pset.add_pset(self.f, product=produkt, name=name)
             api.pset.edit_pset(self.f, pset=ps, properties=werte)
 
-    def bohrung(self, dokument: dict, b: dict, xy: tuple[float, float], lage: str, hoehe: str | None = None):
-        """IfcBorehole mit Schichten als Prismen (N1); xy lokal."""
+    def bohrung(self, dokument: dict, b: dict, xy: tuple[float, float], lage: str, hoehe: str | None = None,
+                durchmesser: float = 1.0, durchmesser_quelle: str = "Standard (Darstellung)"):
+        """IfcBorehole mit Schichten als Prismen (N1); xy lokal. Durchmesser der Saeule in m (Darstellung)."""
         f = self.f
         ent = api.root.create_entity(f, ifc_class="IfcBorehole", name=b["code"])
         api.spatial.assign_container(f, products=[ent], relating_structure=self.site)
@@ -128,6 +136,8 @@ class IfcAusgabe:
             "Labelbestaetigung": float((b.get("checks") or {}).get("label_support") or 0.0),
             # Pruefung durch den Nutzer (App): nur wenn der Schluessel gesetzt ist
             "Geprueft": bool(b["geprueft"]) if "geprueft" in b else None})
+        self._pset(ent, "CPset_Darstellung", {"Durchmesser_m": round(float(durchmesser), 3),
+                                               "Durchmesser_Quelle": durchmesser_quelle})
         z0 = b["gok_nhn"] if b.get("gok_nhn") is not None else 0.0
         strata = []
         for ly in b["layers"]:
@@ -135,7 +145,7 @@ class IfcAusgabe:
                 f, ifc_class="IfcGeotechnicalStratum", predefined_type="SOLID",
                 name=f"{b['code']} {ly['top_depth']:.2f}-{ly['bottom_depth']:.2f} {ly['soil_class'] or '?'}")
             s.Description = "Bohrsaeule"
-            kn, fl = prisma(xy[0], xy[1], z0 - ly["top_depth"], z0 - ly["bottom_depth"])
+            kn, fl = prisma(xy[0], xy[1], z0 - ly["top_depth"], z0 - ly["bottom_depth"], r=float(durchmesser) / 2)
             self._geometrie(s, kn, fl, farbe(ly["soil_class"]), farbschluessel(ly["soil_class"]) or "unbekannt",
                             geschlossen=True)
             self._pset(s, "Pset_GeotechnicalStratumCommon", {"Status": "EXISTING"})
@@ -149,6 +159,10 @@ class IfcAusgabe:
                 "Korrigiert": bool(ly["korrigiert"]) if ly.get("korrigiert") else None,
                 "Konfidenz_Extraktion": float(ly["konfidenz_extraktion"]) if ly.get("konfidenz_extraktion") is not None else None,
                 "Hinweise": "; ".join(ly.get("issues") or [])})
+            # Deutung der Beschreibung nach DIN 4023 / DIN EN ISO 14688-1 / DIN 18196 (normen.py)
+            ansprache = ifc_eigenschaften(deuten(ly.get("description_raw"), ly.get("soil_class")))
+            ansprache.pop("Beschreibung")                 # steht schon im CPset_Schichtenverzeichnis
+            self._pset(s, "CPset_Bodenansprache", ansprache)
             strata.append(s)
         if strata:
             api.aggregate.assign_object(f, products=strata, relating_object=ent)

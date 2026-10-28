@@ -1,7 +1,8 @@
 // Headless-Pruefung des Viewers (Chromium/Playwright) in drei Teilen, mit Bildern:
 //   A  grosses Modell (Trasse > 5 km): Laden, Kamera-Grenzen, Ansichten, Koordinaten, Auswahl, Transparenz, Schnitt
-//   B  Lageplan (scripts/testplan.py): kalibrieren ueber zwei Bohrungen, Bohrungen ohne Lage auf den Plan ziehen
-//   C  Laengsschnitt: kalibrieren (Station/Hoehe), Bohrung entlang der Reihe auf ihre Saeule ziehen
+//   B  Lageplan (scripts/testplan.py): ungesperrt nicht ziehbar; Strecke (zwei Bildpunkte) -> Massstab, Bezug, Drehung,
+//      gesperrt; Bohrungen ohne Lage auf den Plan ziehen
+//   C  Laengsschnitt: 1:500/1:100 mit Bezugspunkt; entlang der Reihe ziehen, GOK aus dem PDF bleibt, ohne GOK ziehbar
 //
 //   npm run build && python ../../scripts/testplan.py <plan-ordner>
 //   node scripts/check.mjs <modell.ifc> <plan-ordner> [ausgabeordner]
@@ -58,7 +59,7 @@ async function ziehen(von, nach, umschalt = false) {
 
 try {
   // ---------------------------------------------------------------- A: grosses Modell
-  await page.goto(`http://localhost:4174/?ifc=modelle/${basename(ifcQuelle)}&ueberhoehung=5`);
+  await page.goto(`http://localhost:4174/viewer.html?ifc=modelle/${basename(ifcQuelle)}&ueberhoehung=5`);
   await page.waitForFunction(() => window.baugrund?.geladen || window.baugrund?.fehler, null, { timeout: 240000 });
   await ruhe(2500);
   let s = await st();
@@ -109,9 +110,10 @@ try {
   await page.screenshot({ path: `${aus}/A6_schnitt.png` });
   await knopf("Löschen").click();
 
-  // ---------------------------------------------------------------- B: Lageplan
+  // ---------------------------------------------------------------- B: Lageplan (Kalibrierung wie in der App: Strecke, Bezug, Drehung)
   const wPlan = JSON.parse(readFileSync(join(planOrdner, "wahrheit_plan.json"), "utf8"));
-  await page.goto("http://localhost:4174/?bohrungen=modelle/args_plan.json");
+  const argsPlan = JSON.parse(readFileSync(join(planOrdner, "args_plan.json"), "utf8"));
+  await page.goto("http://localhost:4174/viewer.html?bohrungen=modelle/args_plan.json");
   await page.waitForFunction(() => (window.baugrund?.renders ?? 0) >= 1, null, { timeout: 60000 });
   await ohnePost();
   await ruhe(2000);
@@ -122,61 +124,83 @@ try {
   await ruhe(2500);
   pruefe("Lage-Modus: Draufsicht orthografisch", (await page.evaluate(() => window.viewer.world.camera.projection.current)) === "Orthographic");
   const schirm = (u, v_) => page.evaluate(([a, b]) => window.viewer.editor.bildZuSchirm(a, b), [u, v_]);
-  async function passpunkt(k, code) {
-    await page.locator(`.lage-panel bim-button[label="Punkt ${k + 1}"]`).click();
-    const [u, v_] = wPlan.bohrungen[code].px;
-    const p = await schirm(u, v_);
+  const marke = (c) => page.evaluate((c_) => {
+    const e = window.viewer.editor;
+    return e.markenPunkt([...e.nadeln.values()].find((n) => n.daten.code === c_).daten.id);
+  }, c);
+  // ungesperrt: Bohrungen lassen sich nicht ziehen (erst kalibrieren und sperren)
+  const vorher = (await ereignisse()).length;
+  const b2a = await marke("B 2");
+  await ziehen(b2a, { x: b2a.x + 60, y: b2a.y + 30 });
+  pruefe("Ungesperrter Plan: Bohrung bleibt liegen", (await ereignisse()).length === vorher);
+  // Bildpunkte waehlen wie in der App: B 1 und B 11 anklicken
+  async function waehlen(code) {
+    const p = await schirm(...wPlan.bohrungen[code].px);
+    const versprechen = page.evaluate(() => window.viewer.editor.bildpunktWaehlen());
+    await ruhe(200);
     await page.mouse.click(p.x, p.y);
-    await ruhe(400);
-    await page.locator(".lage-panel select").nth(k).selectOption({ label: code });
+    return await versprechen;
   }
-  await passpunkt(0, "B 1");
-  await passpunkt(1, "B 11");
-  await page.locator('.lage-panel bim-button[label="Kalibrierung übernehmen"]').click();
+  const p1 = await waehlen("B 1");
+  const p2 = await waehlen("B 11");
+  const w1 = wPlan.bohrungen["B 1"];
+  const w2 = wPlan.bohrungen["B 11"];
+  const kal = { massstab: { u1: p1.u, v1: p1.v, u2: p2.u, v2: p2.v, meter: Math.hypot(w2.x - w1.x, w2.y - w1.y) },
+                bezug: { u: p1.u, v: p1.v, x: w1.x, y: w1.y }, drehung: 10, epsg: 25832, gesperrt: true };
+  await page.evaluate((a) => window.viewer.setzen(a), { ...argsPlan, unterlage: { ...argsPlan.unterlage, kalibrierung: kal } });
   await ruhe(1500);
   s = await st();
-  const kal = (await ereignisse()).find((e) => e.typ === "kalibrierung");
-  pruefe("Kalibrierung als Ereignis", kal && kal.punkte.length === 2, JSON.stringify(kal?.punkte?.map((p) => [Math.round(p.u), Math.round(p.v)])));
-  pruefe("Massstab und Drehung erkannt", /1:(49\d|50\d)\b/.test(s.lage.text) && /Drehung (9,[6-9]|10,[0-4])/.test(s.lage.text), s.lage.text);
-  // Lagepruefung: Marke von B 7 liegt auf ihrem Symbol im Plan
-  const b7 = await page.evaluate(() => {
-    const e = window.viewer.editor;
-    const id = [...e.nadeln.values()].find((n) => n.daten.code === "B 7").daten.id;
-    return e.markenPunkt(id);
-  });
+  pruefe("Massstab aus der Strecke, Drehung, gesperrt", /1:(49\d|50\d)\b/.test(s.lage.text) && /Drehung 10,0/.test(s.lage.text) &&
+         s.lage.unterlage.gesperrt, s.lage.text);
+  const b7 = await marke("B 7");
   const sym7 = await schirm(...wPlan.bohrungen["B 7"].px);
   pruefe("Plan und Bohrungen decken sich (B 7)", Math.hypot(b7.x - sym7.x, b7.y - sym7.y) < 4, `${Math.hypot(b7.x - sym7.x, b7.y - sym7.y).toFixed(1)} px`);
+  // Bohrungen ohne Lage: aus einer Liste (wie in der App) auf ihr Symbol ziehen
   for (const code of wPlan.ohne_lage) {
-    const park = page.locator(".lage-panel .park", { hasText: code });
-    const von = await park.boundingBox();
+    await page.evaluate((c) => {
+      const e = window.viewer.editor;
+      const id = [...e.nadeln.values()].find((n) => n.daten.code === c).daten.id;
+      const el = document.createElement("div");
+      el.className = "park-test";
+      el.textContent = c;
+      Object.assign(el.style, { position: "fixed", left: "20px", top: "300px", padding: "6px", background: "#333", zIndex: 999 });
+      el.addEventListener("pointerdown", (ev) => e.ziehenStart(ev, id, true));
+      document.body.append(el);
+    }, code);
+    const von = await page.locator(".park-test").boundingBox();
     const ziel = await schirm(...wPlan.bohrungen[code].px);
     await ziehen({ x: von.x + von.width / 2, y: von.y + von.height / 2 }, ziel);
+    await page.evaluate(() => document.querySelector(".park-test")?.remove());
     const e = (await ereignisse()).filter((x) => x.typ === "lage").at(-1);
     const wahr = wPlan.bohrungen[code];
     const abw = e ? Math.hypot(e.x - wahr.x, e.y - wahr.y) : Infinity;
     pruefe(`${code} auf den Plan gezogen`, abw < 0.5, e ? `R ${e.x} H ${e.y} (Abweichung ${abw.toFixed(2)} m)` : "kein Ereignis");
   }
   await page.screenshot({ path: `${aus}/B1_lageplan.png` });
-  // Marke verschieben: B 2 um eine Strecke versetzen -> Ereignis mit neuer Lage
-  const b2 = await page.evaluate(() => {
-    const e = window.viewer.editor;
-    return e.markenPunkt([...e.nadeln.values()].find((n) => n.daten.code === "B 2").daten.id);
-  });
+  const b2 = await marke("B 2");
   await ziehen(b2, { x: b2.x + 60, y: b2.y + 30 });
   const e2 = (await ereignisse()).filter((x) => x.typ === "lage").at(-1);
-  pruefe("Marke B 2 verschoben", e2 && Math.hypot(e2.x - 565045, e2.y - 5933010) > 1, e2 ? `R ${e2.x} H ${e2.y}` : "");
+  pruefe("Gesperrter Plan: Marke B 2 verschoben (nur x/y)", e2 && Math.hypot(e2.x - 565045, e2.y - 5933010) > 1 && !("gok" in e2),
+         e2 ? `R ${e2.x} H ${e2.y}` : "");
   await page.screenshot({ path: `${aus}/B2_verschoben.png` });
 
-  // ---------------------------------------------------------------- C: Laengsschnitt
+  // ---------------------------------------------------------------- C: Laengsschnitt (1:500 / 1:100, Bezug B 1)
   const wS = JSON.parse(readFileSync(join(planOrdner, "wahrheit_schnitt.json"), "utf8"));
-  await page.goto("http://localhost:4174/?bohrungen=modelle/args_schnitt.json");
+  const argsS = JSON.parse(readFileSync(join(planOrdner, "args_schnitt.json"), "utf8"));
+  await page.goto("http://localhost:4174/viewer.html?bohrungen=modelle/args_schnitt.json");
   await page.waitForFunction(() => (window.baugrund?.renders ?? 0) >= 1, null, { timeout: 60000 });
   await ohnePost();
   await ruhe(1500);
   await knopf("Lage bearbeiten").click();
   await ruhe(2500);
-  const eingaben = page.locator(".lage-panel .passzeile input[type=number]");
-  // Wie am Bildschirm: zum Picken und Ziehen heranzoomen (die Zeichnung ist 5-fach ueberhoeht)
+  const b1 = wS.bohrungen["B 1"];
+  // B 5 ohne GOK aus dem PDF: nur sie darf in der Hoehe gezogen werden
+  const nadeln = argsS.bohrungen.map((n) => ({ ...n, gok_pdf: n.code !== "B 5" }));
+  const kalS = { massstab: { n: 500 }, hoehe: { n: 100 }, bezug: { u: b1.px_top[0], v: b1.px_top[1], x: b1.station, y: b1.gok }, gesperrt: true };
+  await page.evaluate((a) => window.viewer.setzen(a), { ...argsS, bohrungen: nadeln, unterlage: { ...argsS.unterlage, kalibrierung: kalS } });
+  await ruhe(1500);
+  s = await st();
+  pruefe("Schnitt kalibriert (Länge 1:500, Höhe 1:100)", /Länge 1:500 · Höhe 1:100/.test(s.lage.text), s.lage.text);
   const heran = (punkt, radius) => page.evaluate(([p, r]) => {
     const k = window.viewer.KAMERA.szeneKugel().clone();
     k.center.set(p.x, p.y, p.z);
@@ -184,55 +208,34 @@ try {
     return window.viewer.KAMERA.einpassen(k, false);
   }, [punkt, radius]);
   const bildPunkt = (u, v_) => page.evaluate(([a, b]) => window.viewer.editor.bildPunkt(a, b), [u, v_]);
-  async function schnittPunkt(k, u, v_, station, hoehe) {
-    await heran(await bildPunkt(u, v_), 4);
-    await bilder();
-    await page.locator(`.lage-panel bim-button[label="Punkt ${k + 1}"]`).click();
-    const p = await schirm(u, v_);
-    await page.mouse.click(p.x, p.y);
-    await ruhe(400);
-    await eingaben.nth(2 * k).fill(String(station));
-    await eingaben.nth(2 * k + 1).fill(String(hoehe));
-  }
-  const b1 = wS.bohrungen["B 1"];
-  const b6 = wS.bohrungen["B 6"];
-  await schnittPunkt(0, ...b1.px_top, b1.station, b1.gok);
-  await schnittPunkt(1, ...b6.px_unten, b6.station, Math.round((b6.gok - b6.ende) * 100) / 100);
-  await page.locator('.lage-panel bim-button[label="Kalibrierung übernehmen"]').click();
-  await ruhe(1500);
-  s = await st();
-  pruefe("Schnitt kalibriert (Laenge 1:500, Hoehe 1:100)", /Länge 1:(49\d|50\d)\b/.test(s.lage.text) && /Höhe 1:(99|10\d)\b/.test(s.lage.text), s.lage.text);
   const nadelPunkt = (c) => page.evaluate((c_) => {
     const e = window.viewer.editor;
     return e.szenenPunkt([...e.nadeln.values()].find((n) => n.daten.code === c_).daten.id);
   }, c);
-  for (const code of ["B 2", "B 3"]) {
+  for (const code of ["B 2", "B 3", "B 4"]) {
     const a = await nadelPunkt(code);
     const b = await bildPunkt(...wS.bohrungen[code].px_top);
     await heran({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, z: 0 }, Math.abs(a.x - b.x) / 2 + 6);
     await bilder();
-    const von = await page.evaluate((c) => {
-      const e = window.viewer.editor;
-      return e.markenPunkt([...e.nadeln.values()].find((n) => n.daten.code === c).daten.id);
-    }, code);
+    const von = await marke(code);
     const ziel = await schirm(...wS.bohrungen[code].px_top);
-    await ziehen(von, { x: ziel.x, y: von.y });
-    const e = (await ereignisse()).filter((x) => x.typ === "station").at(-1);
+    const n = (await ereignisse()).length;
+    await ziehen(von, { x: ziel.x, y: von.y - 40 });           // auch nach oben: die GOK aus dem PDF bleibt
+    const neu = (await ereignisse()).slice(n);
+    const e = neu.find((x) => x.typ === "station");
     const abw = e ? Math.abs(e.station - wS.bohrungen[code].station) : Infinity;
-    pruefe(`${code} entlang der Reihe auf Station ${wS.bohrungen[code].station} m`, abw < 0.3, e ? `Station ${e.station} (Abw. ${abw.toFixed(2)} m)` : "kein Ereignis");
+    pruefe(`${code}: Station ${wS.bohrungen[code].station} m, GOK aus dem PDF bleibt`, abw < 0.3 && !neu.some((x) => x.typ === "gok"),
+           e ? `Station ${e.station} (Abw. ${abw.toFixed(2)} m)` : "kein Ereignis");
   }
-  // Umschalt+Ziehen: Ansatzhoehe von B 4 auf die gezeichnete GOK + 1 m
-  const b4 = wS.bohrungen["B 4"];
-  await heran(await nadelPunkt("B 4"), 6);
+  // B 5 hat keine GOK im PDF: Ziehen setzt Station und Hoehe (1 m ueber der gezeichneten GOK)
+  const b5 = wS.bohrungen["B 5"];
+  await heran(await nadelPunkt("B 5"), 6);
   await bilder();
-  const von4 = await page.evaluate(() => {
-    const e = window.viewer.editor;
-    return e.markenPunkt([...e.nadeln.values()].find((n) => n.daten.code === "B 4").daten.id);
-  });
-  const hoch = await schirm(b4.px_top[0], b4.px_top[1] - (1.0 / wS.massstab_hoehe) * 1000 / 0.0846667);
-  await ziehen(von4, { x: von4.x, y: hoch.y }, true);
+  const von5 = await marke("B 5");
+  const hoch = await schirm(b5.px_top[0], b5.px_top[1] - (1.0 / wS.massstab_hoehe) * 1000 / argsS.unterlage.mm_pro_px);
+  await ziehen(von5, hoch);
   const g = (await ereignisse()).filter((x) => x.typ === "gok").at(-1);
-  pruefe("Umschalt+Ziehen setzt die GOK", g && Math.abs(g.gok - (b4.gok + 1)) < 0.3, g ? `GOK ${g.gok} (soll ${(b4.gok + 1).toFixed(2)})` : "kein Ereignis");
+  pruefe("Ohne GOK im PDF: Höhe ziehbar", g && Math.abs(g.gok - (b5.gok + 1)) < 0.3, g ? `GOK ${g.gok} (soll ${(b5.gok + 1).toFixed(2)})` : "kein Ereignis");
   await page.evaluate(() => window.viewer.KAMERA.ansicht("sued", false));
   await bilder();
   await page.screenshot({ path: `${aus}/C1_laengsschnitt.png` });

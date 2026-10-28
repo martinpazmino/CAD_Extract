@@ -1,14 +1,15 @@
 # Geo_Agent — del Bodengutachten al Baugrundmodell
 
-Herramienta local (Streamlit, sólo `localhost`) para informes geotécnicos alemanes en PDF:
+Herramienta local (sólo `localhost`) para informes geotécnicos alemanes en PDF:
 
-* **Baugrundmodell (v2, página principal):** se suben los PDF → se reconocen los sondeos
-  (vector o escaneo con OCR) → **tablas** para revisar y corregir sondeos y capas → los sondeos se
-  colocan sobre el **PDF del Lageplan o del Längsschnitt** en el visor (o en fila con distancias
-  propias) → *Baugrundmodell erzeugen*: las **Bodenschichten se generan** como modelo 3D (IFC 4.3:
-  `IfcGeomodel` + `IfcBorehole`) y **se ajustan solas a cada cambio** → el estado de revisión se
-  **eincheckt**. Visor **That Open** con los controles del TwinBimM, también para trasses de más de
-  5 km. Export: IFC con estado de revisión, informe de control, JSON.
+* **Baugrundmodell (app por pasos, pantalla completa):** **1 Gutachten** (subir PDF; vector o
+  escaneo con OCR) → **2 Bohrungen** (revisar y corregir sondeos y capas; avisos para capas sin
+  clasificar; lectura de cada descripción según **DIN 4023 / EN ISO 14688-1 / DIN 18196**; quitar
+  sondeos) → **3 Lage** (Lageplan o Längsschnitt en PDF: distancia medida → escala, punto de
+  referencia con coordenada, candado; después se arrastran los sondeos; o fila con distancias
+  propias) → **4 Einheiten** (cómo se unen las capas) → **5 Modell** (IFC 4.3 `IfcGeomodel` +
+  `IfcBorehole` en el visor **That Open** con los controles del TwinBimM, también para trasses de
+  más de 5 km; *einchecken* del estado de revisión; export). Cada paso actualiza el siguiente.
 * **Excel nach Vorlage (v1):** Bohrprofil + Längsschnitt (layout Hamburgo) → `.xlsx` de 4 hojas.
 
 ![Lageplan sintético calibrado en el visor: sondeos arrastrados a su símbolo](docs/img/20_lageplan_kalibriert.jpg)
@@ -16,63 +17,73 @@ Herramienta local (Streamlit, sólo `localhost`) para informes geotécnicos alem
 ## Arrancar
 
 **Windows:** doble clic en [`start.bat`](start.bat). La primera vez crea `.venv` e instala todo
-(unos minutos; el OCR es opcional y no bloquea), después abre `http://localhost:8501`.
+(unos minutos; el OCR es opcional y no bloquea); después abre `http://localhost:8500` en el
+navegador. Excel v1: [`start_excel.bat`](start_excel.bat) (`http://localhost:8501`).
 
 **A mano (cualquier sistema):**
 
 ```bash
 pip install -r requirements.txt
 pip install -r requirements-ocr.txt      # opcional: escaneos y texto SHX (OpenCV + onnxruntime)
-streamlit run app.py
+python -m server                          # app por pasos en http://localhost:8500 (--port, --arbeit, --kein-browser)
+streamlit run app.py                      # sólo Excel v1
 ```
 
-No hace falta Node: el visor compilado está en `apps/web/dist`. Sin PDF propio, la barra lateral
-ofrece [ejemplos](data/beispiele/README.md) (Berlín georreferenciado, Talheim sin coordenadas,
-demo sintética, trasse sintética de 6 km y un PDF sintético para probar la subida).
+No hace falta Node: la página compilada está en `apps/web/dist`. Sin PDF propio, la primera
+página ofrece [ejemplos](data/beispiele/README.md) (Berlín georreferenciado, Talheim sin
+coordenadas, demo sintética, trasse de 6 km y un PDF sintético para probar la extracción); también
+se puede subir una extracción en JSON. Los proyectos se guardan solos y aparecen en *Zuletzt
+bearbeitet*.
 
 Si la instalación se quedó a medias: borrar la carpeta `.venv` y volver a ejecutar `start.bat`.
 
-## Qué hace la v2
+## Qué hace
 
 1. **Extracción v4** ([docs/17](docs/17_algoritmo_extraccion.md)): clase de página, columnas,
    escala, límites, Bodenart, nivel freático, Schichtenverzeichnis, coordenadas; cada capa con
    confianza y procedencia (página, bbox).
-2. **Revisión antes del modelo** ([docs/20](docs/20_lage_pruefung_viewer.md)): tablas editables de
-   sondeos (incluir, revisado, GOK, Rechts-/Hochwert, EPSG) y de capas (von/bis, Bodenart, revisado),
-   **Lage** sobre el PDF del plano (calibrado con dos puntos) o fila con distancias propias
-   (BK1 → BK2 10 m …), **Prüfstand** con *Einchecken*. Todo lo corregido o supuesto queda **marcado**
-   (manuell, Plan, Reihe, schematisch, relativ) y el estado del proyecto se guarda solo.
-3. **Modelo de capas** ([docs/18](docs/18_modelador_capas.md)): unidades por correlación de las
-   secuencias (clase + cota/profundidad, acuñamientos, lentes, sondeos cortos), superficies que
-   respetan cada contacto, sólidos cerrados, IFC 4.3 válido. Las unidades se pueden fijar a mano.
-4. **Visor That Open** ([apps/web](apps/web/README.md)) dentro de la página, con los controles del
-   TwinBimM (barra inferior, ViewCube, engranaje, coordenadas reales) y el editor de Lage; tras
-   *Erzeugen* el modelo se recalcula con cada cambio.
+2. **Revisión** ([docs/21](docs/21_app_schritte_normen.md)): sondeo a sondeo con la página del PDF y
+   la capa marcada; avisos sólo para capas **sin clasificar**; propuesta según norma con un clic;
+   *todo revisado*; quitar y restaurar sondeos. Todo lo corregido o supuesto queda **marcado**
+   (manuell, Plan, Reihe, schematisch, relativ) y el proyecto se guarda solo.
+3. **Normas** ([docs/21 §3](docs/21_app_schritte_normen.md#3-mini-base-de-datos-de-normas)): mini
+   base de datos de Kurzzeichen, colores DIN 4023 y grupos DIN 18196 con la evidencia de cada dato;
+   la lectura de cada descripción va al IFC (`CPset_Bodenansprache`).
+4. **Lage** ([docs/21 §4](docs/21_app_schritte_normen.md#4-lage-calibración-nueva)): escala por
+   distancia medida o 1:n, punto de referencia, giro / escala vertical, candado; los sondeos se
+   arrastran sólo en x/y (sección: estación; la altura sólo sin GOK del PDF). Diámetro de las
+   columnas ajustable.
+5. **Modelo de capas** ([docs/18](docs/18_modelador_capas.md)): unidades por correlación de las
+   secuencias, superficies que respetan cada contacto, sólidos cerrados, IFC 4.3 válido en metros.
+6. **Visor That Open** ([apps/web](apps/web/README.md)) con barra de herramientas compacta, ayuda en
+   cada ajuste y el editor de Lage; con cada cambio el modelo se recalcula.
 
-Detalle de la app: [docs/19](docs/19_app_v2.md) y [docs/20](docs/20_lage_pruefung_viewer.md). Sin
-coordenadas ni plano, los sondeos van en una **fila** (esquemática con la distancia estándar,
-avisado en la app, el IFC y el visor; con distancias propias o estaciones del Längsschnitt, marcada
-como tal).
+Historia: [docs/19](docs/19_app_v2.md) (app v2 en Streamlit) y [docs/20](docs/20_lage_pruefung_viewer.md)
+(controles TwinBimM, cámara > 5 km, Prüfstand).
 
 ## Estructura
 
 ```
-app.py                      entrada Streamlit (páginas v2 y v1)
-start.bat                   arranque en Windows (venv + instalación + navegador)
-ui/                         páginas, pipeline sin interfaz, componente del visor
+server/                     app del Baugrundmodell: FastAPI + proyectos, extracción en segundo plano (python -m server)
+ui/                         estado del proyecto (projekt.py), pipeline sin interfaz, página Excel v1
+app.py                      Streamlit: sólo Excel v1
+start.bat  start_excel.bat  arranque en Windows
 spikes/extraktion_v2/       extracción v4 (referencia de la regresión, docs/17)
-services/modeler/           modelador de capas `baugrundmodell` (python -m baugrundmodell …)
-apps/web/                   visor That Open (Vite + TypeScript); dist/ compilado en el repo
+services/modeler/           modelador `baugrundmodell` y base de datos de normas (python -m baugrundmodell …)
+apps/web/                   app por pasos y visor That Open (Vite + TypeScript + lit); dist/ compilado en el repo
 geo_agent/                  paquete v1 (Excel)
 data/beispiele/             ejemplos (datos factuales y sintéticos)
-tests/  scripts/            pruebas de la app y prueba de punta a punta (Playwright)
+tests/  scripts/            pruebas de la app y de la API; prueba de punta a punta (Playwright); planes sintéticos
 docs/                       notas enlazadas (español): índice en docs/README.md
 spikes/                     corpus, regresión, IFC, Supabase
 ```
 
-Pruebas: `pytest tests`, `cd services/modeler && pytest tests`; visor:
-`python scripts/testplan.py planes && cd apps/web && node scripts/check.mjs <modelo.ifc> ../../planes capturas`;
-con la app en marcha: `node scripts/check_app.mjs http://localhost:8501 capturas --plan planes`.
+Pruebas:
+
+- `pytest tests` (lógica del proyecto y API) y `cd services/modeler && pytest tests` (modelador y normas).
+- Visor: `python scripts/testplan.py planes && cd apps/web && node scripts/check.mjs <modelo.ifc> ../../planes capturas`.
+- App: `python -m server --port 8511 --kein-browser --arbeit <carpeta vacía>` y
+  `node scripts/check_app.mjs http://localhost:8511 planes capturas`.
 
 Documentación: [`docs/README.md`](docs/README.md) (arquitectura, decisiones, lecciones, resultados).
 

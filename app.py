@@ -1,17 +1,13 @@
-"""Geo_Agent – lokales Web-Tool fuer Bodengutachten.
+"""Geo_Agent – Excel nach Vorlage (v1, Layout Hamburg) als Streamlit-Seite.
 
-    streamlit run app.py
+    streamlit run app.py          (Windows: start_excel.bat)
 
-Seiten: Baugrundmodell (v2: PDF -> Bohrungen -> 3D-Modell IFC 4.3 im That-Open-Viewer) und
-Excel nach Vorlage (v1, Layout Hamburg). Dokumentation: docs/19_app_v2.md.
+Das Baugrundmodell (PDF -> Bohrungen pruefen -> Lage -> Einheiten -> IFC 4.3 im That-Open-Viewer) ist die
+Schritt-App: python -m server (Windows: start.bat), Beschreibung in docs/21_app_schritte_normen.md.
 """
 import streamlit as st
 
-from ui import viewer  # noqa: F401  (registriert die MIME-Typen fuer den Viewer, bevor er geladen wird)
-
-st.set_page_config(page_title="Geo_Agent", page_icon="🧱", layout="wide")
-seite = st.navigation([
-    st.Page("ui/baugrundmodell.py", title="Baugrundmodell", icon="🧱", default=True),
-    st.Page("ui/excel_v1.py", title="Excel nach Vorlage (v1)", icon="📊"),
-])
-seite.run()
+st.set_page_config(page_title="Geo_Agent – Excel v1", page_icon="📊", layout="wide")
+st.info("Das **Baugrundmodell** ist jetzt eine eigene Schritt-App: `start.bat` bzw. `python -m server` "
+        "(http://localhost:8500).", icon="🧱")
+st.navigation([st.Page("ui/excel_v1.py", title="Excel nach Vorlage (v1)", icon="📊", default=True)]).run()

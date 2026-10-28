@@ -18,9 +18,9 @@ const SAMMLUNGEN = ["mdi", "eos-icons"];
 const INTERN = ["eos-icons:loading"];                  // von BUI selbst benutzt (Ladeanzeige der Knoepfe)
 const src = new URL("../src/", import.meta.url).pathname;
 const namen = new Set(INTERN);
-for (const f of readdirSync(src)) {
-  if (!f.endsWith(".ts")) continue;
-  const text = readFileSync(join(src, f), "utf8");
+for (const f of readdirSync(src, { recursive: true })) {        // src/viewer, src/app
+  if (!String(f).endsWith(".ts")) continue;
+  const text = readFileSync(join(src, String(f)), "utf8");
   for (const m of text.matchAll(/["'`](mdi|eos-icons):([a-z0-9-]+)["'`]/g)) namen.add(`${m[1]}:${m[2]}`);
 }
 const ausgabe = [];

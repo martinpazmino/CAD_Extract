@@ -74,6 +74,16 @@ equipo; "Verificado" = respaldado por una prueba en este repo.
 | D60 | **Prüfstand + Einchecken** con contadores y huella del modelo; IFC con `Geprueft`/`Korrigiert`/`Pruefstand` generado al descargar | "Einchecken de la confidence": estado de revisión fechado y comprobable | `test_einchecken`, E2E | Decidido |
 | D61 | **Delimitación = envolvente convexa + buffer** (auto 5–100 m, a mano hasta 5 km) con presupuesto de 30 000 nodos también para raster manual | Modelos > 5 km sin agotar memoria | `test_grosse_modellgrenze_von_hand` | Decidido |
 | D62 | **Página con esqueleto fijo de contenedores** | Un elemento nuevo encima del componente lo volvía a montar (X13) | E2E: *Erzeugen* sin remontar | Verificado |
+| D63 | **App por pasos a pantalla completa (FastAPI + página web con el visor integrado)** en vez de Streamlit; Streamlit sólo para Excel v1 | Petición del usuario ("como una historia con pasos"); navegación estable sin reruns; un proceso, un puerto, sin Node | [21 §1](21_app_schritte_normen.md#1-arranque-y-arquitectura); E2E 19/19 | Verificado |
+| D64 | **Avisos = capas sin clasificar** (y sin revisar), no confianza baja | Petición del usuario: lo que hay que mirar es lo que no se pudo extraer | `test_warnung_bei_unklassifizierten_schichten_und_vorschlag` | Decidido |
+| D65 | **Mini base de datos de normas** (DIN 4023, EN ISO 14688-1, DIN 18196) con evidencia por entrada (`DIN4023`/`praxis`/`darstellung`); lee cada descripción; la propuesta para una capa sin clasificar sólo se aplica con un clic | Las abreviaturas son casi siempre las mismas; sin el texto de la norma (de pago) hay que decir de dónde viene cada dato | 19 pruebas; 13 rellenos de Berlín marcados ([21 §3](21_app_schritte_normen.md#3-mini-base-de-datos-de-normas)) | Decidido |
+| D66 | **Colores DIN 4023** en modelador, IFC, visor y app (Kies amarillo, Sand naranja, Schluff oliva, Ton violeta, Mudde lila …) | Los anteriores contradecían la norma (Kies/Sand cambiados) | `test_farben_nach_din_4023` | Decidido |
+| D67 | **Calibración nueva**: escala por distancia medida (o 1:n) + punto de referencia con coordenada + giro (plano) / escala vertical (sección) + **candado**; sustituye los dos puntos de pase de D57; las calibraciones antiguas se convierten | Petición del usuario; más fácil de entender y de comprobar (1:n visible) | UI: 1:500 · 10,0° exacto; marcas 0,3 px | Verificado |
+| D68 | **Arrastre de sondeos sólo con el plano bloqueado; en el plano x/y; en la sección la altura sólo sin GOK del PDF** (regla también en el servidor) | Petición del usuario; una GOK medida no se toca con el ratón | `check.mjs` C, `test_gok_nur_ohne_gok_aus_dem_pdf_verschiebbar` | Verificado |
+| D69 | **Diámetro de las columnas** por proyecto y por sondeo; automático `clamp(extensión/300, 0,8, 12)` m; mismo valor en visor e IFC (`CPset_Darstellung`) | Petición del usuario; columnas visibles en una trasse de 6 km | `test_durchmesser_projekt_und_je_bohrung` | Decidido |
+| D70 | **IFC con la descripción y su lectura por norma en cada capa** (`CPset_Bodenansprache`) y las descripciones de cada unidad (`CPset_Modelleinheit.Beschreibungen`), textos largos como `IfcText` | Trazabilidad completa en el modelo, no sólo en la app | IFC válido sin errores | Verificado |
+| D71 | **Barra del visor sólo con iconos** (grupos propios, no `bim-toolbar-section`) y **ayuda "?" en cada ajuste** | Petición del usuario: la barra no cabía; cada ajuste debe explicarse | ~460 px; M26 | Verificado |
+| D72 | **Subir una extracción en JSON** además de PDFs | Reabrir extracciones exportadas o hechas por línea de comandos | `test_extraktion_als_json_hochladen` | Decidido |
 
 ## Preguntas abiertas
 
@@ -86,4 +96,4 @@ equipo; "Verificado" = respaldado por una prueba en este repo.
 
 Up: [Índice](README.md)
 
-Related: [Arquitectura](ARQUITECTURA_BAUGRUNDMODELL.md) · [10 Plan](10_plan_implementacion.md) · [09 Validación](09_validacion_benchmark.md) · [18 Modelador de capas](18_modelador_capas.md) · [20 Lage y Prüfstand](20_lage_pruefung_viewer.md)
+Related: [Arquitectura](ARQUITECTURA_BAUGRUNDMODELL.md) · [10 Plan](10_plan_implementacion.md) · [09 Validación](09_validacion_benchmark.md) · [18 Modelador de capas](18_modelador_capas.md) · [20 Lage y Prüfstand](20_lage_pruefung_viewer.md) · [21 App por pasos y normas](21_app_schritte_normen.md)

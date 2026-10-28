@@ -25,7 +25,8 @@ sys.path.insert(0, str(REPO / "services" / "modeler"))
 from baugrundmodell.einheiten import einheiten_aus_vorgabe  # noqa: E402
 from baugrundmodell.modell import bauen, bericht, ifc_schreiben  # noqa: E402
 
-ARBEIT = Path(tempfile.gettempdir()) / "geo_agent"
+# Arbeitsordner (Zwischenablage, Projekte); mit GEO_AGENT_ARBEIT an einen festen Ort legbar
+ARBEIT = Path(os.environ.get("GEO_AGENT_ARBEIT") or Path(tempfile.gettempdir()) / "geo_agent")
 _modul = None
 
 
@@ -96,6 +97,15 @@ def pdf_extrahieren(name: str, daten: bytes, ocr: bool = True,
     return doc
 
 
+def pdf_pfad(dokument: dict) -> Path | None:
+    """Abgelegtes Gutachten-PDF eines Dokuments (beim Extrahieren unter ARBEIT/pdf/<sha>/ gespeichert)."""
+    sha = dokument.get("sha256") or ""
+    ordner = ARBEIT / "pdf" / sha[:16]
+    if not sha or not ordner.is_dir():
+        return None
+    return next(iter(sorted(ordner.glob("*.pdf"))), None)
+
+
 def ist_extrahiert(daten: bytes, ocr: bool) -> bool:
     sha = hashlib.sha256(daten).hexdigest()
     return (ARBEIT / "json" / f"{sha[:24]}_{int(bool(ocr))}_{_extraktor_stand()}.json").exists()
@@ -116,12 +126,13 @@ def modell_bauen(docs: list[dict], vorgabe: list[dict] | None = None, methode: s
     return bauen(docs, einheiten_aus_vorgabe(vorgabe) if vorgabe else None, methode, raster, puffer, basis, ursprung)
 
 
-def ifc_bytes(m, docs: list[dict], pruefstand: str | None = None) -> bytes:
+def ifc_bytes(m, docs: list[dict], pruefstand: str | None = None, durchmesser: float | None = None,
+              durchmesser_je: dict[str, float] | None = None) -> bytes:
     ARBEIT.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile(suffix=".ifc", dir=ARBEIT, delete=False) as fh:
         pfad = Path(fh.name)
     try:
-        ifc_schreiben(m, pfad, docs, pruefstand=pruefstand)
+        ifc_schreiben(m, pfad, docs, pruefstand=pruefstand, durchmesser=durchmesser, durchmesser_je=durchmesser_je)
         return pfad.read_bytes()
     finally:
         pfad.unlink(missing_ok=True)
@@ -129,10 +140,12 @@ def ifc_bytes(m, docs: list[dict], pruefstand: str | None = None) -> bytes:
 
 def modell_rechnen(docs: list[dict], vorgabe: list[dict] | None = None, methode: str = "idw",
                    puffer: float | None = None, raster: float | None = None, basis: float | None = None,
-                   ursprung: tuple[float, float] | None = None, pruefstand: str | None = None) -> Ergebnis:
+                   ursprung: tuple[float, float] | None = None, pruefstand: str | None = None,
+                   durchmesser: float | None = None, durchmesser_je: dict[str, float] | None = None) -> Ergebnis:
     m = modell_bauen(docs, vorgabe, methode, puffer, raster, basis, ursprung)
     b = bericht(m)
-    return Ergebnis(ifc_bytes(m, docs, pruefstand), b, {e["name"]: e["farbe"] for e in b["einheiten"]})
+    return Ergebnis(ifc_bytes(m, docs, pruefstand, durchmesser, durchmesser_je), b,
+                    {e["name"]: e["farbe"] for e in b["einheiten"]})
 
 
 def ohne_pruefvermerke(docs: list[dict]) -> list[dict]:

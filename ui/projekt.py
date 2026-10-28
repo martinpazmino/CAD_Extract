@@ -1,9 +1,12 @@
-"""Projektzustand der App v2: Korrekturen des Nutzers, Lage (Koordinaten oder Reihe), Unterlage, Pruefstand.
+"""Projektzustand der Baugrundmodell-App: Korrekturen des Nutzers, Lage (Koordinaten oder Reihe), Unterlage mit
+Kalibrierung, Durchmesser der Bohrsaeulen, Pruefstand und Eincheckungen.
 
-Ohne Streamlit testbar. Das kanonische JSON der Extraktion bleibt unveraendert: alles, was der Nutzer
-aendert, liegt hier und wird beim Rechnen auf eine Kopie angewendet und dort markiert (coord_source,
-gok_source, geprueft, korrigiert). Ereignisse aus dem Viewer (Bohrung verschoben, Station im Schnitt,
-Kalibrierung der Unterlage) kommen ueber ereignis_anwenden herein. Beschreibung: docs/20.
+Ohne Oberflaeche testbar; die App (server/, apps/web) ruft nur aendern() und zustand() auf. Das kanonische JSON der
+Extraktion bleibt unveraendert: alles, was der Nutzer aendert, liegt hier und wird beim Rechnen auf eine Kopie
+angewendet und dort markiert (coord_source, gok_source, geprueft, korrigiert). Warnungen gelten Schichten, die nicht
+klassifiziert werden konnten (Bodenart "unklassifiziert"), nicht einer niedrigen Konfidenz. Jede Beschreibung wird
+nach Norm gedeutet (services/modeler/baugrundmodell/normen.py); ein Vorschlag wird nur auf Wunsch uebernommen.
+Beschreibung: docs/20 (Lage, Pruefung) und docs/21 (Schritt-App, Normen, Kalibrierung).
 """
 from __future__ import annotations
 
@@ -19,11 +22,14 @@ _MODELLIERER = str(Path(__file__).resolve().parents[1] / "services" / "modeler")
 if _MODELLIERER not in sys.path:
     sys.path.insert(0, _MODELLIERER)
 
-from baugrundmodell.ifc4x3 import FARBEN, farbe, farbschluessel, hexfarbe  # noqa: E402
+from baugrundmodell.ifc4x3 import FARBEN  # noqa: E402,F401  (Farben nach DIN 4023, fuer aeltere Aufrufer)
+from baugrundmodell.modell import standard_durchmesser  # noqa: E402
+from baugrundmodell.normen import (UNKLASSIFIZIERT, bekannt, deuten, farbinfo, klassen_liste,  # noqa: E402
+                                   vorschlag)
 
 LAGE_KOORDINATEN = "koordinaten"          # Lageplan: Rechts-/Hochwert (aus dem PDF, eingetragen oder im Viewer gesetzt)
 LAGE_REIHE = "reihe"                      # Laengsschnitt: Bohrungen in einer Reihe, Stationen je Bohrung
-UNSICHER = 0.6                            # Konfidenz darunter: zuerst pruefen
+SCHRITTE = ("gutachten", "bohrungen", "lage", "einheiten", "modell")
 
 
 @dataclass
@@ -46,8 +52,9 @@ class Vorbereitung:
 @dataclass
 class Projekt:
     signatur: str
+    name: str = ""
     lage_modus: str = LAGE_KOORDINATEN
-    bohrung: dict[str, dict] = field(default_factory=dict)   # id -> {modell, geprueft, gok, x, y, epsg, quelle}
+    bohrung: dict[str, dict] = field(default_factory=dict)   # id -> {modell, geprueft, gok, x, y, epsg, quelle, durchmesser}
     schicht: dict[str, dict] = field(default_factory=dict)   # "id/k" -> {oben, unten, bodenart, geprueft}
     reihe: dict = field(default_factory=lambda: {"standard": 20.0, "reihenfolge": [], "abstand": {}, "station": {}})
     unterlage: dict | None = None
@@ -56,9 +63,15 @@ class Projekt:
     auto: bool = True
     vorgabe: list[dict] | None = None
     eincheckungen: list[dict] = field(default_factory=list)
-    viewer_nr: int = 0                      # zuletzt angewendetes Viewer-Ereignis
-    unterlage_zaehler: int = 0              # neue Unterlage: Upload-Feld leeren
-    version: int = 0                        # steigt bei Aenderungen von aussen: Tabellen-Editoren neu aufbauen
+    viewer_nr: int = 0                      # zuletzt angewendetes Viewer-Ereignis (Ereignisse mit laufender Nummer)
+    unterlage_zaehler: int = 0
+    version: int = 0                        # steigt bei jeder Aenderung (die Oberflaeche erkennt veralteten Stand)
+    einstellungen: dict = field(default_factory=lambda: asdict(Einstellungen()))
+    durchmesser: float | None = None        # Bohrsaeulen in m; None = automatisch nach Modellgroesse
+    ueberhoehung: int = 5
+    schritt: str = "bohrungen"              # zuletzt offener Schritt der App
+    angelegt: str = ""
+    geaendert: str = ""
 
 
 # ---------------------------------------------------------------- Grundlagen
@@ -71,7 +84,7 @@ def zahl(v) -> float | None:
         f = float(v)
     except (TypeError, ValueError):
         return None
-    return None if f != f else f                         # NaN aus der Tabelle -> None
+    return None if f != f else f                         # NaN -> None
 
 
 def _gleich(a, b, tol: float = 1e-6) -> bool:
@@ -79,9 +92,20 @@ def _gleich(a, b, tol: float = 1e-6) -> bool:
     return (a is None and b is None) or (a is not None and b is not None and abs(a - b) <= tol)
 
 
+def jetzt() -> str:
+    return datetime.now().strftime("%Y-%m-%d %H:%M")
+
+
 def bohrungen(docs: list[dict]) -> list[tuple[str, dict, dict]]:
     """(id, Dokument, Bohrung) in Dokumentreihenfolge; id = 'Dokumentindex:Bohrungsindex'."""
     return [(f"{di}:{bi}", d, b) for di, d in enumerate(docs) for bi, b in enumerate(d["boreholes"])]
+
+
+def _bohrung(docs: list[dict], bid: str) -> dict:
+    for i, _, b in bohrungen(docs):
+        if i == bid:
+            return b
+    raise KeyError(f"Bohrung {bid} gibt es nicht")
 
 
 def doppelte(docs: list[dict]) -> dict[str, str]:
@@ -97,13 +121,15 @@ def doppelte(docs: list[dict]) -> dict[str, str]:
 
 
 def bodenarten(docs: list[dict]) -> list[str]:
-    """Auswahl fuer die Schichttabelle: bekannte Bodenarten und alle, die die Extraktion geliefert hat."""
+    """Auswahl fuer die Schichttabelle: Klassen der Normen-Datenbank und alle, die die Extraktion geliefert hat."""
     aus_docs = {ly.get("soil_class") for _, _, b in bohrungen(docs) for ly in b.get("layers") or [] if ly.get("soil_class")}
-    return sorted({k for k in FARBEN if k} | aus_docs | {"unklassifiziert"})
+    norm = [k["klasse"] for k in klassen_liste()]
+    return norm + sorted(aus_docs - set(norm))
 
 
 def bodenart_farbe(klasse: str | None) -> str:
-    return hexfarbe(farbe(klasse)) if farbschluessel(klasse) else "#d9d9d9"
+    """Farbe nach DIN 4023 (Normen-Datenbank); unbekannt/unklassifiziert hellgrau."""
+    return farbinfo(klasse if bekannt(klasse) else None)["hex"]
 
 
 def neues_projekt(docs: list[dict], signatur: str) -> Projekt:
@@ -111,7 +137,14 @@ def neues_projekt(docs: list[dict], signatur: str) -> Projekt:
     hat_lage = any(b.get("x") is not None and b.get("y") is not None for _, _, b in bohrungen(docs))
     p.lage_modus = LAGE_KOORDINATEN if hat_lage else LAGE_REIHE
     p.reihe["reihenfolge"] = [bid for bid, _, b in sorted(bohrungen(docs), key=lambda t: natuerlich(t[2]["code"]))]
+    p.name = Path(docs[0]["document"]["file"]).stem if len(docs) == 1 else f"{len(docs)} Dokumente"
+    p.angelegt = p.geaendert = jetzt()
     return p
+
+
+def einstellungen(p: Projekt) -> Einstellungen:
+    felder = Einstellungen.__dataclass_fields__
+    return Einstellungen(**{k: v for k, v in (p.einstellungen or {}).items() if k in felder})
 
 
 # ---------------------------------------------------------------- wirksame Werte (Extraktion + Korrekturen)
@@ -126,19 +159,29 @@ def wert(p: Projekt, bid: str, b: dict, schluessel: str, doppelt: dict | None = 
         return o[schluessel]
     return {"modell": lambda: _basis_modell(bid, b, doppelt or {}), "geprueft": lambda: False,
             "gok": lambda: b.get("gok_nhn"), "x": lambda: b.get("x"), "y": lambda: b.get("y"),
-            "epsg": lambda: b.get("crs_epsg"), "quelle": lambda: b.get("coord_source") or ""}[schluessel]()
+            "epsg": lambda: b.get("crs_epsg"), "quelle": lambda: b.get("coord_source") or "",
+            "durchmesser": lambda: None}[schluessel]()
 
 
 def schicht_wert(p: Projekt, bid: str, k: int, ly: dict, schluessel: str):
     o = p.schicht.get(f"{bid}/{k}", {})
     if schluessel in o:
         return o[schluessel]
-    return {"oben": ly["top_depth"], "unten": ly["bottom_depth"], "bodenart": ly.get("soil_class") or "unklassifiziert",
+    return {"oben": ly["top_depth"], "unten": ly["bottom_depth"], "bodenart": ly.get("soil_class") or UNKLASSIFIZIERT,
             "geprueft": False}[schluessel]
 
 
 def schicht_geprueft(p: Projekt, bid: str, b: dict, k: int, ly: dict) -> bool:
     return bool(schicht_wert(p, bid, k, ly, "geprueft")) or bool(wert(p, bid, b, "geprueft"))
+
+
+def schicht_unklassifiziert(p: Projekt, bid: str, k: int, ly: dict) -> bool:
+    return schicht_wert(p, bid, k, ly, "bodenart") in (None, "", UNKLASSIFIZIERT)
+
+
+def schicht_offen(p: Projekt, bid: str, b: dict, k: int, ly: dict) -> bool:
+    """Warnung: Schicht nicht klassifiziert und noch nicht geprueft (wer sie prueft, nimmt sie zur Kenntnis)."""
+    return schicht_unklassifiziert(p, bid, k, ly) and not schicht_geprueft(p, bid, b, k, ly)
 
 
 def wirksame_docs(docs: list[dict], p: Projekt) -> list[dict]:
@@ -162,7 +205,7 @@ def wirksame_docs(docs: list[dict], p: Projekt) -> list[dict]:
                 ly["top_depth"] = float(lo.get("oben", ly["top_depth"]))
                 ly["bottom_depth"] = float(lo.get("unten", ly["bottom_depth"]))
                 art = lo.get("bodenart", ly.get("soil_class"))
-                ly["soil_class"] = None if art in (None, "", "unklassifiziert") else art
+                ly["soil_class"] = None if art in (None, "", UNKLASSIFIZIERT) else art
                 ly["confidence"] = 1.0                    # vom Menschen festgelegt
                 ly["korrigiert"] = True
                 ly["issues"] = list(ly.get("issues") or []) + ["manuell korrigiert"]
@@ -172,138 +215,279 @@ def wirksame_docs(docs: list[dict], p: Projekt) -> list[dict]:
     return neu
 
 
-# ---------------------------------------------------------------- Tabelle Bohrungen
-def bohrungen_zeilen(docs: list[dict], p: Projekt) -> list[dict]:
+# ---------------------------------------------------------------- Listen fuer die Oberflaeche
+def bohrungen_liste(docs: list[dict], p: Projekt) -> list[dict]:
+    """Eine Zeile je Bohrung (wirksame Werte, Pruef- und Warnzaehler)."""
     doppelt = doppelte(docs)
     out = []
     for bid, d, b in bohrungen(docs):
         schichten = b.get("layers") or []
         konf = [ly.get("confidence") or 0.0 for ly in schichten]
-        geprueft = sum(schicht_geprueft(p, bid, b, k, ly) for k, ly in enumerate(schichten))
         hinweise = list(b.get("issues") or [])
         if bid in doppelt:
             hinweise.insert(0, f"doppelt (auch in {doppelt[bid]})")
+        modell = bool(wert(p, bid, b, "modell", doppelt))
+        gok = zahl(wert(p, bid, b, "gok"))
         out.append({
-            "id": bid, "Modell": bool(wert(p, bid, b, "modell", doppelt)), "Geprüft": bool(wert(p, bid, b, "geprueft")),
-            "Bohrung": b["code"], "Dokument": d["document"]["file"],
-            "Seite": int((b.get("provenance") or [{}])[0].get("page", 0) or 0) + 1,
-            "GOK [m NHN]": zahl(wert(p, bid, b, "gok")), "Endteufe [m]": b.get("end_depth"),
-            "Rechtswert": zahl(wert(p, bid, b, "x")), "Hochwert": zahl(wert(p, bid, b, "y")),
-            "EPSG": zahl(wert(p, bid, b, "epsg")), "Lage aus": wert(p, bid, b, "quelle"),
-            "Schichten geprüft": f"{geprueft}/{len(schichten)}",
-            "Konfidenz": round(sum(konf) / len(konf), 2) if konf else None,
-            "min. Konfidenz": round(min(konf), 2) if konf else None,
-            "Grundwasser": ", ".join(f"{g['depth']:.2f} m" for g in b.get("groundwater") or []) or
+            "id": bid, "code": b["code"], "dokument": d["document"]["file"],
+            "seite": int((b.get("provenance") or [{}])[0].get("page", 0) or 0) + 1,
+            "modell": modell, "entfernt": not modell, "geprueft": bool(wert(p, bid, b, "geprueft")),
+            "gok": gok, "gok_pdf": b.get("gok_nhn") is not None,
+            "gok_quelle": "manuell" if "gok" in p.bohrung.get(bid, {}) else ("PDF" if b.get("gok_nhn") is not None else ""),
+            "endteufe": max((zahl(schicht_wert(p, bid, k, ly, "unten")) or 0.0 for k, ly in enumerate(schichten)),
+                            default=b.get("end_depth")),
+            "x": zahl(wert(p, bid, b, "x")), "y": zahl(wert(p, bid, b, "y")), "epsg": zahl(wert(p, bid, b, "epsg")),
+            "lage_aus": wert(p, bid, b, "quelle"),
+            "schichten_n": len(schichten),
+            "schichten_geprueft": sum(schicht_geprueft(p, bid, b, k, ly) for k, ly in enumerate(schichten)),
+            "unklassifiziert": sum(schicht_unklassifiziert(p, bid, k, ly) for k, ly in enumerate(schichten)),
+            "offen": sum(schicht_offen(p, bid, b, k, ly) for k, ly in enumerate(schichten)),
+            "korrigiert": sum(any(s in p.schicht.get(f"{bid}/{k}", {}) for s in ("oben", "unten", "bodenart"))
+                              for k, _ in enumerate(schichten)),
+            "konfidenz_min": round(min(konf), 2) if konf else None,
+            "grundwasser": ", ".join(f"{g['depth']:.2f} m" for g in b.get("groundwater") or []) or
                            (b.get("groundwater_status") or ""),
-            "Hinweise": "; ".join(hinweise)})
+            "durchmesser": zahl(wert(p, bid, b, "durchmesser")),
+            "doppelt_in": doppelt.get(bid),
+            "hinweise": hinweise})
     return out
 
 
-def bohrungen_uebernehmen(docs: list[dict], p: Projekt, zeilen: list[dict]) -> bool:
-    """Aenderungen aus der Tabelle in die Korrekturen; gleich dem PDF-Wert -> Korrektur entfaellt."""
-    doppelt = doppelte(docs)
-    alt = {z["id"]: z for z in bohrungen_zeilen(docs, p)}
-    basis = {bid: b for bid, _, b in bohrungen(docs)}
-    geaendert = False
-    for z in zeilen:
-        bid = z["id"]
-        b, vorher = basis[bid], alt[bid]
-        o = p.bohrung.setdefault(bid, {})
-        for spalte, schluessel, ursprung in (("Modell", "modell", _basis_modell(bid, b, doppelt)),
-                                             ("Geprüft", "geprueft", False)):
-            if bool(z[spalte]) != bool(vorher[spalte]):
-                geaendert = True
-                if bool(z[spalte]) == ursprung:
-                    o.pop(schluessel, None)
-                else:
-                    o[schluessel] = bool(z[spalte])
-        if not _gleich(z["GOK [m NHN]"], vorher["GOK [m NHN]"]):
-            geaendert = True
-            if _gleich(z["GOK [m NHN]"], b.get("gok_nhn")):
-                o.pop("gok", None)
-            else:
-                o["gok"] = zahl(z["GOK [m NHN]"])
-        lage_neu = [z["Rechtswert"], z["Hochwert"], z["EPSG"]]
-        lage_alt = [vorher["Rechtswert"], vorher["Hochwert"], vorher["EPSG"]]
-        if not all(_gleich(a, c) for a, c in zip(lage_neu, lage_alt)):
-            geaendert = True
-            if all(_gleich(a, c) for a, c in zip(lage_neu, [b.get("x"), b.get("y"), b.get("crs_epsg")])):
-                for s in ("x", "y", "epsg", "quelle"):
-                    o.pop(s, None)
-            else:
-                o.update(x=zahl(z["Rechtswert"]), y=zahl(z["Hochwert"]), epsg=zahl(z["EPSG"]), quelle="manuell (Tabelle)")
-        if not o:
-            p.bohrung.pop(bid, None)
-    return geaendert
-
-
-# ---------------------------------------------------------------- Tabelle Schichten einer Bohrung
-def schichten_zeilen(docs: list[dict], p: Projekt, bid: str) -> list[dict]:
-    b = next(b for i, _, b in bohrungen(docs) if i == bid)
+def schichten_liste(docs: list[dict], p: Projekt, bid: str) -> list[dict]:
+    """Schichten einer Bohrung mit Quelle (Seite, Rahmen im PDF) und Deutung nach Norm."""
+    b = _bohrung(docs, bid)
     d = next(d for i, d, _ in bohrungen(docs) if i == bid)
     out = []
     for k, ly in enumerate(b.get("layers") or []):
         lo = p.schicht.get(f"{bid}/{k}", {})
         pv = (ly.get("provenance") or [{}])[0]
+        art = schicht_wert(p, bid, k, ly, "bodenart")
+        norm = deuten(ly.get("description_raw"), None if art == UNKLASSIFIZIERT else art)
+        vs = vorschlag(ly) if art == UNKLASSIFIZIERT else None
         out.append({"k": k, "von": float(schicht_wert(p, bid, k, ly, "oben")), "bis": float(schicht_wert(p, bid, k, ly, "unten")),
-                    "Bodenart": schicht_wert(p, bid, k, ly, "bodenart"), "Geprüft": schicht_geprueft(p, bid, b, k, ly),
-                    "Korrigiert": any(s in lo for s in ("oben", "unten", "bodenart")),
-                    "Konfidenz": ly.get("confidence"), "Beschreibung": ly.get("description_raw") or "",
-                    "Hinweise": "; ".join(ly.get("issues") or []),
-                    "Quelle": f"{d['document']['file']} S.{int(pv.get('page') or 0) + 1}"})
+                    "bodenart": art, "farbe": bodenart_farbe(art),
+                    "geprueft": schicht_geprueft(p, bid, b, k, ly),
+                    "korrigiert": any(s in lo for s in ("oben", "unten", "bodenart")),
+                    "unklassifiziert": art == UNKLASSIFIZIERT, "offen": schicht_offen(p, bid, b, k, ly),
+                    "konfidenz": ly.get("confidence"), "beschreibung": ly.get("description_raw") or "",
+                    "hinweise": list(ly.get("issues") or []),
+                    "quelle": {"dokument": d["document"]["file"], "seite": int(pv.get("page") or 0) + 1,
+                               "bbox": pv.get("bbox"), "methode": pv.get("method")},
+                    "norm": {"benennung": norm.benennung, "din4023": norm.din4023, "iso14688": norm.iso14688,
+                             "bodengruppe": norm.bodengruppe, "konsistenz": norm.konsistenz, "lagerung": norm.lagerung,
+                             "kalk": norm.kalk, "feuchte": norm.feuchte, "bodenfarbe": norm.bodenfarbe,
+                             "klasse": norm.klasse, "farbe": norm.farbe, "farbname": norm.farbname,
+                             "sicher": norm.sicher, "hinweise": norm.hinweise},
+                    "vorschlag": vs})
     return out
 
 
-def schichten_uebernehmen(docs: list[dict], p: Projekt, bid: str, zeilen: list[dict]) -> bool:
-    b = next(b for i, _, b in bohrungen(docs) if i == bid)
-    alt = {z["k"]: z for z in schichten_zeilen(docs, p, bid)}
-    geaendert = False
-    for z in zeilen:
-        k = int(z["k"])
-        ly = b["layers"][k]
-        vorher = alt[k]
-        o = p.schicht.setdefault(f"{bid}/{k}", {})
-        for spalte, schluessel, ursprung in (("von", "oben", ly["top_depth"]), ("bis", "unten", ly["bottom_depth"])):
-            if not _gleich(z[spalte], vorher[spalte]):
-                geaendert = True
-                if _gleich(z[spalte], ursprung):
-                    o.pop(schluessel, None)
-                else:
-                    o[schluessel] = zahl(z[spalte])
-        if (z["Bodenart"] or "unklassifiziert") != vorher["Bodenart"]:
-            geaendert = True
-            if (z["Bodenart"] or "unklassifiziert") == (ly.get("soil_class") or "unklassifiziert"):
-                o.pop("bodenart", None)
-            else:
-                o["bodenart"] = z["Bodenart"]
-        korrigiert_jetzt = any(s_ in o for s_ in ("oben", "unten", "bodenart")) and not vorher["Korrigiert"]
-        if korrigiert_jetzt and not bool(z["Geprüft"]):
-            o["geprueft"] = True                          # wer korrigiert, hat die Schicht geprueft
-        elif bool(z["Geprüft"]) != bool(vorher["Geprüft"]):
-            geaendert = True
-            o["geprueft"] = bool(z["Geprüft"])
-            if not o["geprueft"] and wert(p, bid, b, "geprueft"):
-                # Haken an einer Schicht weg, die Bohrung war als ganze geprueft: die anderen Schichten bleiben geprueft
-                p.bohrung.setdefault(bid, {})["geprueft"] = False
-                for j, _ in enumerate(b["layers"]):
-                    if j != k:
-                        p.schicht.setdefault(f"{bid}/{j}", {}).setdefault("geprueft", True)
-        if not o:
-            p.schicht.pop(f"{bid}/{k}", None)
-    return geaendert
+# ---------------------------------------------------------------- Aenderungen
+def _bohrung_setzen(docs: list[dict], p: Projekt, bid: str, feld: str, w) -> bool:
+    """Ein Feld einer Bohrung setzen; gleich dem PDF-Wert (oder None) -> Korrektur entfaellt."""
+    b = _bohrung(docs, bid)
+    o = p.bohrung.setdefault(bid, {})
+    vorher = dict(o)
+    if feld in ("modell", "geprueft"):
+        ursprung = _basis_modell(bid, b, doppelte(docs)) if feld == "modell" else False
+        if bool(w) == ursprung:
+            o.pop(feld, None)
+        else:
+            o[feld] = bool(w)
+    elif feld == "gok":
+        if w is None or _gleich(w, b.get("gok_nhn")):
+            o.pop("gok", None)
+        else:
+            o["gok"] = zahl(w)
+    elif feld in ("x", "y", "epsg"):
+        neu = {s: zahl(o.get(s, b.get({"x": "x", "y": "y", "epsg": "crs_epsg"}[s]))) for s in ("x", "y", "epsg")}
+        neu[feld] = zahl(w)
+        if all(_gleich(neu[s], b.get({"x": "x", "y": "y", "epsg": "crs_epsg"}[s])) for s in neu):
+            for s in ("x", "y", "epsg", "quelle"):
+                o.pop(s, None)
+        else:
+            o.update(neu, quelle="manuell (Tabelle)")
+    elif feld == "durchmesser":
+        d = zahl(w)
+        if d is None or d <= 0:
+            o.pop("durchmesser", None)
+        else:
+            o["durchmesser"] = round(d, 3)
+    else:
+        raise ValueError(f"unbekanntes Feld {feld}")
+    if not o:
+        p.bohrung.pop(bid, None)
+    return o != vorher
+
+
+def _schicht_setzen(docs: list[dict], p: Projekt, bid: str, k: int, feld: str, w) -> bool:
+    b = _bohrung(docs, bid)
+    ly = b["layers"][k]
+    schl = f"{bid}/{k}"
+    o = p.schicht.setdefault(schl, {})
+    vorher = dict(o)
+    war_korrigiert = any(s in o for s in ("oben", "unten", "bodenart"))
+    if feld in ("oben", "unten"):
+        ursprung = ly["top_depth"] if feld == "oben" else ly["bottom_depth"]
+        if w is None or _gleich(w, ursprung):
+            o.pop(feld, None)
+        else:
+            o[feld] = zahl(w)
+    elif feld == "bodenart":
+        art = w or UNKLASSIFIZIERT
+        if art == (ly.get("soil_class") or UNKLASSIFIZIERT):
+            o.pop("bodenart", None)
+        else:
+            o["bodenart"] = art
+    elif feld == "geprueft":
+        o["geprueft"] = bool(w)
+        if not w and wert(p, bid, b, "geprueft"):
+            # Haken an einer Schicht weg, die Bohrung war als ganze geprueft: die anderen Schichten bleiben geprueft
+            p.bohrung.setdefault(bid, {})["geprueft"] = False
+            for j, _ in enumerate(b["layers"]):
+                if j != k:
+                    p.schicht.setdefault(f"{bid}/{j}", {}).setdefault("geprueft", True)
+    else:
+        raise ValueError(f"unbekanntes Feld {feld}")
+    if feld != "geprueft" and not war_korrigiert and any(s in o for s in ("oben", "unten", "bodenart")):
+        o["geprueft"] = True                              # wer korrigiert, hat die Schicht geprueft
+    if not o:
+        p.schicht.pop(schl, None)
+    return o != vorher
 
 
 def alle_schichten_pruefen(docs: list[dict], p: Projekt, bid: str, geprueft: bool = True) -> None:
-    b = next(b for i, _, b in bohrungen(docs) if i == bid)
+    b = _bohrung(docs, bid)
     for k, _ in enumerate(b.get("layers") or []):
         p.schicht.setdefault(f"{bid}/{k}", {})["geprueft"] = geprueft
+    if not geprueft:
+        p.bohrung.setdefault(bid, {})["geprueft"] = False
+
+
+def alle_pruefen(docs: list[dict], p: Projekt, geprueft: bool = True) -> int:
+    """Alle Schichten aller Bohrungen im Modell als geprueft markieren (oder zuruecknehmen); Anzahl Bohrungen."""
+    doppelt = doppelte(docs)
+    n = 0
+    for bid, _, b in bohrungen(docs):
+        if not wert(p, bid, b, "modell", doppelt):
+            continue
+        alle_schichten_pruefen(docs, p, bid, geprueft)
+        _bohrung_setzen(docs, p, bid, "geprueft", geprueft)
+        n += 1
+    return n
+
+
+def _gok_aus_pdf(docs: list[dict] | None, bid: str) -> bool:
+    if docs is None:
+        return False
+    try:
+        return _bohrung(docs, bid).get("gok_nhn") is not None
+    except KeyError:
+        return False
+
+
+def aendern(docs: list[dict], p: Projekt, op: dict) -> str:
+    """Eine Aenderung aus der App anwenden. Rueckgabe: kurze Meldung; ValueError bei ungueltiger Eingabe."""
+    art = op.get("op")
+    codes = {bid: b["code"] for bid, _, b in bohrungen(docs)}
+    bid = op.get("id")
+    if bid is not None and bid not in codes:
+        raise ValueError(f"Bohrung {bid} gibt es nicht")
+    code = codes.get(bid, "")
+    meldung = ""
+    if art == "bohrung":
+        _bohrung_setzen(docs, p, bid, op["feld"], op.get("wert"))
+        meldung = f"{code}: {op['feld']} übernommen"
+    elif art in ("entfernen", "wiederherstellen"):
+        _bohrung_setzen(docs, p, bid, "modell", art == "wiederherstellen")
+        meldung = f"{code} {'aus dem Modell entfernt' if art == 'entfernen' else 'wieder im Modell'}"
+    elif art == "schicht":
+        _schicht_setzen(docs, p, bid, int(op["k"]), op["feld"], op.get("wert"))
+        meldung = f"{code}, Schicht {int(op['k']) + 1}: {op['feld']} übernommen"
+    elif art == "vorschlag":                              # Deutung nach Norm fuer eine unklassifizierte Schicht
+        ly = _bohrung(docs, bid)["layers"][int(op["k"])]
+        if not schicht_unklassifiziert(p, bid, int(op["k"]), ly):
+            raise ValueError("Schicht ist schon klassifiziert")
+        vs = vorschlag(ly)
+        if not vs:
+            raise ValueError("kein Vorschlag nach Norm")
+        _schicht_setzen(docs, p, bid, int(op["k"]), "bodenart", vs["klasse"])
+        meldung = f"{code}, Schicht {int(op['k']) + 1}: {vs['klasse']} übernommen ({vs['din4023']})"
+    elif art == "bohrung_pruefen":
+        alle_schichten_pruefen(docs, p, bid, bool(op.get("wert", True)))
+        _bohrung_setzen(docs, p, bid, "geprueft", bool(op.get("wert", True)))
+        meldung = f"{code}: {'alle Schichten geprüft' if op.get('wert', True) else 'Prüfung zurückgenommen'}"
+    elif art == "alle_pruefen":
+        n = alle_pruefen(docs, p, bool(op.get("wert", True)))
+        meldung = f"{n} Bohrungen {'vollständig geprüft' if op.get('wert', True) else 'Prüfung zurückgenommen'}"
+    elif art == "lage_modus":
+        if op["wert"] not in (LAGE_KOORDINATEN, LAGE_REIHE):
+            raise ValueError("Lage: koordinaten oder reihe")
+        p.lage_modus = op["wert"]
+    elif art == "reihe":
+        reihe_aendern(docs, p, op)
+        meldung = "Reihe übernommen"
+    elif art == "lage":                                  # im Viewer auf den Plan gezogen (nur x/y)
+        kal = (p.unterlage or {}).get("kalibrierung") or {}
+        o = p.bohrung.setdefault(bid, {})
+        o.update(x=float(op["x"]), y=float(op["y"]), quelle="Plan (kalibriert)" if kal else "manuell (Viewer)")
+        if kal.get("epsg"):                               # sonst bleibt das System der Bohrung (PDF/Tabelle)
+            o["epsg"] = int(kal["epsg"])
+        meldung = f"{code}: Lage R {float(op['x']):,.2f} · H {float(op['y']):,.2f}"
+    elif art == "station":
+        p.reihe["station"][bid] = float(op["station"])
+        p.reihe["abstand"].pop(bid, None)
+        meldung = f"{code}: Station {float(op['station']):,.2f} m"
+    elif art == "gok":                                   # Ansatzhoehe im Schnitt gezogen: nur ohne GOK aus dem PDF
+        if _gok_aus_pdf(docs, bid):
+            raise ValueError(f"{code}: GOK steht im PDF – Höhe nur in der Tabelle änderbar")
+        p.bohrung.setdefault(bid, {})["gok"] = float(op["gok"])
+        meldung = f"{code}: GOK {float(op['gok']):,.2f} m NHN"
+    elif art == "geprueft":
+        _bohrung_setzen(docs, p, bid, "geprueft", bool(op["wert"]))
+        meldung = f"{code}: {'als geprüft markiert' if op['wert'] else 'Prüfung zurückgenommen'}"
+    elif art == "kalibrierung":
+        if p.unterlage is None:
+            raise ValueError("keine Unterlage")
+        p.unterlage["kalibrierung"] = kalibrierung_pruefen(op.get("wert"), p.unterlage.get("art", "plan"))
+        meldung = "Kalibrierung übernommen" if op.get("wert") else "Kalibrierung zurückgesetzt"
+    elif art == "einstellungen":
+        felder = Einstellungen.__dataclass_fields__
+        neu = {k: v for k, v in op.items() if k in felder}
+        if neu.get("methode", "idw") not in ("idw", "tps"):
+            raise ValueError("Interpolation: idw oder tps")
+        p.einstellungen = {**p.einstellungen, **neu}
+    elif art == "durchmesser":
+        d = zahl(op.get("wert"))
+        p.durchmesser = None if d is None or d <= 0 else round(d, 3)
+    elif art == "ueberhoehung":
+        p.ueberhoehung = int(op["wert"])
+    elif art == "vorgabe":
+        w = op.get("wert")
+        p.vorgabe = None if not w else [{"name": str(v["name"]).strip(),
+                                         "bodenarten": [str(t).strip() for t in v.get("bodenarten") or [] if str(t).strip()]}
+                                        for v in w if str(v.get("name") or "").strip()]
+    elif art == "erzeugen":
+        p.erzeugt = True
+    elif art == "auto":
+        p.auto = bool(op["wert"])
+    elif art == "schritt":
+        if op["wert"] not in SCHRITTE:
+            raise ValueError("unbekannter Schritt")
+        p.schritt = op["wert"]
+        return ""                                         # kein neuer Stand
+    else:
+        raise ValueError(f"unbekannte Änderung {art}")
+    p.version += 1
+    p.geaendert = jetzt()
+    return meldung
 
 
 # ---------------------------------------------------------------- Reihe (Laengsschnitt)
 def _reihenfolge(docs: list[dict], p: Projekt) -> list[str]:
     alle = [bid for bid, _, _ in bohrungen(docs)]
-    bekannt = [bid for bid in p.reihe["reihenfolge"] if bid in alle]
-    return bekannt + [bid for bid in alle if bid not in bekannt]
+    bekannt_ = [bid for bid in p.reihe["reihenfolge"] if bid in alle]
+    return bekannt_ + [bid for bid in alle if bid not in bekannt_]
 
 
 def stationen(docs: list[dict], p: Projekt, ids: list[str] | None = None) -> dict[str, tuple[float, str]]:
@@ -325,47 +509,134 @@ def stationen(docs: list[dict], p: Projekt, ids: list[str] | None = None) -> dic
     return out
 
 
-def reihe_zeilen(docs: list[dict], p: Projekt, ids: list[str]) -> list[dict]:
+def reihe_liste(docs: list[dict], p: Projekt, ids: list[str] | None = None) -> list[dict]:
+    if ids is None:
+        doppelt = doppelte(docs)
+        ids = [bid for bid, _, b in bohrungen(docs) if wert(p, bid, b, "modell", doppelt)]
     st = stationen(docs, p, ids)
     codes = {bid: b["code"] for bid, _, b in bohrungen(docs)}
     out, vorher = [], None
     for nr, (bid, (s, q)) in enumerate(st.items(), start=1):
-        out.append({"id": bid, "Nr": nr, "Bohrung": codes[bid],
-                    "Abstand zum Vorgänger [m]": None if vorher is None else round(s - vorher, 3),
-                    "Station [m]": round(s, 3), "Quelle": {"Schnitt": "im Schnitt gesetzt", "manuell": "Abstand manuell",
-                                                           "Standard": "Standardabstand", "Start": "Anfang"}[q]})
+        out.append({"id": bid, "nr": nr, "code": codes[bid], "abstand": None if vorher is None else round(s - vorher, 3),
+                    "station": round(s, 3), "quelle": q,
+                    "quelle_text": {"Schnitt": "im Schnitt gesetzt", "manuell": "Abstand manuell",
+                                    "Standard": "Standardabstand", "Start": "Anfang"}[q]})
         vorher = s
     return out
 
 
-def reihe_uebernehmen(docs: list[dict], p: Projekt, ids: list[str], zeilen: list[dict]) -> bool:
-    alt = {z["id"]: z for z in reihe_zeilen(docs, p, ids)}
-    geaendert = False
-    neu = sorted(zeilen, key=lambda z: (zahl(z["Nr"]) if zahl(z["Nr"]) is not None else 1e9, alt[z["id"]]["Nr"]))
-    if [z["id"] for z in neu] != [z["id"] for z in sorted(alt.values(), key=lambda z: z["Nr"])]:
-        rest = [bid for bid in _reihenfolge(docs, p) if bid not in ids]
-        p.reihe["reihenfolge"] = [z["id"] for z in neu] + rest
-        geaendert = True
-    for z in zeilen:
-        bid, vorher = z["id"], alt[z["id"]]
-        if not _gleich(z["Station [m]"], vorher["Station [m]"], 1e-3) and zahl(z["Station [m]"]) is not None:
-            p.reihe["station"][bid] = zahl(z["Station [m]"])
+def reihe_aendern(docs: list[dict], p: Projekt, op: dict) -> None:
+    """op: standard (m), reihenfolge (ids), abstand {id: m|None}, station {id: m|None}."""
+    if op.get("standard") is not None:
+        s = zahl(op["standard"])
+        if s is None or s <= 0:
+            raise ValueError("Standardabstand muss positiv sein")
+        p.reihe["standard"] = s
+    if op.get("reihenfolge"):
+        alle = [bid for bid, _, _ in bohrungen(docs)]
+        neu = [bid for bid in op["reihenfolge"] if bid in alle]
+        p.reihe["reihenfolge"] = neu + [bid for bid in _reihenfolge(docs, p) if bid not in neu]
+    for bid, a in (op.get("abstand") or {}).items():
+        p.reihe["station"].pop(bid, None)
+        if zahl(a) is None:
             p.reihe["abstand"].pop(bid, None)
-            geaendert = True
-        elif not _gleich(z["Abstand zum Vorgänger [m]"], vorher["Abstand zum Vorgänger [m]"], 1e-3):
-            a = zahl(z["Abstand zum Vorgänger [m]"])
+        else:
+            p.reihe["abstand"][bid] = zahl(a)
+    for bid, s in (op.get("station") or {}).items():
+        if zahl(s) is None:
             p.reihe["station"].pop(bid, None)
-            if a is None:
-                p.reihe["abstand"].pop(bid, None)
-            else:
-                p.reihe["abstand"][bid] = a
-            geaendert = True
-    return geaendert
+        else:
+            p.reihe["station"][bid] = zahl(s)
+            p.reihe["abstand"].pop(bid, None)
+
+
+# ---------------------------------------------------------------- Kalibrierung der Unterlage
+def _strecke_px(s: dict) -> float:
+    return math.hypot(float(s["u2"]) - float(s["u1"]), float(s["v2"]) - float(s["v1"]))
+
+
+def kalibrierung_pruefen(k: dict | None, art: str) -> dict | None:
+    """Neue Kalibrierung (docs/21 §4): Massstab aus einer gemessenen Strecke (zwei Punkte + wahre Laenge) oder aus
+    der Angabe 1:n, Bezugspunkt im Bild mit Koordinate, Drehung (Plan) bzw. Hoehenmassstab (Schnitt), Sperre.
+
+    {"massstab": {"u1", "v1", "u2", "v2", "meter"} | {"n": 500},
+     "hoehe": {"u1", "v1", "u2", "v2", "meter"} | {"n": 100} | None   (nur Schnitt; None = wie die Laenge),
+     "bezug": {"u", "v", "x", "y"}, "drehung": Grad (Plan, gegen den Uhrzeigersinn), "epsg", "gesperrt"}
+    """
+    if not k:
+        return None
+    if "punkte" in k and "massstab" not in k:                    # alte Kalibrierung (zwei Passpunkte)
+        return kalibrierung_aus_punkten(k["punkte"], art, k.get("epsg"))
+    aus: dict = {"gesperrt": bool(k.get("gesperrt"))}
+    for name in ("massstab", "hoehe"):
+        m = k.get(name)
+        if not m:
+            continue
+        if "n" in m:
+            n = zahl(m["n"])
+            if not n or n <= 0:
+                raise ValueError("Maßstab 1:n mit positivem n")
+            aus[name] = {"n": n}
+        else:
+            werte = {s: zahl(m.get(s)) for s in ("u1", "v1", "u2", "v2", "meter")}
+            if any(v is None for v in werte.values()) or werte["meter"] <= 0:
+                raise ValueError("Strecke: zwei Bildpunkte und die wahre Länge in m")
+            if _strecke_px(werte) < 10:
+                raise ValueError("Strecke zu kurz: Punkte weiter auseinander setzen")
+            aus[name] = werte
+    if "massstab" not in aus:
+        raise ValueError("Maßstab fehlt: Strecke messen oder 1:n eingeben")
+    b = k.get("bezug") or {}
+    bezug = {s: zahl(b.get(s)) for s in ("u", "v", "x", "y")}
+    if any(v is None for v in bezug.values()):
+        raise ValueError("Bezugspunkt: Bildpunkt und Koordinate eintragen")
+    aus["bezug"] = bezug
+    aus["drehung"] = float(zahl(k.get("drehung")) or 0.0) if art == "plan" else 0.0
+    aus["epsg"] = int(k["epsg"]) if art == "plan" and zahl(k.get("epsg")) else None
+    return aus
+
+
+def meter_je_pixel(m: dict, mm_pro_px: float) -> float:
+    """Massstab einer Kalibrierung in m je Bildpixel: aus der Strecke oder aus 1:n und dem Papiermass des Bilds."""
+    if "n" in m:
+        return float(m["n"]) * mm_pro_px / 1000.0
+    return float(m["meter"]) / _strecke_px(m)
+
+
+def bild_zu_welt(kal: dict, art: str, mm_pro_px: float, u: float, v: float) -> tuple[float, float]:
+    """Bildpixel (u nach rechts, v nach unten) -> Welt: Plan (Rechtswert, Hochwert), Schnitt (Station, Hoehe NHN).
+    Gleiche Formel wie apps/web/src/lage.ts (abbildung)."""
+    s = meter_je_pixel(kal["massstab"], mm_pro_px)
+    b = kal["bezug"]
+    du, dv = u - b["u"], v - b["v"]
+    if art == "plan":
+        t = -math.radians(kal.get("drehung") or 0.0)            # Plan gegen Gitternord gedreht: Welt dreht zurueck
+        a, c = du * s, -dv * s
+        return b["x"] + a * math.cos(t) - c * math.sin(t), b["y"] + a * math.sin(t) + c * math.cos(t)
+    sh = meter_je_pixel(kal["hoehe"], mm_pro_px) if kal.get("hoehe") else s
+    return b["x"] + du * s, b["y"] - dv * sh
+
+
+def kalibrierung_aus_punkten(punkte: list, art: str, epsg=None) -> dict:
+    """Alte Kalibrierung (zwei Passpunkte u, v, x, y) in die neue Form: Strecke, Bezug = Punkt 1, Drehung."""
+    p1, p2 = ({"u": q[0], "v": q[1], "x": q[2], "y": q[3]} if isinstance(q, (list, tuple)) else q for q in punkte[:2])
+    if art == "plan":
+        meter = math.hypot(p2["x"] - p1["x"], p2["y"] - p1["y"])
+        bild = math.atan2(-(p2["v"] - p1["v"]), p2["u"] - p1["u"])
+        welt = math.atan2(p2["y"] - p1["y"], p2["x"] - p1["x"])
+        return {"massstab": {"u1": p1["u"], "v1": p1["v"], "u2": p2["u"], "v2": p2["v"], "meter": meter},
+                "bezug": {"u": p1["u"], "v": p1["v"], "x": p1["x"], "y": p1["y"]},
+                "drehung": round(math.degrees(bild - welt), 6), "epsg": epsg, "gesperrt": False}
+    return {"massstab": {"u1": p1["u"], "v1": 0.0, "u2": p2["u"], "v2": 0.0, "meter": abs(p2["x"] - p1["x"])},
+            "hoehe": {"u1": 0.0, "v1": p1["v"], "u2": 0.0, "v2": p2["v"], "meter": abs(p2["y"] - p1["y"])},
+            "bezug": {"u": p1["u"], "v": p1["v"], "x": p1["x"], "y": p1["y"]}, "drehung": 0.0, "epsg": None,
+            "gesperrt": False}
 
 
 # ---------------------------------------------------------------- Eingabe fuer den Modellierer
-def modell_eingabe(docs: list[dict], p: Projekt, e: Einstellungen) -> Vorbereitung:
+def modell_eingabe(docs: list[dict], p: Projekt, e: Einstellungen | None = None) -> Vorbereitung:
     """Korrekturen anwenden, Auswahl, GOK-Regel und Lage nach Modus; alles Angenommene als Hinweis."""
+    e = e or einstellungen(p)
     neu = wirksame_docs(docs, p)
     doppelt = doppelte(docs)
     hinweise: list[str] = []
@@ -373,9 +644,9 @@ def modell_eingabe(docs: list[dict], p: Projekt, e: Einstellungen) -> Vorbereitu
     gewaehlt: list[tuple[str, dict]] = []
     for bid, d, b in bohrungen(neu):
         if not wert(p, bid, b, "modell", doppelt):
-            raus.append({"code": b["code"], "dokument": d["document"]["file"],
+            raus.append({"id": bid, "code": b["code"], "dokument": d["document"]["file"],
                          "grund": f"doppelt (auch in {doppelt[bid]})" if bid in doppelt and "modell" not in p.bohrung.get(bid, {})
-                         else ("keine Schichten" if not b.get("layers") else "abgewaehlt")})
+                         else ("keine Schichten" if not b.get("layers") else "entfernt")})
             b["_raus"] = True
         else:
             gewaehlt.append((bid, b))
@@ -405,7 +676,7 @@ def modell_eingabe(docs: list[dict], p: Projekt, e: Einstellungen) -> Vorbereitu
             lage[bid] = (s, 0.0, quelle)
         if nur_standard:
             hinweise.append(f"Bohrungen in einer Reihe mit Standardabstand {p.reihe['standard']:g} m – Abstaende "
-                            "nicht vermessen, nur zur Anschauung (Abstaende in 'Lage' eintragen oder im Schnitt setzen).")
+                            "nicht vermessen, nur zur Anschauung (Abstaende eintragen oder im Schnitt setzen).")
         else:
             hinweise.append("Bohrungen in einer Reihe (Laengsschnitt): Abstaende gesetzt, Querlage unbekannt.")
     else:
@@ -431,14 +702,29 @@ def ursprung(p: Projekt, vorb: Vorbereitung) -> tuple[float, float]:
     return p.ursprung
 
 
+def durchmesser_auto(vorb: Vorbereitung) -> float:
+    """Automatischer Saeulendurchmesser wie im Modellierer (Darstellung nach Modellgroesse)."""
+    if not vorb.lage:
+        return standard_durchmesser(20.0)
+    xs = [v[0] for v in vorb.lage.values()]
+    ys = [v[1] for v in vorb.lage.values()]
+    return standard_durchmesser(max(max(xs) - min(xs), max(ys) - min(ys), 20.0))
+
+
+def durchmesser_je_code(docs: list[dict], p: Projekt) -> dict[str, float]:
+    return {b["code"]: float(p.bohrung[bid]["durchmesser"]) for bid, _, b in bohrungen(docs)
+            if p.bohrung.get(bid, {}).get("durchmesser")}
+
+
 # ---------------------------------------------------------------- Viewer
 def viewer_bohrungen(docs: list[dict], p: Projekt, vorb: Vorbereitung, bericht: dict | None) -> list[dict]:
-    """Stecknadeln fuer den Viewer: alle gewaehlten Bohrungen, mit Lage oder (ohne) zum Platzieren."""
+    """Stecknadeln fuer den Viewer: alle Bohrungen im Modell, mit Lage oder (ohne) zum Platzieren."""
     doppelt = doppelte(docs)
     im_modell = {x["code"] for x in (bericht or {}).get("bohrungen", [])}
     raus = {a["code"]: a["grund"] for a in (bericht or {}).get("ausgeschlossen", [])}
     ohne_gok_raus = any("ohne GOK bleiben draussen" in h for h in vorb.hinweise)
     wirksam = {bid: b for bid, _, b in bohrungen(wirksame_docs(docs, p))}
+    auto = p.durchmesser or durchmesser_auto(vorb)
     out = []
     for bid, _, b0 in bohrungen(docs):
         if not wert(p, bid, b0, "modell", doppelt):
@@ -453,23 +739,27 @@ def viewer_bohrungen(docs: list[dict], p: Projekt, vorb: Vorbereitung, bericht: 
             grund = "" if drin else ("ohne Lage" if bid not in vorb.lage else "ohne GOK")
         else:
             drin, grund = b["code"] in im_modell, raus.get(b["code"], "")
+        offen = sum(not ly.get("soil_class") and not ly.get("geprueft") for ly in schichten)
         out.append({"id": bid, "code": b["code"], "x": x, "y": y, "quelle": quelle,
                     "gok": 0.0 if gok is None else float(gok), "gok_bekannt": gok is not None,
+                    "gok_pdf": b0.get("gok_nhn") is not None,
                     "ende": float(b.get("end_depth") or (schichten[-1]["bottom_depth"] if schichten else 0.0)),
                     "geprueft": bool(b.get("geprueft")),
                     "schichten_geprueft": sum(bool(ly.get("geprueft")) for ly in schichten), "schichten_n": len(schichten),
                     "konfidenz": round(min(konf), 2) if konf else None,
+                    "unklassifiziert": sum(not ly.get("soil_class") for ly in schichten), "offen": offen,
+                    "durchmesser": float(p.bohrung.get(bid, {}).get("durchmesser") or auto),
                     "im_modell": drin, "grund": grund,
                     # je Schicht: Tiefe oben/unten, Farbe, Bodenart, Konfidenz, geprueft
                     "schichten": [[float(ly["top_depth"]), float(ly["bottom_depth"]), bodenart_farbe(ly.get("soil_class")),
-                                   ly.get("soil_class") or "unklassifiziert", round(float(ly.get("confidence") or 0.0), 2),
+                                   ly.get("soil_class") or UNKLASSIFIZIERT, round(float(ly.get("confidence") or 0.0), 2),
                                    bool(ly.get("geprueft"))] for ly in schichten]})
     return out
 
 
 def speichern(p: Projekt) -> dict:
     """Projektstand als JSON (Korrekturen, Lage, Pruefung, Eincheckungen) - die Extraktion bleibt eigene Datei."""
-    return {"format": "geo_agent-projekt/1", **asdict(p)}
+    return {"format": "geo_agent-projekt/2", **asdict(p)}
 
 
 def laden(d: dict) -> Projekt:
@@ -477,31 +767,41 @@ def laden(d: dict) -> Projekt:
     p = Projekt(**werte)
     if p.ursprung is not None:
         p.ursprung = (float(p.ursprung[0]), float(p.ursprung[1]))
+    u = p.unterlage or {}
+    if u.get("kalibrierung") and "punkte" in u["kalibrierung"]:           # Projekt aus App v2 (zwei Passpunkte)
+        u["kalibrierung"] = kalibrierung_aus_punkten(u["kalibrierung"]["punkte"], u.get("art", "plan"),
+                                                     u["kalibrierung"].get("epsg"))
     return p
 
 
-def ereignis_anwenden(p: Projekt, ereignis: dict | None) -> bool:
-    """Ereignis aus dem Viewer (laufende Nummer 'nr'); jedes nur einmal. True = Projekt geaendert."""
+def ereignis_anwenden(p: Projekt, ereignis: dict | None, docs: list[dict] | None = None) -> bool:
+    """Ereignis aus dem Viewer mit laufender Nummer 'nr'; jedes nur einmal. True = Projekt geaendert.
+    Mit docs werden die Regeln geprueft (GOK aus dem PDF ist im Schnitt nicht verschiebbar)."""
     if not ereignis or int(ereignis.get("nr", 0)) <= p.viewer_nr:
         return False
     if ereignis.get("projekt") not in (None, "", p.signatur):          # Ereignis eines anderen Projekts
         return False
     p.viewer_nr = int(ereignis["nr"])
     typ = ereignis.get("typ")
+    if typ == "gok" and _gok_aus_pdf(docs, ereignis["id"]):
+        return False
     if typ == "lage":
         kal = (p.unterlage or {}).get("kalibrierung") or {}
         o = p.bohrung.setdefault(ereignis["id"], {})
         o.update(x=float(ereignis["x"]), y=float(ereignis["y"]),
                  quelle="Plan (kalibriert)" if kal else "manuell (Viewer)")
-        if kal.get("epsg"):                               # sonst bleibt das System der Bohrung (PDF/Tabelle)
+        if kal.get("epsg"):
             o["epsg"] = int(kal["epsg"])
     elif typ == "station":
         p.reihe["station"][ereignis["id"]] = float(ereignis["station"])
         p.reihe["abstand"].pop(ereignis["id"], None)
-    elif typ == "gok":                                    # Ansatzhoehe im Laengsschnitt gezogen
+    elif typ == "gok":
         p.bohrung.setdefault(ereignis["id"], {})["gok"] = float(ereignis["gok"])
     elif typ == "kalibrierung" and p.unterlage is not None:
-        p.unterlage["kalibrierung"] = {"punkte": ereignis["punkte"], "epsg": ereignis.get("epsg")}
+        wert_ = ereignis.get("wert")
+        if wert_ is None and "punkte" in ereignis:
+            wert_ = {"punkte": ereignis["punkte"], "epsg": ereignis.get("epsg")}
+        p.unterlage["kalibrierung"] = kalibrierung_pruefen(wert_, p.unterlage.get("art", "plan"))
     elif typ == "geprueft":
         p.bohrung.setdefault(ereignis["id"], {})["geprueft"] = bool(ereignis["wert"])
     else:
@@ -513,7 +813,7 @@ def ereignis_anwenden(p: Projekt, ereignis: dict | None) -> bool:
 # ---------------------------------------------------------------- Pruefstand und Einchecken
 def pruefstand(docs: list[dict], p: Projekt) -> dict:
     doppelt = doppelte(docs)
-    b_ges = b_gep = s_ges = s_gep = unsicher = korrigiert = 0
+    b_ges = b_gep = s_ges = s_gep = unklass = offen = korrigiert = 0
     for bid, _, b in bohrungen(docs):
         if not wert(p, bid, b, "modell", doppelt):
             continue
@@ -521,13 +821,14 @@ def pruefstand(docs: list[dict], p: Projekt) -> dict:
         b_gep += bool(wert(p, bid, b, "geprueft"))
         for k, ly in enumerate(b.get("layers") or []):
             s_ges += 1
-            gep = schicht_geprueft(p, bid, b, k, ly)
-            s_gep += gep
-            unsicher += (not gep) and (ly.get("confidence") or 0.0) < UNSICHER
+            s_gep += schicht_geprueft(p, bid, b, k, ly)
+            unklass += schicht_unklassifiziert(p, bid, k, ly)
+            offen += schicht_offen(p, bid, b, k, ly)
             korrigiert += any(s in p.schicht.get(f"{bid}/{k}", {}) for s in ("oben", "unten", "bodenart"))
     manuell = sum(1 for o in p.bohrung.values() if "x" in o) + len(p.reihe["station"]) + len(p.reihe["abstand"])
-    return {"bohrungen": [b_gep, b_ges], "schichten": [s_gep, s_ges], "unsicher_ungeprueft": unsicher,
-            "korrigiert": korrigiert, "manuelle_lage": manuell}
+    entfernt = sum(1 for o in p.bohrung.values() if o.get("modell") is False)
+    return {"bohrungen": [b_gep, b_ges], "schichten": [s_gep, s_ges], "unklassifiziert": unklass,
+            "unklassifiziert_offen": offen, "korrigiert": korrigiert, "manuelle_lage": manuell, "entfernt": entfernt}
 
 
 def stand_text(eintrag: dict) -> str:
@@ -538,9 +839,10 @@ def stand_text(eintrag: dict) -> str:
 def einchecken(docs: list[dict], p: Projekt, modell: str | None, kommentar: str = "") -> dict:
     """Pruefstand festhalten. modell: Fingerabdruck des Modells = Schluessel seiner Eingaben (nicht das IFC: dessen
     Kopf traegt eine Uhrzeit, nach einem Neustart haette dasselbe Modell einen anderen Hash)."""
-    eintrag = {"nr": len(p.eincheckungen) + 1, "zeit": datetime.now().strftime("%Y-%m-%d %H:%M"),
+    eintrag = {"nr": len(p.eincheckungen) + 1, "zeit": jetzt(),
                "stand": pruefstand(docs, p), "modell": modell[:12] if modell else None, "kommentar": kommentar}
     p.eincheckungen.append(eintrag)
+    p.version += 1
     return eintrag
 
 

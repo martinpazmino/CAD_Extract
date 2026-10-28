@@ -1,4 +1,7 @@
-# Geo_Agent: App (Baugrundmodell v2 + Excel v1), Extraktion v4, Modellierer
+# Geo_Agent: Baugrundmodell-App (FastAPI + Schritt-App), Excel v1 (Streamlit), Extraktion v4, Modellierer
+fastapi>=0.110
+uvicorn>=0.29
+python-multipart>=0.0.9
 streamlit>=1.52
 PyMuPDF>=1.24
 numpy>=1.26
@@ -9,3 +12,4 @@ ifcopenshell>=0.8
 openpyxl>=3.1
 pillow>=10.0
 pytest>=8
+httpx>=0.27

@@ -7,8 +7,8 @@ aliases: [Beispiele]
 
 # Ejemplos para la app v2
 
-La app ([`app.py`](../../app.py), página *Baugrundmodell*) los ofrece en la barra lateral para
-recorrer el flujo completo sin un PDF propio. Sólo datos factuales o generados por nosotros: los
+La app por pasos (`python -m server`, [docs/21](../../docs/21_app_schritte_normen.md)) los ofrece en la
+primera página para recorrer el flujo completo sin un PDF propio. Sólo datos factuales o generados por nosotros: los
 PDF de terceros **no** están en el repo (fuente y `sha256` abajo).
 
 | Archivo | Qué es | Lo que enseña |
@@ -29,4 +29,4 @@ Las cifras de estos dos son de **entrenamiento** (los PDFs se usaron para ajusta
 
 Up: [Índice de documentación](../../docs/README.md)
 
-Related: [19 App v2](../../docs/19_app_v2.md) · [18 Modelador de capas](../../docs/18_modelador_capas.md) · [Corpus](../../spikes/korpus/README.md)
+Related: [21 App por pasos](../../docs/21_app_schritte_normen.md) · [19 App v2](../../docs/19_app_v2.md) · [18 Modelador de capas](../../docs/18_modelador_capas.md) · [Corpus](../../spikes/korpus/README.md)

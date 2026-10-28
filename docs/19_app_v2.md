@@ -7,6 +7,11 @@ aliases: [App v2, Streamlit v2]
 
 # 19 App v2: del PDF al Baugrundmodell en Streamlit
 
+> [!NOTE]
+> **Sustituida** por la app por pasos de [21](21_app_schritte_normen.md) (FastAPI + página web, `python -m server`).
+> Esta nota queda como historia; la página Streamlit del Baugrundmodell ya no existe (Streamlit sigue sólo para
+> Excel v1). Los proyectos guardados por esta versión se recogen al abrir el mismo PDF.
+
 La app local une todo lo construido: **se sube el PDF del Gutachten, se reconocen los sondeos, se
 revisan y el Baugrundmodell se genera solo** y se ve en el visor That Open, dentro de la misma
 página. La v1 (Excel según plantilla, layout Hamburgo) sigue como segunda página.
@@ -80,10 +85,10 @@ unidades que antes del cambio.
 | Archivo | Qué hace |
 |---|---|
 | [`app.py`](../app.py) | Entrada: navegación entre *Baugrundmodell* y *Excel nach Vorlage (v1)* |
-| [`ui/baugrundmodell.py`](../ui/baugrundmodell.py) | Página v2 |
+| `ui/baugrundmodell.py` (eliminado, ver [21](21_app_schritte_normen.md)) | Página v2 |
 | [`ui/pipeline.py`](../ui/pipeline.py) | Sin interfaz: extracción con progreso y caché, modelo (`modell_bauen`, `ifc_bytes`), imagen del plano |
 | [`ui/projekt.py`](../ui/projekt.py) | Estado del proyecto: correcciones, Reihe, Lage, eventos del visor, Prüfstand ([20](20_lage_pruefung_viewer.md)) |
-| [`ui/viewer.py`](../ui/viewer.py) | Componente Streamlit con `apps/web/dist`; el IFC se escribe como `modelle/<hash>.ifc` y se pasa por URL |
+| `ui/viewer.py` (eliminado, ver [21](21_app_schritte_normen.md)) | Componente Streamlit con `apps/web/dist`; el IFC se escribe como `modelle/<hash>.ifc` y se pasa por URL |
 | [`ui/excel_v1.py`](../ui/excel_v1.py) | Página v1 sin cambios funcionales |
 | [`tests/test_app_pipeline.py`](../tests/test_app_pipeline.py) | 15 pruebas de la capa de la app (desde [20](20_lage_pruefung_viewer.md)) |
 | [`scripts/check_app.mjs`](../scripts/check_app.mjs) | Prueba de punta a punta en Chromium (ejemplos o `--pdf`) |

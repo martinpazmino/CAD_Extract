@@ -307,3 +307,51 @@ def test_ausschluss_ohne_koordinaten():
     assert bohrungen == [] and epsg is None and len(aus) == 9
     with pytest.raises(ValueError):
         bauen([doc])
+
+
+def test_bodenansprache_beschreibungen_und_durchmesser(tmp_path):
+    """Jede Schicht traegt ihre Beschreibung und die Deutung nach Norm; jede Einheit die Beschreibungen ihrer
+    Schichten; Bohrsaeulen mit Durchmesser von Hand (je Bohrung) oder automatisch nach Modellgroesse."""
+    import ifcopenshell
+    import ifcopenshell.util.element
+    import ifcopenshell.validate
+    doc = syn.dokument(syn.demo())
+    b0 = doc["boreholes"][0]
+    b0["layers"][0]["description_raw"] = "Anschüttung, Schluff, stark tonig, kiesig, weich-steif"
+    b0["layers"][1]["description_raw"] = "mS, fs', u, mitteldicht"
+    m = bauen([doc])
+    pfad = tmp_path / "ansprache.ifc"
+    ifc_schreiben(m, pfad, [doc], durchmesser_je={b0["code"]: 0.3})
+    f = ifcopenshell.open(str(pfad))
+    log = ifcopenshell.validate.json_logger()
+    ifcopenshell.validate.validate(f, log)
+    assert log.statements == []
+    bohrung = next(b for b in f.by_type("IfcBorehole") if b.Name == b0["code"])
+    ps = ifcopenshell.util.element.get_psets(bohrung)
+    assert ps["CPset_Darstellung"]["Durchmesser_m"] == 0.3
+    assert ps["CPset_Darstellung"]["Durchmesser_Quelle"] == "manuell (Bohrung)"
+    andere = next(b for b in f.by_type("IfcBorehole") if b.Name != b0["code"])
+    assert ifcopenshell.util.element.get_psets(andere)["CPset_Darstellung"]["Durchmesser_m"] == \
+        m.parameter["durchmesser_auto_m"]
+    schichten = ifcopenshell.util.element.get_decomposition(bohrung)
+    oben = next(s for s in schichten if " 0.00-" in s.Name)
+    ps = ifcopenshell.util.element.get_psets(oben)
+    assert ps["CPset_Schichtenverzeichnis"]["Beschreibung"].startswith("Anschüttung, Schluff")
+    assert ps["CPset_Bodenansprache"]["Kurzzeichen_DIN4023"] == "A (U, t̅, g)"
+    assert ps["CPset_Bodenansprache"]["Konsistenz"] == "weich bis steif"
+    assert ps["CPset_Bodenansprache"]["Farbname_DIN4023"] == "grau"
+    # Beschreibung als IfcText (Freitext), Kurzzeichen als IfcLabel
+    beschreibung = [p for p in f.by_type("IfcPropertySingleValue") if p.Name == "Beschreibung"]
+    assert beschreibung and all(p.NominalValue.is_a("IfcText") for p in beschreibung)
+    # Kanten der Saeule: Radius 0.15 m um die Achse
+    rep = oben.Representation.Representations[0].Items[0]
+    xy = np.array(rep.Coordinates.CoordList)[:, :2]
+    assert np.allclose(np.hypot(*(xy - xy.mean(axis=0)).T), 0.15, atol=1e-6)
+    # Einheiten: Beschreibungen ihrer Schichten und Benennungen nach Norm
+    einheit = next(s for s in f.by_type("IfcGeotechnicalStratum") if s.Name == "Sand 1" or s.Name == "Sand")
+    me = ifcopenshell.util.element.get_psets(einheit)["CPset_Modelleinheit"]
+    assert "mS, fs', u" in me["Beschreibungen"] and "Mittelsand" in me["Benennungen"]
+    assert me["Farbname_DIN4023"] == "orange"
+    b = bericht(m)
+    sand = next(e for e in b["einheiten"] if e["name"] in ("Sand", "Sand 1"))
+    assert any(s["beschreibung"] == "mS, fs', u, mitteldicht" and s["bohrung"] == b0["code"] for s in sand["schichten"])

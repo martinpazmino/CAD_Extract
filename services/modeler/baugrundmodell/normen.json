@@ -1,0 +1,277 @@
+{
+  "format": "geo_agent-normen/1",
+  "beschreibung": "Mini-Datenbank fuer die Deutung von Schichtbeschreibungen: Kurzzeichen, Benennungen und Farben der Boden- und Felsarten nach DIN 4023, DIN EN ISO 14688-1 und DIN EN ISO 14689, Bodengruppen nach DIN 18196. 'beleg' sagt, woher ein Eintrag stammt: Norm (aus Sekundaerquellen bestaetigt), 'praxis' (in Legenden veroeffentlichter Gutachten gebraeuchlich, nicht aus dem Normtext bestaetigt) oder 'darstellung' (Farbton nur fuer die Anzeige gewaehlt, keine Normfarbe). Quellen und Pruefstand: docs/21_normen_bodenansprache.md.",
+  "quellen": {
+    "DIN4023": "DIN 4023:2023-02 Geotechnische Erkundung und Untersuchung - Zeichnerische Darstellung der Ergebnisse von Bohrungen und sonstigen direkten Aufschluessen (Anhang B: Kurzformen nach DIN 4023 und Kurzzeichen nach DIN EN ISO 14688-1)",
+    "ISO14688": "DIN EN ISO 14688-1 Benennung, Beschreibung und Klassifizierung von Boden - Teil 1: Benennung und Beschreibung",
+    "ISO14688-2": "DIN EN ISO 14688-2 Benennung, Beschreibung und Klassifizierung von Boden - Teil 2: Grundlagen fuer Bodenklassifizierungen",
+    "ISO14689": "DIN EN ISO 14689 Benennung, Beschreibung und Klassifizierung von Fels",
+    "DIN18196": "DIN 18196 Erd- und Grundbau - Bodenklassifikation fuer bautechnische Zwecke",
+    "DIN6164": "DIN 6164 Farbenkarte (Farbton:Saettigung:Dunkelstufe); DIN 4023 nannte die Farben bis 2006 mit DIN-6164-Nummern, die Ausgabe 2023 nur noch mit Namen",
+    "praxis": "Zeichenerklaerungen veroeffentlichter Bohrprofile und Gutachten (nicht normativ)"
+  },
+  "klassen": {
+    "Kies": {
+      "art": "boden", "din4023": "G", "iso14688": "Gr", "neben": "g", "adjektiv": "kiesig",
+      "farbe": "#f2cf2c", "farbname": "gelb", "din6164": "2:6:1", "beleg": "DIN4023",
+      "korngroesse_mm": [2.0, 63.0],
+      "fraktionen": {
+        "f": {"name": "Feinkies", "din4023": "fG", "iso14688": "fGr", "mm": [2.0, 6.3]},
+        "m": {"name": "Mittelkies", "din4023": "mG", "iso14688": "mGr", "mm": [6.3, 20.0]},
+        "g": {"name": "Grobkies", "din4023": "gG", "iso14688": "cGr", "mm": [20.0, 63.0]}
+      },
+      "woerter": ["kies", "gerölle", "geroelle"]
+    },
+    "Sand": {
+      "art": "boden", "din4023": "S", "iso14688": "Sa", "neben": "s", "adjektiv": "sandig",
+      "farbe": "#ef8f2f", "farbname": "orange", "din6164": "6:6:2", "beleg": "DIN4023",
+      "korngroesse_mm": [0.063, 2.0],
+      "fraktionen": {
+        "f": {"name": "Feinsand", "din4023": "fS", "iso14688": "fSa", "mm": [0.063, 0.2]},
+        "m": {"name": "Mittelsand", "din4023": "mS", "iso14688": "mSa", "mm": [0.2, 0.63]},
+        "g": {"name": "Grobsand", "din4023": "gS", "iso14688": "cSa", "mm": [0.63, 2.0]}
+      },
+      "woerter": ["sand", "flugsand", "dünensand", "duenensand", "talsand", "schmelzwassersand", "beckensand"]
+    },
+    "Schluff": {
+      "art": "boden", "din4023": "U", "iso14688": "Si", "neben": "u", "adjektiv": "schluffig",
+      "farbe": "#94913f", "farbname": "oliv", "din6164": "1:4:5", "beleg": "DIN4023",
+      "korngroesse_mm": [0.002, 0.063],
+      "fraktionen": {
+        "f": {"name": "Feinschluff", "din4023": "fU", "iso14688": "fSi", "mm": [0.002, 0.0063]},
+        "m": {"name": "Mittelschluff", "din4023": "mU", "iso14688": "mSi", "mm": [0.0063, 0.02]},
+        "g": {"name": "Grobschluff", "din4023": "gU", "iso14688": "cSi", "mm": [0.02, 0.063],
+              "farbe": "#3fb0a6", "farbname": "türkis", "beleg": "DIN4023 (Ausgabe 2023)"}
+      },
+      "woerter": ["schluff"]
+    },
+    "Ton": {
+      "art": "boden", "din4023": "T", "iso14688": "Cl", "neben": "t", "adjektiv": "tonig",
+      "farbe": "#7d65a8", "farbname": "violett", "din6164": "14:5:4", "beleg": "DIN4023",
+      "korngroesse_mm": [0.0, 0.002],
+      "woerter": ["ton", "beckenton", "bänderton", "baenderton"]
+    },
+    "Steine": {
+      "art": "boden", "din4023": "X", "iso14688": "Co", "neben": "x", "adjektiv": "steinig",
+      "farbe": "#c9b37e", "farbname": "beige", "beleg": "darstellung",
+      "korngroesse_mm": [63.0, 200.0],
+      "woerter": ["steine", "feldsteine", "geschiebe"]
+    },
+    "Bloecke": {
+      "art": "boden", "din4023": "Y", "iso14688": "Bo", "neben": "y", "adjektiv": "blockig",
+      "farbe": "#a8956a", "farbname": "graubeige", "beleg": "darstellung",
+      "korngroesse_mm": [200.0, 630.0],
+      "woerter": ["blöcke", "bloecke", "blocke", "findlinge"]
+    },
+    "Torf": {
+      "art": "organisch", "din4023": "H", "iso14688": "Or", "neben": "h", "adjektiv": "humos",
+      "farbe": "#5a3b22", "farbname": "dunkelbraun", "beleg": "DIN4023",
+      "hinweis": "H steht in DIN 4023 fuer Torf und Humus; als Nebenanteil h = humos. Or (ISO) = organischer Boden allgemein.",
+      "woerter": ["torf", "niedermoortorf", "hochmoortorf", "moor"]
+    },
+    "Mudde": {
+      "art": "organisch", "din4023": "F", "neben": "o", "adjektiv": "organisch",
+      "farbe": "#a8669e", "farbname": "lila", "din6164": "11:4:4", "beleg": "DIN4023",
+      "hinweis": "F = Mudde (Faulschlamm); als Nebenanteil o = organisch.",
+      "woerter": ["mudde", "faulschlamm", "seekreide", "kalkmudde", "torfmudde", "detritusmudde"]
+    },
+    "Mutterboden": {
+      "art": "organisch", "din4023": "Mu",
+      "farbe": "#b08442", "farbname": "gelblichbraun", "din6164": "4:5:3", "beleg": "DIN4023",
+      "woerter": ["mutterboden", "oberboden", "humus", "humusboden"]
+    },
+    "Auffuellung": {
+      "art": "anthropogen", "din4023": "A", "iso14688": "Mg",
+      "farbe": "#a6a6a6", "farbname": "grau", "beleg": "darstellung",
+      "hinweis": "Auffuellung hat in DIN 4023 keine Farbe (Kurzzeichen A, Material in Klammern). ISO 14688-1: Mg = made ground.",
+      "woerter": ["auffüllung", "auffuellung", "auffullung", "anschüttung", "anschuettung", "anschuttung",
+                  "aufschüttung", "aufschuettung", "aufschuttung", "bauschutt", "schotter", "recycling",
+                  "recyclingmaterial", "rc-material", "tragschicht", "frostschutzschicht", "schottertragschicht"]
+    },
+    "Geschiebemergel": {
+      "art": "geologisch", "din4023": "Mg",
+      "farbe": "#7f9d5a", "farbname": "graugrün", "beleg": "darstellung",
+      "hinweis": "Mg = Geschiebemergel nach DIN 4023 (aeltere Ausgaben, praxis); in DIN EN ISO 14688-1 ist Mg dagegen 'made ground' (Auffuellung): Kurzzeichen Mg allein ist mehrdeutig. Meist Schluff, sandig, tonig, kiesig, kalkhaltig.",
+      "haupt": "Schluff",
+      "woerter": ["geschiebemergel"]
+    },
+    "Geschiebelehm": {
+      "art": "geologisch", "din4023": "Lg",
+      "farbe": "#a4a35e", "farbname": "gelbgrün", "beleg": "darstellung",
+      "hinweis": "Lg = Geschiebelehm (praxis); entkalkter Geschiebemergel.",
+      "haupt": "Schluff",
+      "woerter": ["geschiebelehm"]
+    },
+    "Loess": {
+      "art": "geologisch", "din4023": "Lö",
+      "farbe": "#e3c27a", "farbname": "hellocker", "beleg": "darstellung",
+      "hinweis": "Lö = Löss (praxis); meist leicht plastischer Schluff (UL).",
+      "haupt": "Schluff",
+      "woerter": ["löss", "löß", "loess", "loss"]
+    },
+    "Loesslehm": {
+      "art": "geologisch", "din4023": "Löl",
+      "farbe": "#c9a15e", "farbname": "ocker", "beleg": "darstellung",
+      "hinweis": "Löl = Lösslehm (praxis); entkalkter Löss, meist mittelplastischer Schluff (UM).",
+      "haupt": "Schluff",
+      "woerter": ["lösslehm", "lößlehm", "loesslehm", "losslehm"]
+    },
+    "Lehm": {
+      "art": "geologisch",
+      "farbe": "#b09a5e", "farbname": "gelbbraun", "beleg": "darstellung",
+      "hinweis": "Lehm ist keine Hauptbodenart der Norm: Gemisch aus Sand, Schluff und Ton (meist Schluff, sandig, tonig). Als Vorschlag gilt Schluff nur geschaetzt.",
+      "haupt": "Schluff",
+      "woerter": ["lehm", "auelehm", "hanglehm", "verwitterungslehm", "auenlehm", "schwemmlehm"]
+    },
+    "Mergel": {
+      "art": "geologisch",
+      "farbe": "#8aa39a", "farbname": "graugrün", "beleg": "darstellung",
+      "hinweis": "Mergel: kalkhaltiges Gemisch aus Ton/Schluff; nicht dasselbe wie Geschiebemergel.",
+      "haupt": "Ton",
+      "woerter": ["mergel", "keupermergel"]
+    },
+    "Klei": {
+      "art": "geologisch",
+      "farbe": "#6e5f8f", "farbname": "dunkelviolett", "beleg": "darstellung",
+      "hinweis": "Klei: Marschenboden (Ton/Schluff, oft organisch).",
+      "haupt": "Ton",
+      "woerter": ["klei", "marschenklei"]
+    },
+    "Glimmerton": {"art": "geologisch", "farbe": "#8a74b0", "farbname": "violett", "beleg": "darstellung", "haupt": "Ton", "woerter": ["glimmerton", "glimmerschluff"]},
+    "Lauenburger Ton": {"art": "geologisch", "farbe": "#6b5596", "farbname": "violett", "beleg": "darstellung", "haupt": "Ton", "woerter": ["lauenburger"]},
+    "Beton": {"art": "anthropogen", "farbe": "#c8c8c8", "farbname": "hellgrau", "beleg": "darstellung", "woerter": ["beton", "stahlbeton", "magerbeton"]},
+    "Asphalt": {"art": "anthropogen", "farbe": "#303030", "farbname": "schwarz", "beleg": "darstellung", "woerter": ["asphalt", "asphaltbeton"]},
+    "Schwarzdecke": {"art": "anthropogen", "farbe": "#262626", "farbname": "schwarz", "beleg": "darstellung", "woerter": ["schwarzdecke", "bitumen"]},
+    "Pflaster": {"art": "anthropogen", "farbe": "#8c8c8c", "farbname": "grau", "beleg": "darstellung", "woerter": ["pflaster", "pflastersteine", "gehwegplatten", "betonpflaster"]},
+    "Fels": {
+      "art": "fels", "farbe": "#9a6a5a", "farbname": "rotbraun", "beleg": "darstellung",
+      "hinweis": "Fels ohne genannte Felsart; die Felsart steht als 'Fels (Tonstein)'.",
+      "woerter": ["fels", "festgestein", "gestein"]
+    },
+    "unklassifiziert": {"art": "unbekannt", "farbe": "#e6e6e6", "farbname": "hellgrau", "beleg": "darstellung", "woerter": []}
+  },
+  "fels": {
+    "Sandstein": {"kurz": "Sst", "farbe": "#d9822b", "farbname": "orange", "beleg": "DIN4023 (teilweise bestaetigt)", "verwandt": "Sand"},
+    "Schluffstein": {"kurz": "Ust", "farbe": "#77733a", "farbname": "dunkeloliv", "beleg": "darstellung", "verwandt": "Schluff"},
+    "Tonstein": {"kurz": "Tst", "farbe": "#5f4d86", "farbname": "dunkelviolett", "beleg": "darstellung", "verwandt": "Ton"},
+    "Mergelstein": {"kurz": "Mst", "farbe": "#6f8f7f", "farbname": "graugrün", "beleg": "darstellung", "verwandt": "Mergel"},
+    "Kalkstein": {"kurz": "Kst", "farbe": "#5f8fbf", "farbname": "blau", "beleg": "darstellung"},
+    "Konglomerat": {"kurz": "Ko", "farbe": "#e0b52a", "farbname": "gelb", "beleg": "DIN4023", "verwandt": "Kies"},
+    "Brekzie": {"kurz": "Br", "farbe": "#d8a820", "farbname": "gelb", "beleg": "DIN4023", "verwandt": "Kies"},
+    "Dolomit": {"farbe": "#7f9fbf", "farbname": "graublau", "beleg": "darstellung"},
+    "Tonschiefer": {"farbe": "#4f4a63", "farbname": "dunkelgrau", "beleg": "darstellung"},
+    "Quarzit": {"farbe": "#d8cfc0", "farbname": "hellgrau", "beleg": "darstellung"},
+    "Granit": {"farbe": "#c06a6a", "farbname": "rötlich", "beleg": "darstellung"},
+    "Gneis": {"farbe": "#a86070", "farbname": "rötlich", "beleg": "darstellung"},
+    "Basalt": {"farbe": "#4a4f58", "farbname": "dunkelgrau", "beleg": "darstellung"},
+    "Gips": {"farbe": "#e8e0f0", "farbname": "weiß", "beleg": "darstellung"},
+    "Anhydrit": {"farbe": "#d0c8e0", "farbname": "hellviolett", "beleg": "darstellung"}
+  },
+  "verwitterung": ["unverwittert", "frisch", "angewittert", "schwach verwittert", "mäßig verwittert", "verwittert",
+                   "stark verwittert", "vollständig verwittert", "zersetzt", "entfestigt", "mürbe", "zerbohrt", "geklüftet", "klüftig"],
+  "nebenanteile": {
+    "g":  {"klasse": "Kies",    "adjektiv": "kiesig"},
+    "fg": {"klasse": "Kies",    "adjektiv": "feinkiesig",   "fraktion": "f"},
+    "mg": {"klasse": "Kies",    "adjektiv": "mittelkiesig", "fraktion": "m"},
+    "gg": {"klasse": "Kies",    "adjektiv": "grobkiesig",   "fraktion": "g"},
+    "s":  {"klasse": "Sand",    "adjektiv": "sandig"},
+    "fs": {"klasse": "Sand",    "adjektiv": "feinsandig",   "fraktion": "f"},
+    "ms": {"klasse": "Sand",    "adjektiv": "mittelsandig", "fraktion": "m"},
+    "gs": {"klasse": "Sand",    "adjektiv": "grobsandig",   "fraktion": "g"},
+    "u":  {"klasse": "Schluff", "adjektiv": "schluffig"},
+    "t":  {"klasse": "Ton",     "adjektiv": "tonig"},
+    "x":  {"klasse": "Steine",  "adjektiv": "steinig"},
+    "y":  {"klasse": "Bloecke", "adjektiv": "blockig"},
+    "h":  {"klasse": "Torf",    "adjektiv": "humos"},
+    "o":  {"klasse": "Mudde",   "adjektiv": "organisch"}
+  },
+  "nebenanteil_woerter": {"torfig": "h", "muddig": "o", "anmoorig": "h"},
+  "stufen": {
+    "sehr schwach": {"zeichen": "''", "rang": 1, "beleg": "praxis"},
+    "schwach":      {"zeichen": "'",  "rang": 2, "anteil": "gering (Richtwert < 15 %)", "beleg": "DIN4023"},
+    "":             {"zeichen": "",   "rang": 3, "anteil": "mittel (Richtwert 15-30 %)", "beleg": "DIN4023"},
+    "stark":        {"zeichen": "̅", "rang": 4, "anteil": "hoch (Richtwert > 30 %)", "beleg": "DIN4023", "hinweis": "Ueberstrich; in Text oft * oder ¯"},
+    "sehr stark":   {"zeichen": "̿", "rang": 5, "beleg": "praxis", "hinweis": "doppelter Ueberstrich; in Text oft = oder **"},
+    "?":            {"zeichen": "",   "rang": 0, "anteil": "ohne Angabe (als Nomen genannt)", "beleg": "praxis"}
+  },
+  "stufe_woerter": {"sehr schwach": "sehr schwach", "schwach": "schwach", "leicht": "schwach", "gering": "schwach",
+                    "mäßig": "", "maessig": "", "stark": "stark", "sehr stark": "sehr stark"},
+  "konsistenz": [
+    {"name": "breiig",   "kurz": ["brg", "brei"], "beleg": "praxis", "feldversuch": "quillt beim Pressen in der Hand zwischen den Fingern hindurch"},
+    {"name": "weich",    "kurz": ["wch"],         "beleg": "praxis", "feldversuch": "leicht knetbar"},
+    {"name": "steif",    "kurz": ["stf"],                "beleg": "praxis", "feldversuch": "schwer knetbar, laesst sich zu 3-mm-Walzen ausrollen, ohne zu reissen"},
+    {"name": "halbfest", "kurz": ["hfst"],         "beleg": "praxis", "feldversuch": "reisst und broeckelt beim Ausrollen zu 3-mm-Walzen, laesst sich aber erneut zu einem Klumpen formen"},
+    {"name": "fest",     "kurz": ["fst"],                "beleg": "praxis", "feldversuch": ""}
+  ],
+  "lagerungsdichte": [
+    {"name": "sehr locker", "id_prozent": [0, 15]},
+    {"name": "locker",      "id_prozent": [15, 35]},
+    {"name": "mitteldicht", "id_prozent": [35, 65]},
+    {"name": "dicht",       "id_prozent": [65, 85]},
+    {"name": "sehr dicht",  "id_prozent": [85, 100]}
+  ],
+  "lagerungsdichte_beleg": "ISO14688-2 (Lagerungsdichte I_D)",
+  "kalkgehalt": [
+    {"name": "kalkfrei",         "kurz": ["k0"],  "beleg": "praxis"},
+    {"name": "schwach kalkhaltig", "kurz": [],    "beleg": "praxis"},
+    {"name": "kalkhaltig",       "kurz": ["k+"],  "beleg": "praxis"},
+    {"name": "stark kalkhaltig", "kurz": ["k++"], "beleg": "praxis"}
+  ],
+  "feuchte": ["trocken", "erdfeucht", "feucht", "nass", "naß", "wassergesättigt", "wassergesaettigt"],
+  "bodenfarben": {
+    "braun":   {"kurz": ["bn"],       "beleg": "praxis (Legende nach DIN 4022/4023)"},
+    "grau":    {"kurz": ["gr"],       "beleg": "praxis (Legende nach DIN 4022/4023)"},
+    "schwarz": {"kurz": ["sw"],       "beleg": "praxis (Legende nach DIN 4022/4023)"},
+    "weiß":    {"kurz": ["we", "ws"], "beleg": "praxis (we in Legende nach DIN 4022/4023, ws gebraeuchlich)"},
+    "rot":     {"kurz": ["ro", "rt"], "beleg": "praxis (ro in Legende nach DIN 4022/4023, rt gebraeuchlich)"},
+    "gelb":    {"kurz": ["ge", "gb"], "beleg": "praxis (ge in Legende nach DIN 4022/4023, gb gebraeuchlich)"},
+    "grün":    {"kurz": ["gn"],       "beleg": "praxis"},
+    "blau":    {"kurz": ["bl"],       "beleg": "praxis"},
+    "oliv":    {"kurz": ["ol"],       "beleg": "praxis"},
+    "ocker":   {"kurz": [],           "beleg": "praxis"},
+    "beige":   {"kurz": [],           "beleg": "praxis"},
+    "rost":    {"kurz": [],           "beleg": "praxis"}
+  },
+  "farbtiefe": {"hell": ["h"], "dunkel": ["d"]},
+  "anthropogen": ["beton", "asphalt", "bitumen", "ziegel", "ziegelbruch", "bauschutt", "schutt", "schlacke", "asche", "glas",
+                  "holz", "kunststoff", "plastik", "müll", "muell", "metall", "schotter", "recycling", "rc", "teer",
+                  "mörtel", "moertel", "putz", "fliesen", "keramik", "porzellan", "draht"],
+  "bodengruppen_din18196": {
+    "GE":  {"name": "enggestufte Kiese", "klasse": "Kies"},
+    "GW":  {"name": "weitgestufte Kies-Sand-Gemische", "klasse": "Kies"},
+    "GI":  {"name": "intermittierend gestufte Kies-Sand-Gemische", "klasse": "Kies"},
+    "SE":  {"name": "enggestufte Sande", "klasse": "Sand"},
+    "SW":  {"name": "weitgestufte Sand-Kies-Gemische", "klasse": "Sand"},
+    "SI":  {"name": "intermittierend gestufte Sand-Kies-Gemische", "klasse": "Sand"},
+    "GU":  {"name": "Kies-Schluff-Gemische, 5 bis 15 % Feinkorn (≤ 0,063 mm)", "klasse": "Kies"},
+    "GU*": {"name": "Kies-Schluff-Gemische, über 15 bis 40 % Feinkorn", "klasse": "Kies"},
+    "GT":  {"name": "Kies-Ton-Gemische, 5 bis 15 % Feinkorn", "klasse": "Kies"},
+    "GT*": {"name": "Kies-Ton-Gemische, über 15 bis 40 % Feinkorn", "klasse": "Kies"},
+    "SU":  {"name": "Sand-Schluff-Gemische, 5 bis 15 % Feinkorn", "klasse": "Sand"},
+    "SU*": {"name": "Sand-Schluff-Gemische, über 15 bis 40 % Feinkorn", "klasse": "Sand"},
+    "ST":  {"name": "Sand-Ton-Gemische, 5 bis 15 % Feinkorn", "klasse": "Sand"},
+    "ST*": {"name": "Sand-Ton-Gemische, über 15 bis 40 % Feinkorn", "klasse": "Sand"},
+    "UL":  {"name": "leicht plastische Schluffe", "klasse": "Schluff"},
+    "UM":  {"name": "mittelplastische Schluffe", "klasse": "Schluff"},
+    "UA":  {"name": "ausgeprägt plastische Schluffe", "klasse": "Schluff"},
+    "TL":  {"name": "leicht plastische Tone", "klasse": "Ton"},
+    "TM":  {"name": "mittelplastische Tone", "klasse": "Ton"},
+    "TA":  {"name": "ausgeprägt plastische Tone", "klasse": "Ton"},
+    "OU":  {"name": "Schluffe mit organischen Beimengungen", "klasse": "Schluff"},
+    "OT":  {"name": "Tone mit organischen Beimengungen", "klasse": "Ton"},
+    "OH":  {"name": "grob- bis gemischtkörnige Böden mit Beimengungen humoser Art", "klasse": null},
+    "OK":  {"name": "grob- bis gemischtkörnige Böden mit kalkigen, kieseligen Bildungen", "klasse": null},
+    "HN":  {"name": "nicht bis mäßig zersetzte Torfe", "klasse": "Torf"},
+    "HZ":  {"name": "zersetzte Torfe", "klasse": "Torf"},
+    "F":   {"name": "Mudden (Faulschlamm)", "klasse": "Mudde"},
+    "A":   {"name": "Auffüllung aus Fremdstoffen", "klasse": "Auffuellung"},
+    "[]":  {"name": "Auffüllung aus natürlichen Böden (Gruppe in eckigen Klammern, z. B. [GW])", "klasse": "Auffuellung"}
+  },
+  "bodengruppen_beleg": "DIN18196 (Benennungen aus Sekundaerquellen; Grenzen der Plastizitaet nach Fliessgrenze w_L siehe Norm)",
+  "mehrdeutig": {
+    "Mg": "Geschiebemergel (DIN 4023, aeltere Ausgaben) oder Auffuellung ('made ground', DIN EN ISO 14688-1)",
+    "Gr": "Kies (DIN EN ISO 14688-1) - als Farbkuerzel klein geschrieben: grau",
+    "H": "Torf oder Humus (DIN 4023)",
+    "Schotter": "Tragschicht/Auffuellung oder natuerlicher Kies (Flussschotter, Terrassenschotter)"
+  }
+}

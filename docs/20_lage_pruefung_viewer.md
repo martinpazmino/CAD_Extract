@@ -7,6 +7,15 @@ aliases: [Lage-Editor, Prüfstand, Visor v3]
 
 # 20 Visor con controles de TwinBimM, Lage sobre plano y Prüfstand
 
+> [!NOTE]
+> Actualizado en [21](21_app_schritte_normen.md):
+> - La app ya no es Streamlit.
+> - Los avisos son por capas sin clasificar.
+> - La **calibración** es escala + punto de referencia + candado (las de dos puntos se convierten).
+> - La barra del visor es sólo de iconos.
+>
+> Los controles TwinBimM, la cámara > 5 km y el Prüfstand de esta nota siguen igual.
+
 Ronda pedida por el usuario sobre la [app v2](19_app_v2.md): replicar los controles de su visor
 **TwinBimM** (That Open), corregir los problemas al mover la geometría, preparar todo para
 **Baugrundmodelle de más de 5 km**, colocar los sondeos **a mano sobre un PDF del plano** (vista de
@@ -193,13 +202,13 @@ trasse: R 565 000,00 / H 5 932 985,00 / GOK 45,00 como en el caso sintético).
 
 | Archivo | Qué hace |
 |---|---|
-| [`apps/web/src/main.ts`](../apps/web/src/main.ts) | Mundo, posproducción, Highlighter/Hider/Clipper, barra inferior, engranaje, ViewCube, HUD, panel lateral, Streamlit |
-| [`apps/web/src/kamera.ts`](../apps/web/src/kamera.ts) | near/far dinámicos, rejilla, vistas, encuadre junto al panel |
-| [`apps/web/src/lage.ts`](../apps/web/src/lage.ts) | Chinchetas, plano, calibración, arrastre, lista sin posición, panel Lage |
-| [`apps/web/src/rahmen.ts`](../apps/web/src/rahmen.ts) | Marco de coordenadas y exageración |
-| [`apps/web/src/streamlit.ts`](../apps/web/src/streamlit.ts) | Protocolo con Streamlit y eventos numerados |
+| [`apps/web/src/main.ts`](../apps/web/src/viewer/viewer.ts) | Mundo, posproducción, Highlighter/Hider/Clipper, barra inferior, engranaje, ViewCube, HUD, panel lateral, Streamlit |
+| [`apps/web/src/kamera.ts`](../apps/web/src/viewer/kamera.ts) | near/far dinámicos, rejilla, vistas, encuadre junto al panel |
+| [`apps/web/src/lage.ts`](../apps/web/src/viewer/lage.ts) | Chinchetas, plano, calibración, arrastre, lista sin posición, panel Lage |
+| [`apps/web/src/rahmen.ts`](../apps/web/src/viewer/rahmen.ts) | Marco de coordenadas y exageración |
+| [`apps/web/src/streamlit.ts`](../apps/web/src/viewer/kanal.ts) | Protocolo con Streamlit y eventos numerados |
 | [`ui/projekt.py`](../ui/projekt.py) | Estado del proyecto: correcciones, Reihe, Lage, eventos, Prüfstand, einchecken, guardar/cargar |
-| [`ui/baugrundmodell.py`](../ui/baugrundmodell.py) | Página: tablas → Lage → erzeugen → visor → resultados |
+| `ui/baugrundmodell.py` (eliminado, ver [21](21_app_schritte_normen.md)) | Página: tablas → Lage → erzeugen → visor → resultados |
 | [`ui/pipeline.py`](../ui/pipeline.py) | Extracción, `modell_bauen`/`ifc_bytes`, imagen del plano |
 | [`scripts/testplan.py`](../scripts/testplan.py) | Lageplan y Längsschnitt sintéticos con verdad conocida |
 

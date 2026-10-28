@@ -3,34 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Baugrundmodell</title>
-    <script type="module" crossorigin src="./assets/index-Bev_COqd.js"></script>
-    <link rel="modulepreload" crossorigin href="./assets/three.core-c97gszZw.js">
-    <link rel="modulepreload" crossorigin href="./assets/three.module-BmYFL2qb.js">
-    <link rel="stylesheet" crossorigin href="./assets/index-L1U3psqb.css">
+    <title>Geo_Agent – Baugrundmodell</title>
+    <script type="module" crossorigin src="./assets/index-DFTG5LtU.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/viewer-CQNpHX1F.js">
+    <link rel="modulepreload" crossorigin href="./assets/preload-helper-Ct5FWWRu.js">
+    <link rel="modulepreload" crossorigin href="./assets/three.core-Dd2BBCN2.js">
+    <link rel="modulepreload" crossorigin href="./assets/lage-Crfzt0CM.js">
+    <link rel="modulepreload" crossorigin href="./assets/store-BI5Rw7m0.js">
+    <link rel="stylesheet" crossorigin href="./assets/viewer-DEetkHlo.css">
+    <link rel="stylesheet" crossorigin href="./assets/index-41l_-h91.css">
   </head>
-  <body>
-    <div id="app">
-      <aside id="seitenleiste"></aside>
-      <bim-viewport id="viewer">
-        <button id="seite-umschalten" class="ecke" type="button" title="Seitenleiste ein/aus" aria-label="Seitenleiste">☰</button>
-        <div id="leiste" class="leiste-unten"></div>
-        <div id="hud" class="hud" hidden>–</div>
-        <div id="leer" class="leer">
-          <strong>Noch kein Modell.</strong>
-          <span>In der App ein Gutachten-PDF hochladen – oder hier eine IFC-Datei ablegen.</span>
-        </div>
-        <div id="laden" class="laden" hidden><div class="kreisel"></div><span id="laden-text">Lade …</span></div>
-        <section id="eigenschaften" hidden>
-          <header>
-            <h2 id="auswahl-name"></h2>
-            <button id="auswahl-zu" type="button" aria-label="Schließen">×</button>
-          </header>
-          <div id="auswahl-knoepfe"></div>
-          <div id="auswahl-inhalt"></div>
-        </section>
-        <div id="meldung" hidden></div>
-      </bim-viewport>
-    </div>
+  <body data-schritt="gutachten">
+    <div id="app"></div>
   </body>
 </html>

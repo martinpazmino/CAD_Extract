@@ -54,6 +54,7 @@ class Bohrung:
     hinweise: list[str] = field(default_factory=list)
     lage: str = "georeferenziert"      # Herkunft der Lage: Koordinatenquelle der Extraktion, manuell, schematisch
     hoehe: str = "m NHN"               # Herkunft der Ansatzhoehe: m NHN, manuell, relativ
+    schichten: list[dict] = field(default_factory=list)   # Schichten des PDFs (Index wie in Abschnitt.schichten)
 
     @property
     def ende(self) -> float:
@@ -175,7 +176,9 @@ def _vorbereiten(b: dict, dokument: str) -> Bohrung:
     lage = b.get("coord_source") or ("georeferenziert" if b.get("crs_epsg") else "lokal")
     hoehe = {"manuell": "manuell (m NHN)", "relativ": "relativ (GOK unbekannt, 0 m gesetzt)"}.get(
         b.get("gok_source") or "", "m NHN")
-    return Bohrung(b["code"], float(b["x"]), float(b["y"]), gok, abschnitte, dokument, hinweise, lage, hoehe)
+    schichten = [{"von": float(ly["top_depth"]), "bis": float(ly["bottom_depth"]), "bodenart": ly.get("soil_class"),
+                  "beschreibung": ly.get("description_raw") or ""} for ly in b["layers"]]
+    return Bohrung(b["code"], float(b["x"]), float(b["y"]), gok, abschnitte, dokument, hinweise, lage, hoehe, schichten)
 
 
 # ---------------------------------------------------------------- Ausrichtung
