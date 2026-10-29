@@ -1,37 +1,39 @@
 ---
-title: "Modelador de capas (baugrundmodell)"
+title: "Layer modeler (baugrundmodell)"
 date: 2026-10-27
-tags: [modelo, layer-cake, ifc]
+tags: [model, layer-cake, ifc]
 aliases: [baugrundmodell]
 ---
 
-# Modelador de capas (`baugrundmodell`)
+# Layer modeler (`baugrundmodell`)
 
-JSON canónico de la extracción → unidades automáticas → superficies → sólidos cerrados →
-IFC 4.3 (`IfcGeomodel` + `IfcBorehole`) para That Open. Diseño, parámetros y resultados:
-[18 Modelador de capas](../../docs/18_modelador_capas.md).
+Canonical JSON of the extraction → automatic Einheiten → surfaces → closed solids → IFC 4.3
+(`IfcGeomodel` + `IfcBorehole`) for That Open. Design, parameters and results:
+[18 Layer modeler](../../docs/18_layer_modeler.md).
 
 ```bash
 pip install -r requirements.txt
 cd services/modeler
-python -m baugrundmodell modelo.ifc extraccion1.json [extraccion2.json ...] --bericht informe.json
+python -m baugrundmodell model.ifc extraction1.json [extraction2.json ...] --bericht report.json
 #   --methode idw|tps   --raster 2.0   --puffer 15   --basis 10.0 (m NHN)   --ohne-bohrsaeulen
-#   --einheiten einheiten.json   (unidades del geotécnico; plantilla en informe.json → vorlage_einheiten)
-python -m pytest tests                                     # 31 pruebas con verdad sintética
-python -m baugrundmodell.synthetisch demo demo.json        # casos: geneigt auskeilen linse zensiert stoerungen demo
+#   --einheiten einheiten.json   (the engineer's Einheiten; template in report.json → vorlage_einheiten)
+python -m pytest tests                                     # tests with synthetic ground truth
+python -m baugrundmodell.synthetisch demo demo.json        # cases: geneigt auskeilen linse zensiert stoerungen demo
 ```
 
-| Módulo | Qué hace |
+| Module | What it does |
 |---|---|
-| [`einheiten.py`](baugrundmodell/einheiten.py) | Preparación de sondeos (exclusiones con motivo), correlación de Schichtfolgen por programación dinámica, contactos exacto / libre / censurado / desconocido |
-| [`flaechen.py`](baugrundmodell/flaechen.py) | Dominio (envolvente + buffer), malla TIN con los sondeos como nodos, IDW/TPS exactos, lentes, censura, recorte, extensión de unidades parciales |
-| [`koerper.py`](baugrundmodell/koerper.py) | Sólido cerrado por unidad, comprobación de cierre y volumen |
-| [`ifc4x3.py`](baugrundmodell/ifc4x3.py) | Escritor IFC 4.3 (N1 columnas y N3 modelo), colores, Psets |
-| [`modell.py`](baugrundmodell/modell.py) | Orquestación, informe JSON |
-| [`synthetisch.py`](baugrundmodell/synthetisch.py) | Casos con verdad conocida (pruebas y demo del visor) |
+| [`einheiten.py`](baugrundmodell/einheiten.py) | Preparation of the Bohrungen (exclusions with the reason), correlation of the Schichtfolgen by dynamic programming, exact / free / censored / unknown contacts |
+| [`flaechen.py`](baugrundmodell/flaechen.py) | Domain (hull + buffer), TIN mesh with the Bohrungen as nodes, exact IDW/TPS, lenses, censoring, trimming, extent of partial Einheiten |
+| [`koerper.py`](baugrundmodell/koerper.py) | Closed solid per Einheit, closure and volume check |
+| [`ifc4x3.py`](baugrundmodell/ifc4x3.py) | IFC 4.3 writer (N1 columns and N3 model), colours, Psets |
+| [`modell.py`](baugrundmodell/modell.py) | Orchestration, JSON report |
+| [`synthetisch.py`](baugrundmodell/synthetisch.py) | Cases with known ground truth (tests and viewer demo) |
+| [`normen.py`](baugrundmodell/normen.py) + [`normen.json`](baugrundmodell/normen.json) | Mini database of norms (DIN 4023, EN ISO 14688-1, DIN 18196) and reading of the descriptions ([21 §3](../../docs/21_app_schritte_normen.md#3-mini-database-of-norms)) |
 
-Ver el resultado: [visor `apps/web`](../../apps/web/README.md) o la app (`streamlit run app.py`, [19](../../docs/19_app_v2.md)).
+See the result: [`apps/web` viewer](../../apps/web/README.md) or the step app (`python -m server`,
+[21](../../docs/21_app_schritte_normen.md)).
 
-Up: [Índice de documentación](../../docs/README.md)
+Up: [Documentation index](../../docs/README.md)
 
-Related: [18 Modelador de capas](../../docs/18_modelador_capas.md) · [Arquitectura §7](../../docs/ARQUITECTURA_BAUGRUNDMODELL.md#7-baugrundmodell-generación-de-geometrías) · [Spike IFC](../../spikes/ifc_thatopen/README.md)
+Related: [18 Layer modeler](../../docs/18_layer_modeler.md) · [Architecture §7](../../docs/ARCHITECTURE_BAUGRUNDMODELL.md#7-baugrundmodell-generating-the-geometry) · [IFC spike](../../spikes/ifc_thatopen/README.md)

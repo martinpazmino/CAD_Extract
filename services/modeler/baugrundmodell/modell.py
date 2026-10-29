@@ -1,6 +1,6 @@
 """Baugrundmodell (N3, Layer-Cake) aus kanonischen Extraktions-JSONs: Einheiten -> Flaechen -> Koerper -> IFC.
 
-Ablauf und Parameter: docs/18_modelador_capas.md.
+Ablauf und Parameter: docs/18_layer_modeler.md.
 """
 from __future__ import annotations
 

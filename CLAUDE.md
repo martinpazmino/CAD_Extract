@@ -1,63 +1,77 @@
-# GroundTwin (Geo_Agent) — memoria del proyecto
+# GroundTwin (Geo_Agent) — project memory
 
-## Objetivo
-Desde un Bodengutachten en PDF construir el **Baugrundmodell**: sondeos validados y trazables →
-Supabase → geometrías IFC 4.3 en That Open Engine. Arquitectura: `docs/ARQUITECTURA_BAUGRUNDMODELL.md`.
-La app actual (`app.py`, `geo_agent/`, Streamlit) es v1: posiciones fijas, 0/58 sondeos en PDFs ajenos.
-Repositorio `github.com/martinpazmino/GroundTwin` (antes CAD_Extract y GeoIM; GitHub redirige los nombres viejos), licencia **AGPL-3.0-or-later** (D79).
+## Goal
+From a Bodengutachten in PDF build the **Baugrundmodell**: validated, traceable Bohrungen →
+Supabase → IFC 4.3 geometry in That Open Engine. Architecture: `docs/ARCHITECTURE_BAUGRUNDMODELL.md`.
+The old app (`app.py`, `geo_agent/`, Streamlit) is v1: fixed positions, 0/58 Bohrungen on other offices' PDFs.
+Repository `github.com/martinpazmino/GroundTwin` (formerly CAD_Extract and GeoIM; GitHub redirects the old names),
+license **AGPL-3.0-or-later** (D79).
 
-## Leer antes de tocar la extracción
-- `docs/16_lecciones_aprendidas.md`: reglas explícitas (proceso P1–P12, entrada E, geometría G, etiquetas L/T, texto B, agua W, segundas fuentes S, swissgeol R, modelo M, entorno X). Respetarlas.
-- `docs/17_algoritmo_extraccion.md`: especificación del algoritmo (etapas, parámetros, confianza).
-- `docs/15_resultados_pdfs_reales.md`: resultados ciegos y de entrenamiento.
-- `docs/11_decisiones.md`: decisiones D1–D81.
-- `docs/18_modelador_capas.md`: modelo de capas (N3) y visor That Open.
-- `docs/19_app_v2.md`: app Streamlit v2 (historia; sustituida por la 21).
-- `docs/20_lage_pruefung_viewer.md`: visor con controles de TwinBimM, modelos > 5 km, Lage sobre plano, Prüfstand.
-- `docs/21_app_schritte_normen.md`: app por pasos (FastAPI + visor), normas de la descripción, calibración nueva.
-- `docs/22_despliegue.md`: en línea como contenedor (Render), por qué no Vercel, variables, memoria, CI.
+## Read before touching the extraction
+- `docs/16_lessons_learned.md`: explicit rules (process P1–P12, input E, geometry G, labels L/T, text B, water W,
+  second sources S, swissgeol R, model M, environment X). Respect them.
+- `docs/17_extraction_algorithm.md`: specification of the algorithm (stages, parameters, confidence).
+- `docs/15_results_real_pdfs.md`: blind and training results.
+- `docs/11_decisions.md`: decisions D1–D83.
+- `docs/18_layer_modeler.md`: layer model (N3) and That Open viewer.
+- `docs/19_app_v2.md`: Streamlit app v2 (history; superseded by 21).
+- `docs/20_lage_pruefung_viewer.md`: viewer with TwinBimM controls, models > 5 km, Lage on the plan, Prüfstand.
+- `docs/21_app_schritte_normen.md`: step app (FastAPI + viewer), norms for the description, new calibration.
+- `docs/22_deployment.md`: free online from your own PC (Cloudflare tunnel), container (Render), free hosts compared,
+  why not Vercel, variables, memory, CI.
 
-## Reglas de trabajo
-- **Prueba ciega**: con un PDF nuevo, congelar predicciones (`spikes/korpus/blind_test.py freeze`)
-  y **subirlas al repo antes de abrir el PDF**; después transcribir la verdad en `spikes/korpus/groundtruth/`.
-- Separar siempre cifras ciegas de cifras de entrenamiento.
-- Todo cambio en la extracción pasa la regresión sobre PDFs reales, casos de estrés y sintéticos:
+## Working rules
+- **Blind test**: with a new PDF, freeze the predictions (`spikes/korpus/blind_test.py freeze`)
+  and **push them to the repo before opening the PDF**; then transcribe the ground truth in `spikes/korpus/groundtruth/`.
+- Always keep blind figures apart from training figures.
+- Every change to the extraction passes the regression on real PDFs, stress cases and synthetic ones:
   `python spikes/korpus/regression.py --module spikes/extraktion_v2/prototyp_v4.py --real <pdfs> --stress <ordner>
-  --synth <ordner> --baseline spikes/korpus/baseline_v4.json` (casos de estrés: `stress_cases.py`; OCR con
-  `GEO_OCR_CACHE=<dir>`). Además: `ablation.py` (qué regla protege qué caso) y `perturb.py` (girar/escalar/raster).
-- Reglas generales (rasgos del dibujo), nunca excepciones por PDF u oficina.
-- Un dato dudoso se **marca** (issue / confianza baja), nunca se esconde. Un sondeo falso es peor que uno perdido.
-- PDFs de terceros **no** se suben al repo: sólo URL, `sha256` y datos factuales.
-- Documentación en español, notas enlazadas (Up/Related, frontmatter). Código y comentarios en alemán.
+  --synth <ordner> --baseline spikes/korpus/baseline_v4.json` (stress cases: `stress_cases.py`; OCR with
+  `GEO_OCR_CACHE=<dir>`). In addition: `ablation.py` (which rule protects which case) and `perturb.py`
+  (rotate/scale/raster).
+- General rules (features of the drawing), never exceptions per PDF or office.
+- A doubtful value is **marked** (issue / low confidence), never hidden. A false Bohrung is worse than a missing one.
+- Third-party PDFs are **not** pushed to the repo: only URL, `sha256` and factual data.
+- **Documentation in English**, keeping the German technical terms of the Gutachten and the app (Bohrung, Schicht,
+  GOK, Lageplan, Längsschnitt, Einheit… see `docs/glossary.md`); linked notes (Up/Related, frontmatter); doc file
+  names in English (D82). **Code, comments and UI texts in German.**
 
-## App, modelo y visor
-- App por pasos (docs/21): `python -m server` (Windows: `start.bat`, puerto 8500) = FastAPI (`server/`) + página
-  `apps/web/dist` (lit + visor). Streamlit (`app.py`, `start_excel.bat`) sólo para Excel v1.
-- Reglas del proyecto en `ui/projekt.py` (`aendern(op)`): avisos = capas **unklassifiziert** (no confianza), todo
-  revisado, quitar/restaurar, Ø de columnas, calibración (escala por distancia o 1:n + punto de referencia + giro /
-  escala vertical + candado), arrastre sólo con candado (plano x/y; sección: altura sólo sin GOK del PDF), puntos
-  en el plano bloqueado (poner, asignar a un sondeo, borrar).
-  Extracción/modelo en `ui/pipeline.py`; la extracción se usa desde `spikes/extraktion_v2/prototyp_v4.py` sin tocarla.
-- Normas (DIN 4023 / EN ISO 14688-1 / DIN 18196): `services/modeler/baugrundmodell/normen.json` + `normen.py`, con
-  evidencia por dato; leer, nunca aplicar en silencio (propuesta con clic). IFC: `CPset_Bodenansprache` por capa.
-- `services/modeler` (paquete `baugrundmodell`): `python -m baugrundmodell modelo.ifc a.json [...] --bericht informe.json`;
-  pruebas `cd services/modeler && python -m pytest tests`. Todo cambio: contactos exactos, sólidos cerrados, IFC sin
-  errores, **unidad METRE** (M17).
-- `apps/web` (app por pasos `src/app`, visor `src/viewer`: controles del TwinBimM, editor de Lage): tras cambiar algo
-  `npm run build` y **subir `apps/web/dist`** (el servidor lo usa sin Node); web-ifc 0.0.77 (X9). Prueba:
-  `python scripts/testplan.py <planes>` y en `apps/web` `node scripts/check.mjs <modelo.ifc> <planes> <capturas>` (19).
-- Punta a punta: `python -m server --port <p> --kein-browser --arbeit <vacía>` y `node scripts/check_app.mjs
-  http://localhost:<p> <planes> <capturas>` (28 comprobaciones; con contraseña: `GEO_AGENT_PASSWORT=…`). `pkill`/`pgrep -f`
-  en un comando aparte (X3, X19).
-- En línea (docs/22, D80): `Dockerfile` (python:3.13-slim, OCR con `--build-arg OCR=0` fuera, datos en `/data`, usuario
-  1000) y blueprint `render.yaml`. Variables: `PORT`, `GEO_AGENT_HOST`, `GEO_AGENT_PASSWORT` (HTTP Basic salvo `/gesund`),
-  `GEO_AGENT_BENUTZER`, `GEO_AGENT_MAX_MB`, `GEO_AGENT_ARBEIT`, `GEO_AGENT_QUELLCODE`. El enlace *Quellcode* (AGPL § 13) no
-  se quita. Dependencias: `requirements-server.txt` + versiones exactas en `constraints.txt` (D81; se renuevan con
-  `pip freeze`); CI `.github/workflows/pruefungen.yml`. Terceros: `THIRD_PARTY_LICENSES.md`; reglas: `CONTRIBUTING.md`.
+## App, model and viewer
+- Step app (docs/21): `python -m server` (Windows: `start.bat`, port 8500) = FastAPI (`server/`) + page
+  `apps/web/dist` (lit + viewer). Streamlit (`app.py`, `start_excel.bat`) only for Excel v1.
+- Project rules in `ui/projekt.py` (`aendern(op)`): warnings = **unklassifiziert** Schichten (not confidence), all
+  reviewed, remove/restore, Ø of the columns, calibration (scale by distance or 1:n + reference point + rotation /
+  vertical scale + lock), dragging only with the lock (plan x/y; section: height only without a GOK from the PDF),
+  points on the locked plan (place, assign to a Bohrung, delete).
+  Extraction/model in `ui/pipeline.py`; the extraction is used from `spikes/extraktion_v2/prototyp_v4.py` without
+  touching it.
+- Norms (DIN 4023 / EN ISO 14688-1 / DIN 18196): `services/modeler/baugrundmodell/normen.json` + `normen.py`, with
+  evidence per value; read them, never apply them silently (proposal with a click). IFC: `CPset_Bodenansprache` per
+  Schicht.
+- `services/modeler` (package `baugrundmodell`): `python -m baugrundmodell model.ifc a.json [...] --bericht report.json`;
+  tests `cd services/modeler && python -m pytest tests`. Every change: exact contacts, closed solids, IFC without
+  errors, **unit METRE** (M17).
+- `apps/web` (step app `src/app`, viewer `src/viewer`: TwinBimM controls, Lage editor): after changing anything
+  `npm run build` and **commit `apps/web/dist`** (the server uses it without Node); web-ifc 0.0.77 (X9). Test:
+  `python scripts/testplan.py <plans>` and in `apps/web` `node scripts/check.mjs <model.ifc> <plans> <screenshots>` (19).
+- End to end: `python -m server --port <p> --kein-browser --arbeit <empty>` and `node scripts/check_app.mjs
+  http://localhost:<p> <plans> <screenshots>` (28 checks; with a password: `GEO_AGENT_PASSWORT=…`). `pkill`/`pgrep -f`
+  in a separate command (X3, X19).
+- Online (docs/22, D80): `Dockerfile` (python:3.13-slim, OCR off with `--build-arg OCR=0`, data in `/data`, user
+  1000) and the `render.yaml` blueprint. Variables: `PORT`, `GEO_AGENT_HOST`, `GEO_AGENT_PASSWORT` (HTTP Basic except
+  `/gesund`), `GEO_AGENT_BENUTZER`, `GEO_AGENT_MAX_MB`, `GEO_AGENT_ARBEIT`, `GEO_AGENT_QUELLCODE`. The *Quellcode* link
+  (AGPL § 13) stays. Dependencies: `requirements-server.txt` + exact versions in `constraints.txt` (D81; renewed with
+  `pip freeze`); CI `.github/workflows/pruefungen.yml`. Third parties: `THIRD_PARTY_LICENSES.md`; rules:
+  `CONTRIBUTING.md`.
+- Free online (D83): `start_online.bat` / `scripts/online.py` start the server **always with a password** and a
+  Cloudflare Quick Tunnel (`cloudflared`, `CLOUDFLARED` for the path); it refuses a server already running on the
+  port. Test `tests/test_online.py` with a simulated cloudflared.
 
-## Entorno (sesiones en la nube)
-- Webs municipales bloqueadas por la política de red; pypi y GitHub accesibles. Los PDFs los sube el usuario.
-- Dependencias pesadas en venvs del scratchpad: `venv` (pymupdf, opencv, rapidocr), `sgvenv` (swissgeol).
-- Docker (X25): arrancar `dockerd` en segundo plano; apt bloqueado → `--build-arg OCR=0`, `--network host`, proxy y CA
-  de la sesión como secreto. vercel.com, render.com y gnu.org bloqueados (docs de Vercel: MCP de Vercel o búsqueda).
-- Rama de trabajo indicada en la sesión; no crear PR sin que lo pidan.
+## Environment (cloud sessions)
+- Municipal websites blocked by the network policy; pypi and GitHub reachable. The user uploads the PDFs.
+- Heavy dependencies in venvs in the scratchpad: `venv` (pymupdf, opencv, rapidocr), `sgvenv` (swissgeol).
+- Docker (X25, X26): start `dockerd` in the background with the longest time limit; apt blocked → `--build-arg OCR=0`,
+  `--network host`, the session's proxy and CA as a secret. vercel.com, render.com, gnu.org and flaviocopes.com
+  blocked (Vercel docs: Vercel MCP or search).
+- The GitHub tools of the session only accept the repository name in the session scope (X29).
+- Working branch given by the session; do not open a PR unless asked.

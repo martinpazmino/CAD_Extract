@@ -1,6 +1,6 @@
 # GroundTwin – Baugrundmodell-App als Container: ein Prozess (FastAPI) liefert API und Oberflaeche (apps/web/dist, im
 # Repo gebaut, kein Node noetig). Laeuft auf Render, Railway, Fly.io, Google Cloud Run, Hugging Face Spaces oder
-# einem eigenen Server (docs/22_despliegue.md).
+# einem eigenen Server (docs/22_deployment.md).
 #
 #   docker build -t groundtwin .                          (ohne OCR: --build-arg OCR=0, kleiner und ohne Systempakete)
 #   docker run -p 8500:8500 -e GEO_AGENT_PASSWORT=… -v groundtwin-daten:/data groundtwin

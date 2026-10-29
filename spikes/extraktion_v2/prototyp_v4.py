@@ -1,4 +1,4 @@
-"""Prototyp v4: Extraktion nach der Spezifikation docs/17_algoritmo_extraccion.md.
+"""Prototyp v4: Extraktion nach der Spezifikation docs/17_extraction_algorithm.md.
 
 Stufen (je Seite, dann je Dokument):
   E0  Seitenklasse: vektor | vektor_ohne_text (AutoCAD-SHX) | raster (Bild ohne Text) | raster_ocr (Scan)
@@ -1131,7 +1131,7 @@ def _assign_text(bh: Borehole, col: Column, lines, words, fit, mode, pairs, righ
 
 
 # ---------------------------------------------------------------------------
-# E9: kanonisches JSON (docs/ARQUITECTURA_BAUGRUNDMODELL.md §5.1) - Eingang fuer Supabase und IFC
+# E9: kanonisches JSON (docs/ARCHITECTURE_BAUGRUNDMODELL.md §5.1) - Eingang fuer Supabase und IFC
 # ---------------------------------------------------------------------------
 KIND = (("GWM", "gwm"), ("RKS", "rks"), ("KRB", "rks"), ("BS", "rks"), ("SCH", "schurf"),
         ("BK", "kernbohrung"), ("KB", "kernbohrung"), ("B", "kernbohrung"))

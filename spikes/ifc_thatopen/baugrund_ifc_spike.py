@@ -1,7 +1,7 @@
 """Spike: Baugrundmodell (synthetisch) -> IFC4X3 mit IfcBorehole / IfcGeomodel / IfcGeotechnicalStratum.
 
 Ziel: pruefen, ob That Open (web-ifc + @thatopen/fragments IfcImporter) diese
-Entitaeten mit Geometrie importiert.  Ergebnis + Ablauf: docs/ARQUITECTURA_BAUGRUNDMODELL.md (Kap. 8).
+Entitaeten mit Geometrie importiert.  Ergebnis + Ablauf: docs/ARCHITECTURE_BAUGRUNDMODELL.md (Kap. 8).
 
     pip install ifcopenshell numpy
     python baugrund_ifc_spike.py baugrund_spike.ifc

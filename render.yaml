@@ -1,4 +1,4 @@
-# Render-Blueprint (https://render.com, docs/22_despliegue.md): im Dashboard "New > Blueprint", dieses Repo waehlen.
+# Render-Blueprint (https://render.com, docs/22_deployment.md): im Dashboard "New > Blueprint", dieses Repo waehlen.
 # Ein Webdienst aus dem Dockerfile, Daten auf einer Platte unter /data (bleiben bei Neustart und Deploy erhalten),
 # Anmeldung mit GEO_AGENT_PASSWORT (wird beim Anlegen abgefragt). Jeder Push auf main baut neu.
 services:
