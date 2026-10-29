@@ -691,8 +691,16 @@ def modell_eingabe(docs: list[dict], p: Projekt, e: Einstellungen | None = None)
 
 
 def ursprung(p: Projekt, vorb: Vorbereitung) -> tuple[float, float]:
-    """Fester lokaler Nullpunkt des Projekts: verschiebt sich nur, wenn die Bohrungen weit davon entfernt liegen."""
+    """Fester lokaler Nullpunkt des Projekts: verschiebt sich nur, wenn die Bohrungen weit davon entfernt liegen.
+    Hat noch keine Bohrung eine Lage, gilt der Bezugspunkt eines kalibrierten Lageplans: sonst laege der Plan
+    Millionen Meter vom Nullpunkt der Szene (Gleitkomma der Grafikkarte, docs/16 M31)."""
     if not vorb.lage:
+        kal = (p.unterlage or {}).get("kalibrierung") or {}
+        bezug = kal.get("bezug") if (p.unterlage or {}).get("art", "plan") == "plan" else None
+        if p.lage_modus == LAGE_KOORDINATEN and bezug:
+            mitte = (float(bezug["x"]), float(bezug["y"]))
+            if p.ursprung is None or math.hypot(mitte[0] - p.ursprung[0], mitte[1] - p.ursprung[1]) > 20000:
+                p.ursprung = (round(mitte[0], -2), round(mitte[1], -2))
         return p.ursprung or (0.0, 0.0)
     xs = [v[0] for v in vorb.lage.values()]
     ys = [v[1] for v in vorb.lage.values()]

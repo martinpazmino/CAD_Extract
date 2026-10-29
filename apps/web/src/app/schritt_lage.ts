@@ -5,6 +5,7 @@ import { html, nothing } from "lit";
 import { live } from "lit/directives/live.js";
 import { api, type Zustand } from "./api";
 import { hilfe } from "./hilfe";
+import { epsgAuswahl, lagePruefen, systemText } from "./epsg";
 import { S, aendern, melden, neu, versuchen, viewerAktualisieren, zustandUebernehmen } from "./store";
 import { kalibrierungText, massstabszahl } from "../viewer/lage";
 import type { Bildpunkt } from "../viewer/lage";
@@ -99,11 +100,16 @@ async function punkt(welcher: "p1" | "p2" | "h1" | "h2" | "bezug") {
   neu();
   const p = await v.editor.bildpunktWaehlen();
   waehlt = "";
-  if (p && e) e[welcher] = p;
+  if (!p || !e || S.z?.unterlage?.kalibrierung?.gesperrt) {       // abgebrochen (Esc, Sperren, Ziehen)
+    neu();
+    return;
+  }
+  e[welcher] = p;
   vorschau();
 }
 
 async function uebernehmen(sperren: boolean) {
+  S.viewer?.editor.waehlenAbbrechen();                  // offene Punktwahl blockiert sonst das Ziehen
   const k = kalibrierung(S.z!, sperren);
   if (!k) {
     melden("Für die Kalibrierung fehlen Maßstab oder Bezugspunkt.", "warn");
@@ -169,6 +175,12 @@ function punktKnopf(titel: string, welcher: "p1" | "p2" | "h1" | "h2" | "bezug",
     @click=${() => punkt(welcher)}>${waehlt === welcher ? "… im Plan klicken" : p ? `${titel} ✓` : titel}</button>`;
 }
 
+/** Passt der Bezugspunkt zum gewaehlten System? (Hinweis, keine Sperre) */
+function systemPruefung(d: Entwurf) {
+  const p = lagePruefen(d.epsg, d.x, d.y);
+  return p ? html`<p class=${`klein ${p.ok ? "ok" : "warn"}`}>${p.ok ? "✓" : "⚠"} ${p.text}</p>` : nothing;
+}
+
 function kalibrierenTeil(z: Zustand) {
   const u = z.unterlage!;
   const d = entwurf(z)!;
@@ -180,7 +192,7 @@ function kalibrierenTeil(z: Zustand) {
   const mitLage = z.viewer.bohrungen.filter((b) => b.x !== null && (plan ? !/Plan|Viewer/.test(b.quelle) : b.gok_bekannt));
   return html`
     <p class=${`status ${u.kalibrierung ? (gesperrt ? "ok" : "") : "warn"}`}>
-      ${u.kalibrierung ? html`${gesperrt ? "🔒 gesperrt · " : ""}${kalibrierungText(u)}` : "nicht kalibriert"}
+      ${u.kalibrierung ? html`${gesperrt ? "🔒 gesperrt · " : ""}${kalibrierungText(u)}${plan ? ` · ${systemText(u.kalibrierung.epsg)}` : ""}` : "nicht kalibriert"}
       ${S.entwurf && JSON.stringify({ ...S.entwurf, gesperrt: false }) !== JSON.stringify({ ...(u.kalibrierung ?? {}), gesperrt: false })
         ? html`<br><span class="leise">Vorschau: ${kalibrierungText(u, S.entwurf)} (noch nicht übernommen)</span>` : nothing}
     </p>
@@ -228,6 +240,10 @@ function kalibrierenTeil(z: Zustand) {
           <label class="feld schmal"><span>${plan ? "Hochwert" : "Höhe [m NHN]"}</span>
             <input type="number" step="0.01" .value=${live(d.y === null ? "" : String(d.y))} @input=${(ev: Event) => { d.y = eingabe(ev); vorschau(); }}></label>
         </div>
+        ${plan ? html`
+          <label class="feld breit"><span>Koordinatensystem (EPSG) ${hilfe("epsg")}</span>
+            ${epsgAuswahl(d.epsg, (c) => { d.epsg = c; vorschau(); })}</label>
+          ${systemPruefung(d)}` : nothing}
         ${mitLage.length ? html`
           <label class="inline klein">oder von Bohrung
             <select @change=${(ev: Event) => {
@@ -245,8 +261,6 @@ function kalibrierenTeil(z: Zustand) {
             <label class="inline"><input type="number" step="0.1" class="kurz" .value=${live(String(d.drehung))}
               @input=${(ev: Event) => { d.drehung = eingabe(ev) ?? 0; vorschau(); }}> ° gegen den Uhrzeigersinn</label>
           </div>
-          <label class="inline">EPSG ${hilfe("epsg")} <input type="number" step="1" class="kurz" .value=${live(d.epsg === null ? "" : String(d.epsg))}
-            @input=${(ev: Event) => { d.epsg = eingabe(ev); vorschau(); }}></label>
         </fieldset>` : nothing}
       <div class="zeile knopfzeile">
         <button ?disabled=${!k} @click=${() => uebernehmen(false)}>Übernehmen</button>

@@ -200,6 +200,17 @@ function grenzenFuer(s: THREE.Sphere) {
   }
 }
 
+/** Kamera um einen Weg in der Szene mitnehmen: Nullpunkt verschoben (rahmen.ts) oder die Unterlage springt beim
+ *  Kalibrieren an eine neue Koordinate - was gezeigt wurde, bleibt im Bild. */
+export async function verschieben(dx: number, dz: number, dy = 0) {
+  if (!welt || (!dx && !dz && !dy) || ![dx, dy, dz].every(Number.isFinite)) return;
+  const c = welt.camera.controls;
+  const pos = c.getPosition(new THREE.Vector3());
+  const ziel = c.getTarget(new THREE.Vector3());
+  await c.setLookAt(pos.x + dx, pos.y + dy, pos.z + dz, ziel.x + dx, ziel.y + dy, ziel.z + dz, false);
+  grenzenAnpassen();
+}
+
 export async function orbitPunkt(p: THREE.Vector3) {
   const c = welt.camera.controls;
   const min = c.minDistance;

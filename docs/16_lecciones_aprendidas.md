@@ -161,6 +161,11 @@ dudoso quede **marcado**, nunca escondido.
 | M26 | BUI: `bim-toolbar-section` pone el `label-hidden` de sus botones según su `vertical` al montarse (y lit no lo vuelve a poner si el valor no cambia): para una barra sólo de iconos, grupos propios (`div`) dentro de `bim-toolbar` | Barra con etiquetas pese a `label-hidden` |
 | M27 | Una app lit con un componente ajeno persistente (el visor): dejarlo en un elemento fijo de la plantilla y **no moverlo** de padre (los componentes web se desmontan y vuelven a montar); mostrarlo u ocultarlo con CSS; con `display:none` el encuadre espera al tamaño (M25) | Visor que no se recarga entre *Lage* y *Modell* |
 | M28 | Calibrar con **escala (distancia medida o 1:n) + punto de referencia + giro** es tan exacto como dos puntos de pase y más fácil de comprobar; bloquear el plano antes de arrastrar evita mover sondeos sin querer | 1:500 · 10,0° desde la UI; D67 |
+| M29 | That Open, `RendererMode.MANUAL`: con `turnOffOnManualMode` cada `update()` dibuja **sin** posproducción y 50 ms después **con** ella. Si algo pide fotogramas sin parar (cada movimiento del ratón, un intervalo de 1 s) la imagen alterna siempre: parpadeo. Decidir la posproducción uno mismo (`turnOffOnManualMode = false`, `manualDefaultStyle` = estilo), justo antes de dibujar (`renderer.onBeforeUpdate`, tras mover la cámara), sólo por actividad real (cámara, carga, arrastre); en el modo Lage nunca; sin redibujar por mover el ratón | Plano que parpadeaba aun transparente; `check.mjs` B, `check_app.mjs` C2 |
+| M30 | three.js `GTAOPass` fija `PERSPECTIVE_CAMERA` **sólo al crearse**: tras pasar a ortográfica sigue decodificando la profundidad como perspectiva y con el `near` negativo de la cámara ortográfica (M18) da sombras falsas o un **visor negro** según la GPU. Actualizar el *define* (y `needsUpdate`) en cada cambio de proyección | Captura del usuario: Lage negro con HUD válido |
+| M31 | Coordenadas de 6–7 cifras en la escena: el **origen** debe estar cerca de lo que se ve. Sin sondeos con posición, el origen sale del punto de referencia del plano calibrado; si el origen cambia, la cámara (y la vista guardada) se desplaza lo mismo; si el plano salta lejos al escribir su coordenada, la cámara lo sigue; los vértices del plano van relativos a su esquina (Float32) | El primer sondeo soltado movía el origen y todo desaparecía; vista previa vacía |
+| M32 | Un "elige un punto" pendiente bloqueaba **todo** arrastre sin aviso. Al bloquear el plano, al empezar a arrastrar desde la lista o con el plano bloqueado, cancelar la elección pendiente | `check_app.mjs` C2 |
+| M33 | EPSG nunca como número libre: **lista** (DE/AT/CH, códigos y nombres verificados con pyproj) y **rango de plausibilidad** por sistema (cifras, prefijo de zona); un código desconocido del PDF se muestra marcado, no se esconde | "EPSG 52" en el HUD; R 74.848,90 → "no encaja en ningún sistema" |
 
 ## X. Entorno de trabajo
 
@@ -187,6 +192,8 @@ dudoso quede **marcado**, nunca escondido.
 | X19 | X3 también vale para `pgrep -f patrón \| xargs kill`: el comando que lo contiene coincide consigo mismo | Exit 144 |
 | X20 | Atajos de teclado: ignorarlos sólo en campos de texto, **no** con el foco en un botón (tras pulsar *Nächste* el foco queda en él y ↓ dejaba de funcionar); cerrar los menús tras una acción | `check_app.mjs` A |
 | X21 | Playwright: el valor de un `<input>` no forma parte del texto de su fila (`hasText` no lo encuentra): buscar el índice por `value` con `evaluate` | Prueba de *Einheiten* |
+| X22 | Un error de render que sólo aparece en la GPU del usuario (negro, parpadeo) no se ve en SwiftShader: medir la **secuencia de fotogramas** (envolver `postproduction.update` y `three.render`) en vez de mirar capturas, y reproducir el caso exacto (aquí: ningún sondeo con coordenadas) | Reproducción de la captura del usuario |
+| X23 | Un `console.log` de Node se pierde si `timeout` mata el proceso con la salida en una tubería: escribir a un archivo (`> log 2>&1`) | Scripts de reproducción sin salida |
 
 Up: [Índice](README.md)
 

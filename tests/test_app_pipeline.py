@@ -292,6 +292,30 @@ def test_viewer_bohrungen_und_fester_ursprung():
     assert p.ursprung == alt                               # Ansicht springt nicht
 
 
+def test_ursprung_vom_bezugspunkt_wenn_keine_bohrung_lage_hat():
+    """RKS ohne Koordinaten: der kalibrierte Lageplan liegt sonst Millionen Meter vom Nullpunkt der Szene, und die
+    erste gesetzte Bohrung verschob den Nullpunkt dorthin (Plan und Bohrungen sprangen aus dem Bild)."""
+    docs = lade("talheim.json")
+    p = projekt(docs)
+    assert p.lage_modus == pj.LAGE_REIHE
+    v = pj.modell_eingabe(docs, p)
+    reihe = pj.ursprung(p, v)                              # Stationen: kleiner Nullpunkt
+    assert abs(reihe[0]) < 1000 and reihe[1] == 0
+    p.lage_modus = pj.LAGE_KOORDINATEN
+    p.unterlage = {"art": "plan", "kalibrierung": None}
+    v = pj.modell_eingabe(docs, p)
+    assert not v.lage and pj.ursprung(p, v) == reihe       # unkalibriert: nichts zu verschieben
+    pj.aendern(docs, p, {"op": "kalibrierung", "wert": {"massstab": {"n": 500}, "drehung": 180, "epsg": 25832,
+                                                        "bezug": {"u": 10, "v": 10, "x": 497848.9, "y": 5603772.65},
+                                                        "gesperrt": True}})
+    assert pj.ursprung(p, pj.modell_eingabe(docs, p)) == (497800.0, 5603800.0)
+    erste = pj.bohrungen_liste(docs, p)[0]["id"]
+    pj.aendern(docs, p, {"op": "lage", "id": erste, "x": 497900.0, "y": 5603700.0})
+    v = pj.modell_eingabe(docs, p)
+    assert erste in v.lage and pj.ursprung(p, v) == (497800.0, 5603800.0)      # erste Bohrung: kein Sprung
+    assert p.bohrung[erste]["epsg"] == 25832 and p.bohrung[erste]["quelle"] == "Plan (kalibriert)"
+
+
 def test_farben_nach_din_4023():
     assert pj.bodenart_farbe("Kies") == "#f2cf2c" and pj.bodenart_farbe("Sand") == "#ef8f2f"
     assert pj.bodenart_farbe("unklassifiziert") == pj.bodenart_farbe("Quatsch") == "#e6e6e6"

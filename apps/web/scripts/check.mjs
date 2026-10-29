@@ -1,7 +1,7 @@
 // Headless-Pruefung des Viewers (Chromium/Playwright) in drei Teilen, mit Bildern:
 //   A  grosses Modell (Trasse > 5 km): Laden, Kamera-Grenzen, Ansichten, Koordinaten, Auswahl, Transparenz, Schnitt
-//   B  Lageplan (scripts/testplan.py): ungesperrt nicht ziehbar; Strecke (zwei Bildpunkte) -> Massstab, Bezug, Drehung,
-//      gesperrt; Bohrungen ohne Lage auf den Plan ziehen
+//   B  Lageplan (scripts/testplan.py): ohne Postproduktion (kein Flackern); ungesperrt nicht ziehbar; Strecke (zwei
+//      Bildpunkte) -> Massstab, Bezug, Drehung, gesperrt; Bohrungen ohne Lage auf den Plan ziehen
 //   C  Laengsschnitt: 1:500/1:100 mit Bezugspunkt; entlang der Reihe ziehen, GOK aus dem PDF bleibt, ohne GOK ziehbar
 //
 //   npm run build && python ../../scripts/testplan.py <plan-ordner>
@@ -43,7 +43,7 @@ const bilder = (n = 2) => page.evaluate((k) => new Promise((fertig) => {
   const schritt = (i) => (i <= 0 ? fertig() : requestAnimationFrame(() => schritt(i - 1)));
   schritt(k);
 }), n);
-const ohnePost = () => page.evaluate(() => { window.viewer.world.renderer.postproduction.enabled = false; });
+const ohnePost = () => page.evaluate(() => window.viewer.schatten(false));
 const knopf = (label) => page.locator(`bim-button[label="${label}"]`).first();
 
 async function ziehen(von, nach, umschalt = false) {
@@ -123,6 +123,31 @@ try {
   await knopf("Lage bearbeiten").click();
   await ruhe(2500);
   pruefe("Lage-Modus: Draufsicht orthografisch", (await page.evaluate(() => window.viewer.world.camera.projection.current)) === "Orthographic");
+  // Flackern (docs/16 X22): im Lage-Modus nie ein Bild mit Postproduktion, auch wenn "Kanten und Schatten" an ist;
+  // die Umgebungsverdeckung rechnet orthografisch (PERSPECTIVE_CAMERA folgt der Kamera)
+  const takt = await page.evaluate(async () => {
+    const v = window.viewer;
+    const r = v.world.renderer;
+    const z = { bilder: 0, post: 0 };
+    const upd = r.postproduction.update.bind(r.postproduction);
+    r.postproduction.update = (...a) => { z.post += 1; return upd(...a); };
+    const weg = () => { z.bilder += 1; };
+    r.onAfterUpdate.add(weg);
+    v.schatten(true);
+    const el = r.three.domElement.getBoundingClientRect();
+    for (let i = 0; i < 12; i++) {
+      r.three.domElement.dispatchEvent(new PointerEvent("pointermove", { clientX: el.left + 300 + i * 7, clientY: el.top + 300, buttons: 1,
+                                                                        bubbles: true }));
+      await new Promise((f) => setTimeout(f, 60));
+    }
+    await new Promise((f) => setTimeout(f, 300));
+    r.onAfterUpdate.remove(weg);
+    r.postproduction.update = upd;
+    v.schatten(false);
+    return { ...z, perspektive: r.postproduction.aoPass.gtaoMaterial.defines.PERSPECTIVE_CAMERA };
+  });
+  pruefe("Lage-Modus ohne Postproduktion (kein Flackern), Verdeckung orthografisch", takt.bilder > 0 && takt.post === 0 && takt.perspektive === 0,
+         JSON.stringify(takt));
   const schirm = (u, v_) => page.evaluate(([a, b]) => window.viewer.editor.bildZuSchirm(a, b), [u, v_]);
   const marke = (c) => page.evaluate((c_) => {
     const e = window.viewer.editor;

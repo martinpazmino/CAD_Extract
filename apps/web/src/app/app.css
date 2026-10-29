@@ -153,6 +153,10 @@ body[data-schritt="modell"] .schritt { left: auto; width: 24rem; overflow: hidde
 .feld output { font-size: 0.9rem; color: var(--text); padding: 0.3rem 0; }
 .feld small { font-size: 0.68rem; }
 .feld small.manuell { color: #8fc6ff; }
+.feld.breit { margin: 0.35rem 0; }
+select.epsg { width: 100%; max-width: 24rem; }
+.feld select.epsg { width: 15rem; }
+.feld.breit select.epsg { width: 100%; }
 .pfeile { white-space: nowrap; }
 .pfeile .symbol { padding: 0 0.2rem; font-size: 0.65rem; }
 

@@ -3,7 +3,8 @@
 //      Schicht klassifizieren, Bohrung entfernen und wiederherstellen, alle Bohrungen geprueft
 //   B  Berlin: Vorschlag nach Norm fuer eine unklassifizierte Schicht uebernehmen
 //   C  Lageplan (scripts/testplan.py): Strecke messen -> Massstab, Bezugspunkt, Drehung, sperren, Bohrungen ohne Lage
-//      aus der Liste auf ihren Kreis ziehen
+//      aus der Liste auf ihren Kreis ziehen; C2 dasselbe ohne eine einzige Koordinate (Vorschau im Bild, EPSG-Liste,
+//      offene Punktwahl, Nullpunkt, kein Flackern)
 //   D  Laengsschnitt: 1:500/1:100, Bezugspunkt (Station/Hoehe), sperren, Bohrungen auf ihre Saeule ziehen (GOK aus dem
 //      PDF bleibt), Einheit umbenennen, Modell im Viewer, einchecken, IFC mit Bodenansprache
 //   E  PDF-Beispiel: Extraktion mit Fortschritt, Quelle der Schicht im PDF
@@ -197,6 +198,85 @@ try {
   pruefe("Bohrungen ohne Lage auf den Plan gezogen (Fehler ≤ 0,5 m)", Math.max(...fehlerLage) <= 0.5,
     fehlerLage.map((f) => f.toFixed(2)).join(" / ") + " m");
   await page.screenshot({ path: `${aus}/C1_plan.png` });
+
+  // ---------------------------------------------------------------- C2: Lageplan, keine Bohrung mit Koordinaten
+  // Fall aus der Praxis (RKS ohne Lage): der Plan springt beim Kalibrieren Millionen Meter - die Vorschau bleibt im
+  // Bild; EPSG aus der Liste mit Hinweis; eine offene Punktwahl blockiert das Ziehen nicht; Nullpunkt vom
+  // Bezugspunkt; im Lage-Modus kein Wechsel zwischen Bild mit und ohne Postproduktion (Flackern).
+  await hochladen(`${plaene}/plan_ohne_lage_extraktion.json`);
+  await zuLage();
+  await unterlageHochladen(`${plaene}/plan.pdf`, "plan");
+  await punktKlick("Punkt 1", wPlan["B 1"].px);
+  await punktKlick("Punkt 2", wPlan["B 4"].px);
+  await page.locator("label.inline", { hasText: "wahre Länge" }).locator("input").fill(meter.toFixed(3));
+  await punktKlick("Punkt im Plan wählen", wPlan["B 1"].px);
+  const rechtswert = page.locator("label", { hasText: "Rechtswert" }).locator("input");
+  const epsgHinweis = page.locator("fieldset", { hasText: "Bezugspunkt" }).locator("p.klein");
+  await rechtswert.fill("74848.9");
+  await page.locator("label", { hasText: "Hochwert" }).locator("input").fill(String(wPlan["B 1"].y));
+  await page.locator("select.epsg").selectOption("25832");
+  await ruhe(300);
+  const falsch = await epsgHinweis.textContent();
+  await rechtswert.fill(String(wPlan["B 1"].x));
+  await page.locator("fieldset", { hasText: "Drehung" }).locator('input[type="number"]').first().fill("10");
+  await ruhe(800);
+  const richtig = await epsgHinweis.textContent();
+  pruefe("EPSG aus der Liste, Hinweis wenn Rechts-/Hochwert nicht passen", /keinem System/.test(falsch) && /passt zu EPSG 25832/.test(richtig),
+    `${falsch.trim()} | ${richtig.trim()}`);
+  const imBild = () => page.evaluate(() => {
+    const r = window.viewer.world.renderer.three.domElement.getBoundingClientRect();
+    const p = window.viewer.editor.bildZuSchirm(2000, 1500);                 // Planmitte
+    return !!p && p.x > r.left && p.x < r.right && p.y > r.top && p.y < r.bottom;
+  });
+  pruefe("Vorschau: Plan bleibt nach dem Eintragen der Koordinate im Bild", await imBild());
+  await page.locator("button.punkt", { hasText: /Punkt im Plan wählen/ }).click();     // Punktwahl offen lassen
+  await page.getByRole("button", { name: /Übernehmen und sperren/ }).click();
+  await warte(() => window.baugrund?.lage?.unterlage?.gesperrt, null, 30000);
+  await ruhe(1500);
+  const gesperrt = await page.evaluate(() => ({ waehlt: document.body.classList.contains("waehlt"),
+                                                ursprung: [window.viewer.rahmen.e0, window.viewer.rahmen.n0] }));
+  pruefe("Sperren: Punktwahl beendet, Nullpunkt vom Bezugspunkt",
+    !gesperrt.waehlt && Math.hypot(gesperrt.ursprung[0] - wPlan["B 1"].x, gesperrt.ursprung[1] - wPlan["B 1"].y) < 100,
+    JSON.stringify(gesperrt));
+  await page.evaluate(() => {
+    const r = window.viewer.world.renderer;
+    window.__bilder = { einfach: 0, post: 0 };
+    const upd = r.postproduction.update.bind(r.postproduction);
+    r.postproduction.update = (...a) => { window.__bilder.post += 1; return upd(...a); };
+    r.onAfterUpdate.add(() => { window.__bilder.einfach += 1; });
+  });
+  // Plan verschieben (Kamera) und Maus darueber bewegen: alle Bilder ohne Postproduktion
+  const flaeche = await page.evaluate(() => { const r = window.viewer.world.renderer.three.domElement.getBoundingClientRect(); return { x: r.left + r.width * 0.75, y: r.top + r.height * 0.85 }; });
+  await page.mouse.move(flaeche.x, flaeche.y);
+  await page.mouse.down();
+  for (let i = 1; i <= 10; i++) {
+    await page.mouse.move(flaeche.x - i * 6, flaeche.y - i * 2);
+    await ruhe(40);
+  }
+  await page.mouse.up();
+  for (let i = 0; i < 10; i++) {
+    await page.mouse.move(flaeche.x - 80 + i * 9, flaeche.y - 40);
+    await ruhe(40);
+  }
+  await ruhe(800);
+  const bilder = await page.evaluate(() => window.__bilder);
+  pruefe("Lage-Modus: Bilder ohne Postproduktion (kein Flackern)", bilder.einfach > 0 && bilder.post === 0, JSON.stringify(bilder));
+  const fehlerOhne = [];
+  let sichtbar = true;
+  for (const code of ["B 1", "B 7", "BS 10"]) {
+    const park = page.locator(".park", { hasText: new RegExp(`^${code}$`) });
+    const kiste = await park.boundingBox();
+    const ziel = await schirm(wPlan[code].px);
+    await ziehen({ x: kiste.x + kiste.width / 2, y: kiste.y + kiste.height / 2 }, ziel);
+    await warte((c) => window.app.z.bohrungen.find((b) => b.code === c)?.x !== null, code, 30000);
+    await ruhe(1500);
+    const x = await bohrung(code);
+    fehlerOhne.push(Math.hypot(x.x - wPlan[code].x, x.y - wPlan[code].y));
+    sichtbar &&= (await imBild()) && !!(await markenPunkt(code));
+  }
+  pruefe("ohne Koordinaten: aus der Liste auf den Plan gezogen, Plan bleibt im Bild (Fehler ≤ 0,5 m)",
+    sichtbar && Math.max(...fehlerOhne) <= 0.5, fehlerOhne.map((f) => f.toFixed(2)).join(" / ") + " m");
+  await page.screenshot({ path: `${aus}/C2_ohne_lage.png` });
 
   // ---------------------------------------------------------------- D: Laengsschnitt
   await hochladen(`${plaene}/schnitt_extraktion.json`);

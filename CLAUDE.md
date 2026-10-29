@@ -9,7 +9,7 @@ La app actual (`app.py`, `geo_agent/`, Streamlit) es v1: posiciones fijas, 0/58 
 - `docs/16_lecciones_aprendidas.md`: reglas explícitas (proceso P1–P12, entrada E, geometría G, etiquetas L/T, texto B, agua W, segundas fuentes S, swissgeol R, modelo M, entorno X). Respetarlas.
 - `docs/17_algoritmo_extraccion.md`: especificación del algoritmo (etapas, parámetros, confianza).
 - `docs/15_resultados_pdfs_reales.md`: resultados ciegos y de entrenamiento.
-- `docs/11_decisiones.md`: decisiones D1–D72.
+- `docs/11_decisiones.md`: decisiones D1–D76.
 - `docs/18_modelador_capas.md`: modelo de capas (N3) y visor That Open.
 - `docs/19_app_v2.md`: app Streamlit v2 (historia; sustituida por la 21).
 - `docs/20_lage_pruefung_viewer.md`: visor con controles de TwinBimM, modelos > 5 km, Lage sobre plano, Prüfstand.
@@ -42,9 +42,9 @@ La app actual (`app.py`, `geo_agent/`, Streamlit) es v1: posiciones fijas, 0/58 
   errores, **unidad METRE** (M17).
 - `apps/web` (app por pasos `src/app`, visor `src/viewer`: controles del TwinBimM, editor de Lage): tras cambiar algo
   `npm run build` y **subir `apps/web/dist`** (el servidor lo usa sin Node); web-ifc 0.0.77 (X9). Prueba:
-  `python scripts/testplan.py <planes>` y en `apps/web` `node scripts/check.mjs <modelo.ifc> <planes> <capturas>` (18).
+  `python scripts/testplan.py <planes>` y en `apps/web` `node scripts/check.mjs <modelo.ifc> <planes> <capturas>` (19).
 - Punta a punta: `python -m server --port <p> --kein-browser --arbeit <vacía>` y `node scripts/check_app.mjs
-  http://localhost:<p> <planes> <capturas>` (19 comprobaciones). `pkill`/`pgrep -f` en un comando aparte (X3, X19).
+  http://localhost:<p> <planes> <capturas>` (24 comprobaciones). `pkill`/`pgrep -f` en un comando aparte (X3, X19).
 
 ## Entorno (sesiones en la nube)
 - Webs municipales bloqueadas por la política de red; pypi y GitHub accesibles. Los PDFs los sube el usuario.

@@ -22,7 +22,7 @@ export const TEXTE = {
   bezug: ["Bezugspunkt", "Ein Punkt im Plan mit bekannter Koordinate (Koordinatenkreuz, Bohrung mit Koordinaten): anklicken und Rechts-/Hochwert eintragen – im Längsschnitt Station und Höhe NHN."],
   drehung: ["Drehung", "Winkel, um den der Plan gegen Norden gedreht ist (gegen den Uhrzeigersinn positiv). Nordpfeil nach oben = 0°; Nordpfeil 10° nach links geneigt = 10°."],
   hoehe: ["Höhenmaßstab", "Längsschnitte sind oft überhöht (z. B. Länge 1:500, Höhe 1:100). Ohne Angabe gilt der Längenmaßstab."],
-  epsg: ["EPSG", "Koordinatensystem der Plankoordinaten, z. B. 25832 (ETRS89 / UTM 32N) oder 25833. Steht dann im IFC (IfcMapConversion)."],
+  epsg: ["Koordinatensystem (EPSG)", "System der Rechts-/Hochwerte aus der Liste wählen: in Deutschland meist ETRS89 / UTM 32N (25832), im Osten 33N (25833), ältere Pläne Gauß-Krüger (Rechtswert 7-stellig, erste Ziffer = Zone); dazu Schweiz und Österreich. Passen die Werte nicht zum System (Ziffernzahl, Zonenkennung), erscheint ein Hinweis. Steht im IFC (IfcMapConversion)."],
   sperren: ["Sperren", "Schloss zu: der Plan liegt fest und ändert sich nicht mehr; jetzt die Bohrungen ziehen. Auf dem Lageplan nur in x/y, im Längsschnitt entlang der Station – in der Höhe nur, wenn das PDF keine GOK hat."],
   deckkraft: ["Deckkraft", "Wie stark der Plan die Szene überdeckt."],
   ohne_lage: ["Ohne Lage", "Bohrungen ohne Koordinaten: mit der Maus aus der Liste auf den (gesperrten) Plan ziehen."],

@@ -132,6 +132,25 @@ def test_unterlage_mit_neuer_kalibrierung(client):
     assert client.post(f"/api/projekt/{sig}/unterlage", files={"datei": ("x.pdf", b"kein pdf", "application/pdf")}).status_code == 400
 
 
+def test_plan_ohne_koordinaten_nullpunkt_und_system_vom_plan(client):
+    """Keine Bohrung mit Koordinaten: Nullpunkt und EPSG des Viewers kommen vom kalibrierten Plan."""
+    import pymupdf
+    sig = oeffnen(client, "talheim")
+    pdf = pymupdf.open()
+    pdf.new_page(width=420 * 72 / 25.4, height=297 * 72 / 25.4).insert_text((50, 50), "Lageplan 1:1000")
+    r = client.post(f"/api/projekt/{sig}/unterlage", files={"datei": ("plan.pdf", pdf.tobytes(), "application/pdf")},
+                    data={"art": "plan", "seite": "0"})
+    assert r.status_code == 200 and r.json()["lage_modus"] == "koordinaten" and r.json()["viewer"]["epsg"] is None
+    kal = {"massstab": {"n": 1000}, "bezug": {"u": 100, "v": 100, "x": 512345.0, "y": 5403210.0}, "drehung": 180,
+           "epsg": 25832, "gesperrt": True}
+    z = aendern(client, sig, {"op": "kalibrierung", "wert": kal})["zustand"]
+    assert z["viewer"]["ursprung"] == [512300.0, 5403200.0] and z["viewer"]["epsg"] == 25832
+    erste = z["bohrungen"][0]["id"]
+    z = aendern(client, sig, {"op": "lage", "id": erste, "x": 512400.0, "y": 5403100.0})["zustand"]
+    assert z["viewer"]["ursprung"] == [512300.0, 5403200.0]                 # erste Bohrung: kein Sprung
+    assert next(b for b in z["bohrungen"] if b["id"] == erste)["epsg"] == 25832
+
+
 def test_pdf_extraktion_als_auftrag_und_quellseite(client):
     r = client.post("/api/beispiel", json={"name": "pdf"}).json()
     aid = r["auftrag"]

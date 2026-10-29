@@ -104,30 +104,74 @@ export async function viewerStarten(huelle: HTMLElement, opt: ViewerOptionen = {
     neuZeichnen(4);
   }
 
-  // Zeichnen nach Bedarf (RendererMode.MANUAL): waehrend der Bewegung ohne Kanten/Schatten (fluessig auch bei
-  // Trassen), in Ruhe mit Postproduktion; ohne Anlass nur ein Bild je Sekunde.
+  // Zeichnen nach Bedarf (RendererMode.MANUAL), ohne Anlass kein Bild. Die Postproduktion (Umgebungsverdeckung)
+  // steuern wir selbst: That Opens Wechsel im MANUAL-Modus (turnOffOnManualMode) zeichnet jedes Bild erst ohne
+  // und 50 ms spaeter mit Postproduktion - mit einem Bild je Mausbewegung wechselte das Bild staendig, der Plan
+  // flackerte (docs/16 M29). Hier: einfache Bilder nur, solange etwas laeuft (Kamera, Laden, Ziehen), danach ein
+  // Bild mit Postproduktion; im Lage-Modus nie (flacher Plan von oben). In Ruhe gleiche Lage = gleiches Bild.
   world.renderer.mode = OBC.RendererMode.MANUAL;
+  world.renderer.turnOffOnManualMode = false;
   let bildBudget = 0;
+  let schattenGewuenscht = true;                        // Einstellung "Kanten und Schatten"
+  let lageAktiv = false;
+  let unruhigBis = 0;
+  let ruheUhr = 0;
   function neuZeichnen(bilder = 3) {
     bildBudget = Math.max(bildBudget, bilder);
     world.renderer!.needsUpdate = true;
   }
+  /** Etwas bewegt sich: bis kurz danach einfache Bilder (fluessig auch bei Trassen), dann eines mit Postproduktion. */
+  function unruhig(ms = 150) {
+    unruhigBis = Math.max(unruhigBis, performance.now() + ms);
+    window.clearTimeout(ruheUhr);
+    ruheUhr = window.setTimeout(() => neuZeichnen(1), unruhigBis - performance.now() + 20);
+  }
   world.onBeforeUpdate.add(() => {
     const laedt = [...fragments.list.values()].some((m) => m.isBusy);
+    if (laedt) unruhig();
     if (bildBudget > 0 || laedt) {
       world.renderer!.needsUpdate = true;
       bildBudget = Math.max(0, bildBudget - 1);
     }
   });
-  world.camera.controls.addEventListener("update", () => neuZeichnen(2));
-  for (const art of ["pointerdown", "pointermove", "pointerup", "wheel", "dblclick", "keydown", "change"]) {
-    huelle.addEventListener(art, () => neuZeichnen(art === "pointermove" ? 1 : 6), { passive: true, capture: true });
+  // Erst unmittelbar vor dem Zeichnen entscheiden: die Kamera bewegt sich im selben Durchlauf nach world.onBeforeUpdate
+  world.renderer.onBeforeUpdate.add(() => {
+    const soll = schattenGewuenscht && !lageAktiv && performance.now() >= unruhigBis;
+    if (postproduction.enabled !== soll) postproduction.enabled = soll;
+  });
+  world.camera.controls.addEventListener("update", () => {
+    unruhig();
+    neuZeichnen(2);
+  });
+  for (const art of ["pointerdown", "pointerup", "wheel", "dblclick", "keydown", "change"]) {
+    huelle.addEventListener(art, () => neuZeichnen(6), { passive: true, capture: true });
   }
-  window.setInterval(() => neuZeichnen(1), 1000);
+  // Mausbewegung nur beim Ziehen (Bohrung, Schnittebene); sonst aendert sie das Bild nicht
+  huelle.addEventListener("pointermove", (ev) => {
+    if (!ev.buttons) return;
+    unruhig();
+    neuZeichnen(1);
+  }, { passive: true, capture: true });
 
   const { postproduction } = world.renderer;
   postproduction.enabled = true;
   postproduction.style = OBF.PostproductionAspect.COLOR_SHADOWS;
+  world.renderer.manualDefaultStyle = postproduction.style;    // kein Stilwechsel je Bild
+  verdeckungKamera();
+
+  /** three.js' GTAO kennt die Kameraart nur vom Start (PERSPECTIVE_CAMERA = 1): nach dem Wechsel auf
+   *  orthografisch rechnete es die Tiefe mit der Perspektivformel und dem negativen near (kamera.ts) - falsche
+   *  Verschattung, je nach Grafikkarte ganz schwarze Bilder (docs/16 M30). */
+  function verdeckungKamera() {
+    const ao = postproduction.aoPass as unknown as Record<string, THREE.ShaderMaterial | undefined>;
+    const perspektivisch = (world.camera.three as THREE.PerspectiveCamera).isPerspectiveCamera ? 1 : 0;
+    for (const m of [ao.gtaoMaterial, ao.depthRenderMaterial]) {
+      if (m?.defines && m.defines.PERSPECTIVE_CAMERA !== perspektivisch) {
+        m.defines.PERSPECTIVE_CAMERA = perspektivisch;
+        m.needsUpdate = true;
+      }
+    }
+  }
   postproduction.edgesPass.color = new THREE.Color(0x494b50);
   postproduction.aoPass.updateGtaoMaterial({ radius: 0.25, distanceExponent: 1, thickness: 1, scale: 1, samples: 4,
                                               distanceFallOff: 1, screenSpaceRadius: true });
@@ -733,9 +777,9 @@ export async function viewerStarten(huelle: HTMLElement, opt: ViewerOptionen = {
           <bim-checkbox label="Orbit um Mauspunkt" ?checked=${world.dynamicAnchor}
             @change=${(e: Event) => { world.dynamicAnchor = (e.target as BUI.Checkbox).checked; }}></bim-checkbox>
           ${hilfeText("Drehen um den Punkt unter der Maus statt um die Bildmitte. Doppelklick legt den Drehpunkt fest.")}
-          <bim-checkbox label="Kanten und Schatten" ?checked=${postproduction.enabled}
-            @change=${(e: Event) => { postproduction.enabled = (e.target as BUI.Checkbox).checked; }}></bim-checkbox>
-          ${hilfeText("Umrisse und Umgebungsverdeckung in Ruhe; während der Bewegung immer aus (flüssig auch bei großen Modellen).")}
+          <bim-checkbox label="Kanten und Schatten" ?checked=${schattenGewuenscht}
+            @change=${(e: Event) => { schattenGewuenscht = (e.target as BUI.Checkbox).checked; neuZeichnen(2); }}></bim-checkbox>
+          ${hilfeText("Umgebungsverdeckung in Ruhe; während der Bewegung und beim Setzen der Lage aus (flüssig, kein Flackern).")}
           <bim-dropdown label="Kameraprojektion" .value=${[world.camera.projection.current]} @change=${async (e: Event) => {
             const [p] = (e.target as BUI.Dropdown).value as string[];
             if (p) await world.camera.projection.set(p as OBC.CameraProjection);
@@ -762,6 +806,7 @@ export async function viewerStarten(huelle: HTMLElement, opt: ViewerOptionen = {
   world.camera.projection.onChanged.add(() => {
     for (const m of fragments.list.values()) m.useCamera(world.camera.three);
     postproduction.updateCamera();
+    verdeckungKamera();
     wuerfel.camera = world.camera.three;
     fragments.core.update(true);
     status.kamera = kameraInfo();
@@ -812,6 +857,7 @@ export async function viewerStarten(huelle: HTMLElement, opt: ViewerOptionen = {
       await auswahlAufheben();
     }
     highlighter.enabled = !an;
+    lageAktiv = an;                                      // Plan ohne Postproduktion (kein Flackern)
     await editor.umschalten(an);
     KAMERA.linksFrei(an ? links : 0);
     editor.setSichtbar(bohrungenAn && (nadelnVonApp || an));
@@ -820,7 +866,9 @@ export async function viewerStarten(huelle: HTMLElement, opt: ViewerOptionen = {
     if (an) {
       await world.camera.projection.set("Orthographic");
       await KAMERA.ansicht(rahmen.modus === "reihe" ? "sued" : "oben");
+      world.camera.set("Plan");                          // linke Taste verschiebt, kein Drehen: die Draufsicht bleibt
     } else {
+      world.camera.set("Orbit");
       if (kameraVorLage) {
         if (!kameraVorLage.ortho) await world.camera.projection.set("Perspective");
         await KAMERA.kameraSetzen(kameraVorLage);
@@ -903,6 +951,16 @@ export async function viewerStarten(huelle: HTMLElement, opt: ViewerOptionen = {
     nadelnVonApp = Array.isArray(a.bohrungen);
     rahmen.modus = a.modus ?? "koordinaten";
     rahmen.epsg = a.epsg ?? null;
+    if (a.ursprung && !neu && (a.ursprung[0] !== rahmen.e0 || a.ursprung[1] !== rahmen.n0)) {
+      // Nullpunkt verschoben (erste Bohrung gesetzt, Plan kalibriert): alles bekommt neue Szenenkoordinaten -
+      // die Kamera geht mit, sonst schaut sie ins Leere und Plan und Bohrungen sind weg.
+      const [dx, dz] = [rahmen.e0 - a.ursprung[0], a.ursprung[1] - rahmen.n0];
+      await KAMERA.verschieben(dx, dz);
+      for (const v of kameraVorLage ? [kameraVorLage.pos, kameraVorLage.ziel] : []) {
+        v[0] += dx;                                      // gemerkte Modellansicht ebenso
+        v[2] += dz;
+      }
+    }
     if (a.ursprung) [rahmen.e0, rahmen.n0] = a.ursprung;
     if (a.ueberhoehung && a.ueberhoehung !== letzte.ueberhoehung) rahmen.faktor = Number(a.ueberhoehung);
     const nadeln = a.bohrungen ?? [];
@@ -941,6 +999,12 @@ export async function viewerStarten(huelle: HTMLElement, opt: ViewerOptionen = {
     setzen, lageModus, ueberhoehen, fokus, meldung, groesseGeaendert, nadelWaehlen,
     ansicht: KAMERA.ansicht,
     modell: () => modell,
+    /** Einstellung "Kanten und Schatten" (Pruefungen schalten sie fuer SwiftShader ab). */
+    schatten(an: boolean) {
+      schattenGewuenscht = an;
+      einstellungenNeu();
+      neuZeichnen(2);
+    },
     /** Seitenleiste (Einheiten, Bohrungen) ein oder aus. */
     seitenleiste(an: boolean) {
       huelle.classList.toggle("zu", !an);

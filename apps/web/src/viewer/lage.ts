@@ -8,7 +8,7 @@ import * as THREE from "three";
 import * as OBC from "@thatopen/components";
 import { ausSzene, hoeheZuSzene, rahmen, zuSzene } from "./rahmen";
 import { ereignis, mitApp, type Kalibrierung, type Massstab, type Nadel, type Unterlage } from "./kanal";
-import { huelleMelden, szeneAktualisieren } from "./kamera";
+import { huelleMelden, szeneAktualisieren, verschieben } from "./kamera";
 
 type Welt = OBC.SimpleWorld<OBC.SimpleScene, OBC.OrthoPerspectiveCamera, OBC.BaseRenderer>;
 type Abbildung = (u: number, v: number) => [number, number];
@@ -103,6 +103,7 @@ export class LageEditor {
   private bild: THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial> | null = null;
   private texturUrl = "";
   private abb: Abbildung | null = null;
+  private planMitte: [number, number] | null = null;     // Weltlage der Planmitte (Kamera folgt grossen Spruengen)
   private hilfe: Hilfsmarken = {};
   private hilfeMarken: HTMLDivElement[] = [];
   private waehlen: ((p: Bildpunkt | null) => void) | null = null;
@@ -147,6 +148,7 @@ export class LageEditor {
     if (unterlage?.url !== this.unterlage?.url || JSON.stringify(unterlage?.kalibrierung) !== JSON.stringify(this.unterlage?.kalibrierung)) {
       this.entwurf = undefined;                         // gespeicherter Stand gilt
     }
+    if (unterlage?.kalibrierung?.gesperrt) this.waehlenAbbrechen();   // gesperrt: nichts mehr zu waehlen
     this.unterlageSetzen(unterlage);
     szeneAktualisieren();
     this.r.neuZeichnen();
@@ -227,7 +229,7 @@ export class LageEditor {
     }
     if (this.bild?.visible) {
       this.bild.geometry.computeBoundingBox();
-      b.union(this.bild.geometry.boundingBox!);
+      b.union(this.bild.geometry.boundingBox!.clone().translate(this.bild.position));
     }
     if (!b.isEmpty()) b.expandByScalar(rmax * 2);
     return b.isEmpty() ? null : b;
@@ -325,9 +327,15 @@ export class LageEditor {
 
   /** Start: Marke in der Szene (neu = false) oder Bohrung ohne Lage aus der Liste der App (neu = true). */
   ziehenStart(ev: PointerEvent, id: string, neu: boolean) {
-    if (ev.button !== 0 || this.waehlen) return;
+    if (ev.button !== 0) return;
     const s = this.nadeln.get(id);
     if (!s) return;
+    // Ein offenes "Punkt im Plan waehlen" blockierte jedes Ziehen, auch nach dem Sperren: aus der Liste oder auf
+    // dem gesperrten Plan gilt das Ziehen, die Wahl wird verworfen.
+    if (this.waehlen) {
+      if (!neu && !this.ziehenErlaubt()) return;
+      this.waehlenAbbrechen();
+    }
     ev.preventDefault();
     ev.stopPropagation();
     if (!this.aktiv || (!s.oben && !neu) || !this.ziehenErlaubt()) {
@@ -374,6 +382,7 @@ export class LageEditor {
     s.saeule.visible = this.sichtbar;
     if (!s.saeule.children.length) this.saeuleBauen(s);
     s.saeule.position.copy(p);
+    this.r.neuZeichnen();
     this.r.meldung(`${s.daten.code}: ${this.lageText(p)}`, 1500);
   }
 
@@ -464,6 +473,7 @@ export class LageEditor {
     }
     if (this.texturUrl !== u.url) {
       this.texturUrl = u.url;
+      this.planMitte = null;                            // neue Unterlage: die App stellt die Ansicht ein
       new THREE.TextureLoader().load(u.url, (t) => {
         t.colorSpace = THREE.SRGBColorSpace;
         t.anisotropy = this.welt.renderer!.three.capabilities.getMaxAnisotropy();
@@ -506,17 +516,37 @@ export class LageEditor {
     for (const s of this.nadeln.values()) if (s.oben) yPlan = Math.max(yPlan, s.oben.y);
     if (!Number.isFinite(yPlan)) yPlan = hoeheZuSzene(oben);
     yPlan += Math.max(0.2, this.radiusAuto * 0.5);
-    for (const [uu, vv] of ecken) {
-      const [x, y] = this.abb(uu, vv);
-      const p = u.art === "plan" ? zuSzene(x, y, 0).setY(yPlan) : zuSzene(x, 0, y).setZ(-this.schnittTiefe);
-      pos.push(p.x, p.y, p.z);
-    }
+    const punkte = ecken.map(([uu, vv]) => {
+      const [x, y] = this.abb!(uu, vv);
+      return u.art === "plan" ? zuSzene(x, y, 0).setY(yPlan) : zuSzene(x, 0, y).setZ(-this.schnittTiefe);
+    });
+    // Ecken relativ zur ersten: beim Kalibrieren kann der Plan Millionen Meter vom Nullpunkt liegen, Float32 der
+    // Grafikkarte truege dann auf 0,5 m (die Lage des Netzes rechnet three.js in doppelter Genauigkeit)
+    this.bild.position.copy(punkte[0]);
+    for (const p of punkte) pos.push(p.x - punkte[0].x, p.y - punkte[0].y, p.z - punkte[0].z);
+    this.bild.updateMatrixWorld();
     const g = this.bild.geometry;
     g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
     g.setAttribute("uv", new THREE.Float32BufferAttribute([0, 1, 1, 1, 1, 0, 0, 0], 2));
     g.setIndex([0, 3, 1, 1, 3, 2]);
     g.computeBoundingBox();
     g.computeBoundingSphere();
+    this.mitfuehren(u);
+  }
+
+  /** Springt die Unterlage beim Kalibrieren weit (Rechts-/Hochwert eingetragen), geht die Kamera mit - sonst ist
+   *  der Plan aus dem Bild und der Viewer leer. Kleine Aenderungen (Drehung, Massstab, Feinlage) bewegen sie nicht. */
+  private mitfuehren(u: Unterlage) {
+    const abb = this.abb!;
+    const m = abb(u.breite / 2, u.hoehe / 2);
+    const [a, b] = [abb(0, 0), abb(u.breite, u.hoehe)];
+    const alt = this.planMitte;
+    this.planMitte = m;
+    if (!alt || !this.aktiv || !this.bild?.visible) return;
+    const [de, dn] = [m[0] - alt[0], m[1] - alt[1]];
+    if (Math.hypot(de, dn) <= Math.hypot(b[0] - a[0], b[1] - a[1]) / 2) return;
+    if (u.art === "plan") void verschieben(de, -dn);
+    else void verschieben(de, 0, dn * rahmen.faktor);
   }
 
   /** Laengsschnitt hinter das Modell legen (Modellbreite quer zur Reihe). */
@@ -610,7 +640,7 @@ export class LageEditor {
     const a = new THREE.Vector3().fromBufferAttribute(pos, 0);
     const b = new THREE.Vector3().fromBufferAttribute(pos, 1).sub(a);
     const d = new THREE.Vector3().fromBufferAttribute(pos, 3).sub(a);
-    return a.addScaledVector(b, u / this.unterlage.breite).addScaledVector(d, v / this.unterlage.hoehe);
+    return a.add(this.bild.position).addScaledVector(b, u / this.unterlage.breite).addScaledVector(d, v / this.unterlage.hoehe);
   }
 
   /** Bildpixel -> Bildschirm (fuer Pruefungen und Hilfen). */
