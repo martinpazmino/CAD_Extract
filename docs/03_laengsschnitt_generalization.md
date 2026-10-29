@@ -1,78 +1,79 @@
 ---
-title: "Längsschnitt: ejes, túnel y geología sin constantes"
+title: "Längsschnitt: axes, tunnel and geology without constants"
 date: 2026-10-23
-tags: [geo_agent, extraccion, laengsschnitt, tunel, generalizacion]
-aliases: [Längsschnitt v2, Generalización Längsschnitt]
+tags: [geo_agent, extraction, laengsschnitt, tunnel, generalization]
+aliases: [Längsschnitt v2, Längsschnitt generalization]
 ---
 
-# Längsschnitt: ejes, túnel y geología sin constantes
+# Längsschnitt: axes, tunnel and geology without constants
 
-**Conclusión:** el método actual (regresiones de ejes, máscara del túnel, validación con `TS=`)
-es correcto; lo que hay que generalizar es **cómo se encuentran** las etiquetas, el túnel y la
-geología. Además conviene pasar de raster a **polígonos vectoriales**: son más exactos, más
-rápidos y producen directamente el `IfcGeoslice` del modelo.
+**Conclusion:** the current method (axis regressions, tunnel mask, validation with `TS=`) is
+correct; what has to be generalised is **how** the labels, the tunnel and the geology are found. It
+is also worth moving from raster to **vector polygons**: they are more exact, faster, and produce
+the model's `IfcGeoslice` directly.
 
-**Estado:** diseño. No probado todavía con PDFs (el spike cubre el Bohrprofil); los supuestos que
-reemplaza están en [01 §2](01_diagnostico_layout_fijo.md#längsschnitt-geo_agentlaengsschnittpy).
+**Status:** design. Not yet tested with PDFs (the spike covers the Bohrprofil); the assumptions it
+replaces are listed in [01 §2](01_diagnosis_fixed_layout.md#längsschnitt-geo_agentlaengsschnittpy).
 
-## 1. Eje X: estaciones
+## 1. X axis: stations
 
-- Regex con variantes: `0+100`, `0+100.000`, `km 1+250,000`, `1+250` (km con 1–2 dígitos).
-- Las etiquetas de estación forman una **fila**: agrupar candidatos por `y` (tolerancia ~3 pt),
-  quedarse con la fila de más elementos cuyo valor crece con `x`; varias filas → la más larga.
-- Ajuste `TM = a·x + b` con residuos; residuo > 0,5 m → etiqueta mal leída o de otra fila.
+- Regex with variants: `0+100`, `0+100.000`, `km 1+250,000`, `1+250` (km with 1–2 digits).
+- The station labels form a **row**: group candidates by `y` (tolerance ~3 pt), keep the row with
+  the most elements whose value grows with `x`; several rows → the longest one.
+- Fit `TM = a·x + b` with residuals; residual > 0.5 m → label misread or from another row.
 
-## 2. Eje Y: NHN
+## 2. Y axis: NHN
 
-- Candidatos: números `±dd.dd` / `±dd,dd` alineados en una **columna** (mismo borde derecho)
-  con espaciado constante y correlación |r| > 0,99 con `y`. Puede haber dos ejes (izquierda y
-  derecha): ambos deben dar la misma recta.
-- La razón entre escalas `a_y / a_x` es la **Überhöhung** (exageración vertical); si el plano la
-  rotula (`Überhöhung 1:10`), se valida.
+- Candidates: numbers `±dd.dd` / `±dd,dd` aligned in a **column** (same right edge) with constant
+  spacing and a correlation |r| > 0.99 with `y`. There can be two axes (left and right): both must
+  give the same line.
+- The ratio between the scales `a_y / a_x` is the **Überhöhung** (vertical exaggeration); if the
+  drawing labels it (`Überhöhung 1:10`), it is validated.
 
-## 3. Túnel
+## 3. Tunnel
 
-Orden de preferencia:
-1. **Capa OCG** del CAD (`get_drawings()` trae `layer` por path — [verificado](ARQUITECTURA_BAUGRUNDMODELL.md#62-primitivas-una-sola-vez-por-documento-cacheadas)).
-2. **Geometría**: polígonos largos en `x` cuyo espesor vertical es casi constante y coincide con
-   `Ø / escala_y`; el diámetro sale del texto (`Ø`, `D=`, `Da=`).
-3. **Un clic del usuario** en la UI: el perfil guarda la capa/color/estilo elegido.
-Validación (ya existe en v1): Sohle detectada = etiquetas `TS=…m`.
+Order of preference:
+1. **OCG layer** of the CAD drawing (`get_drawings()` returns `layer` per path — [verified](ARCHITECTURE_BAUGRUNDMODELL.md#62-primitives-once-per-document-cached)).
+2. **Geometry**: polygons that are long in `x`, whose vertical thickness is almost constant and
+   matches `Ø / scale_y`; the diameter comes from the text (`Ø`, `D=`, `Da=`).
+3. **One click by the user** in the UI: the profile stores the chosen layer/colour/style.
 
-## 4. Geología
+Validation (already in v1): detected Sohle = `TS=…m` labels.
 
-- **Colores desde la leyenda del propio Längsschnitt**: cada muestra (rectángulo relleno) con
-  su nombre a la derecha da el mapa color → Bodenart. Sustituye `DEFAULT_COLOR_MAP`
-  (`geo_agent/laengsschnitt.py:28-33`). Mismo patrón que las muestras de Schraffur
+## 4. Geology
+
+- **Colours from the legend of the Längsschnitt itself**: each sample (filled rectangle) with its
+  name to the right gives the colour → Bodenart map. It replaces `DEFAULT_COLOR_MAP`
+  (`geo_agent/laengsschnitt.py:28-33`). Same pattern as the Schraffur samples
   ([04](04_schraffur_din4023.md)).
-- **Polígonos vectoriales** en lugar del raster de toda la página: cada path con relleno de
-  geología → `shapely.Polygon` en coordenadas `(estación, NHN)` vía las regresiones. Resultado:
-  la sección geológica interpretada (= `IfcGeoslice`) y sus **interfaces** entre sondeos, que
-  alimentan el modelo 3D ([arquitectura §6.6](ARQUITECTURA_BAUGRUNDMODELL.md#66-längsschnitt-v2), §7.2).
-- La composición en el túnel se calcula intersectando el polígono del túnel con los polígonos
-  geológicos por estación, en vez de muestrear píxeles.
+- **Vector polygons** instead of the raster of the whole page: each path with a geology fill →
+  `shapely.Polygon` in `(station, NHN)` coordinates via the regressions. Result: the interpreted
+  geological section (= `IfcGeoslice`) and its **interfaces** between Bohrungen, which feed the 3D
+  model ([architecture §6.6](ARCHITECTURE_BAUGRUNDMODELL.md#66-längsschnitt-v2), §7.2).
+- The composition in the tunnel is computed by intersecting the tunnel polygon with the geological
+  polygons per station, instead of sampling pixels.
 
-## 5. Sondeos en la sección
+## 5. Bohrungen in the section
 
-Los Längsschnitte dibujan mini-columnas de los sondeos. El **mismo detector de columnas** del
-Bohrprofil ([02 §1](02_bohrprofil_generalizacion.md#1-columnas-por-geometría)) las encuentra; con
-la regresión del eje X se obtiene su estación. Validaciones cruzadas: GOK y límites deben
-coincidir con el Bohrprofil del mismo ID.
+Längsschnitte draw mini-columns of the Bohrungen. The **same column detector** as for the
+Bohrprofil ([02 §1](02_bohrprofil_generalization.md#1-columns-from-geometry)) finds them; the X-axis
+regression gives their station. Cross-checks: GOK and boundaries must match the Bohrprofil with the
+same ID.
 
-## 6. Terreno y agua
+## 6. Terrain and water
 
-- GOK del terreno: la polilínea del terreno (capa/estilo propio) en lugar del primer píxel de
-  color geológico (`geo_agent/laengsschnitt.py:242`).
-- Líneas de agua (HGW, MGW, Bemessungswasserstand, normalmente azules y discontinuas) →
-  polilíneas en `(estación, NHN)` → [06](06_grundwasser.md).
+- Terrain GOK: the terrain polyline (its own layer/style) instead of the first pixel of geology
+  colour (`geo_agent/laengsschnitt.py:242`).
+- Water lines (HGW, MGW, Bemessungswasserstand, usually blue and dashed) → polylines in
+  `(station, NHN)` → [06](06_grundwasser.md).
 
-## 7. Otros arreglos
+## 7. Other fixes
 
-- Recorrer todas las páginas, no sólo `doc[0]`; región útil = marco del dibujo, no `160…1130 pt`.
-- Eliminar la caché global `_NHN_FIT` (`geo_agent/laengsschnitt.py:419`): pasar la regresión al
-  generador del Prüfbild.
-- Cachear las primitivas (> 150 000 paths) una vez por documento.
+- Go through all pages, not only `doc[0]`; the useful region is the drawing frame, not `160…1130 pt`.
+- Remove the global cache `_NHN_FIT` (`geo_agent/laengsschnitt.py:419`): pass the regression to the
+  generator of the Prüfbild.
+- Cache the primitives (> 150,000 paths) once per document.
 
-Up: [Índice](README.md)
+Up: [Index](README.md)
 
-Related: [01 Diagnóstico](01_diagnostico_layout_fijo.md) · [02 Bohrprofil](02_bohrprofil_generalizacion.md) · [04 Schraffur](04_schraffur_din4023.md) · [06 Grundwasser](06_grundwasser.md) · [Arquitectura](ARQUITECTURA_BAUGRUNDMODELL.md)
+Related: [01 Diagnosis](01_diagnosis_fixed_layout.md) · [02 Bohrprofil](02_bohrprofil_generalization.md) · [04 Schraffur](04_schraffur_din4023.md) · [06 Grundwasser](06_grundwasser.md) · [Architecture](ARCHITECTURE_BAUGRUNDMODELL.md)

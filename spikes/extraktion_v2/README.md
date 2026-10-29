@@ -1,38 +1,38 @@
 ---
-title: "Spike: extracción v2 sobre PDFs sintéticos"
+title: "Spike: extraction v2 on synthetic PDFs"
 date: 2026-10-23
-tags: [spike, extraccion, benchmark]
-aliases: [Spike extracción v2]
+tags: [spike, extraction, benchmark]
+aliases: [Extraction v2 spike]
 ---
 
-# Spike: extracción v2 sobre PDFs sintéticos
+# Spike: extraction v2 on synthetic PDFs
 
-Prueba de concepto de [02 Bohrprofil independiente del layout](../../docs/02_bohrprofil_generalizacion.md)
-y de la recuperación de Schraffur, Grundwasser, Sondierungen y coordenadas. **No es código de
-producción**: los umbrales están elegidos para los PDFs sintéticos.
+Proof of concept of [02 Layout-independent Bohrprofil](../../docs/02_bohrprofil_generalization.md)
+and of recovering Schraffur, Grundwasser, Sondierungen and coordinates. **It is not production
+code**: the thresholds are chosen for the synthetic PDFs.
 
-| Archivo | Qué hace |
+| File | What it does |
 |---|---|
-| [`synth_bohrprofil.py`](synth_bohrprofil.py) | Genera 6 layouts DIN 4023 simplificados (A, A2, A3, A4, A5, B) + JSON con la verdad |
-| [`prototyp_v2.py`](prototyp_v2.py) | Extractor v2: columnas, cabecera/GOK, escala por regresión, descripción, Schraffur, agua, DPH, coordenadas |
-| [`prototyp_v3.py`](prototyp_v3.py) | Iteración tras los PDFs reales: segmentos, rotación, escala por confirmación de etiquetas, convención techo/base, filtros de tabla y de ejes, adaptador raster, abreviaturas DIN 4023, Schichtenverzeichnis como segunda fuente ([15](../../docs/15_resultados_pdfs_reales.md)); sigue acertando los sintéticos |
-| [`prototyp_v4.py`](prototyp_v4.py) | Algoritmo por etapas E0–E9 ([17](../../docs/17_algoritmo_extraccion.md)): clase de página, OCR, cabeceras genéricas, etiquetas como valor final, modo "etiqueta primero", tablas de capas, Schichtenverzeichnis, coordenadas, confianza y JSON canónico; reglas conmutables en `RULES` |
-| [`stress_cases.py`](stress_cases.py) | 17 casos de estrés, uno por lección ([16](../../docs/16_lecciones_aprendidas.md)), con verdad |
-| [`run_geo_agent_v1.py`](run_geo_agent_v1.py) | Ejecuta el parser actual (`geo_agent`) sobre los layouts |
-| [`run_prototyp_v2.py`](run_prototyp_v2.py) | Ejecuta el prototipo v2 y lo compara con la verdad |
-| [`score_swissgeol.py`](score_swissgeol.py) | Puntúa las predicciones de swissgeol con la misma métrica |
-| [`eval_utils.py`](eval_utils.py) | Métrica común (límites ±2 cm, Bodenart, texto) |
+| [`synth_bohrprofil.py`](synth_bohrprofil.py) | Generates 6 simplified DIN 4023 layouts (A, A2, A3, A4, A5, B) + JSON with the ground truth |
+| [`prototyp_v2.py`](prototyp_v2.py) | Extractor v2: columns, header/GOK, scale by regression, description, Schraffur, water, DPH, coordinates |
+| [`prototyp_v3.py`](prototyp_v3.py) | Iteration after the real PDFs: segments, rotation, scale by label confirmation, top/base convention, table and axis filters, raster adapter, DIN 4023 abbreviations, Schichtenverzeichnis as a second source ([15](../../docs/15_results_real_pdfs.md)); still gets the synthetic ones right |
+| [`prototyp_v4.py`](prototyp_v4.py) | Algorithm by stages E0–E9 ([17](../../docs/17_extraction_algorithm.md)): page class, OCR, generic headers, labels as the final value, "label first" mode, Schicht tables, Schichtenverzeichnis, coordinates, confidence and canonical JSON; switchable rules in `RULES` |
+| [`stress_cases.py`](stress_cases.py) | 17 stress cases, one per lesson ([16](../../docs/16_lessons_learned.md)), with ground truth |
+| [`run_geo_agent_v1.py`](run_geo_agent_v1.py) | Runs the current parser (`geo_agent`) on the layouts |
+| [`run_prototyp_v2.py`](run_prototyp_v2.py) | Runs prototype v2 and compares it with the ground truth |
+| [`score_swissgeol.py`](score_swissgeol.py) | Scores swissgeol's predictions with the same metric |
+| [`eval_utils.py`](eval_utils.py) | Common metric (boundaries ±2 cm, Bodenart, text) |
 
-## Ejecutar
+## Run
 
 ```bash
-pip install pymupdf numpy openpyxl      # mismas dependencias que geo_agent
+pip install pymupdf numpy openpyxl      # same dependencies as geo_agent
 python synth_bohrprofil.py /tmp/synth
 python run_geo_agent_v1.py /tmp/synth
 python run_prototyp_v2.py  /tmp/synth
 ```
 
-swissgeol (opcional, en un entorno **separado**: fija PyMuPDF 1.26.3 y trae OpenCV/AWS):
+swissgeol (optional, in a **separate** environment: it pins PyMuPDF 1.26.3 and brings OpenCV/AWS):
 
 ```bash
 python -m venv sgvenv && sgvenv/bin/pip install git+https://github.com/swisstopo/swissgeol-boreholes-dataextraction
@@ -43,18 +43,18 @@ done
 python score_swissgeol.py /tmp/synth .
 ```
 
-## Resultados (2026-10-23)
+## Results (2026-10-23)
 
-Tabla completa e interpretación: [09 Validación](../../docs/09_validacion_benchmark.md#1-resultados-actuales-spike-pdfs-sintéticos).
+Full table and interpretation: [09 Validation](../../docs/09_validation_benchmark.md#1-current-results-spike-synthetic-pdfs).
 
-- v1: correcto en A/A2; A3 6/18 Bodenarten (7 erróneas en verde); A4 y B 0 %; no detecta la
-  contradicción de A5.
-- v2: 102/102 capas, Schraffur 101/102 (la restante es la contradicción de A5, reportada como
-  issue), GOK/agua/coordenadas 17/17, DPH error máx. 0,4 N10, escala 1:100/1:50 detectada.
-- swissgeol (sin cambios, commit `776ea39`): límites y descripciones 18/18 en A–A3, 12/18 en A4;
-  en B datos correctos bajo nombres equivocados; 0 agua, 0 cota, 0 coordenadas; capas falsas desde
-  la leyenda.
+- v1: correct on A/A2; A3 6/18 Bodenarten (7 wrong ones in green); A4 and B 0 %; it does not detect
+  the contradiction of A5.
+- v2: 102/102 Schichten, Schraffur 101/102 (the remaining one is the contradiction of A5, reported as
+  an issue), GOK/water/coordinates 17/17, DPH max. error 0.4 N10, scale 1:100/1:50 detected.
+- swissgeol (unchanged, commit `776ea39`): boundaries and descriptions 18/18 on A–A3, 12/18 on A4; on
+  B correct data under wrong names; 0 water, 0 elevations, 0 coordinates; false Schichten from the
+  legend.
 
-Up: [Índice de documentación](../../docs/README.md)
+Up: [Documentation index](../../docs/README.md)
 
-Related: [01 Diagnóstico](../../docs/01_diagnostico_layout_fijo.md) · [08 swissgeol](../../docs/08_swissgeol_reutilizacion.md) · [09 Validación](../../docs/09_validacion_benchmark.md)
+Related: [01 Diagnosis](../../docs/01_diagnosis_fixed_layout.md) · [08 swissgeol](../../docs/08_swissgeol_reuse.md) · [09 Validation](../../docs/09_validation_benchmark.md)

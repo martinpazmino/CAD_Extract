@@ -1,241 +1,247 @@
 ---
-title: "20 Visor con controles de TwinBimM, Lage sobre plano y Prüfstand"
+title: "20 Viewer with TwinBimM controls, Lage on the plan and Prüfstand"
 date: 2026-10-28
-tags: [visor, thatopen, streamlit, lage, pruefung, baugrundmodell]
-aliases: [Lage-Editor, Prüfstand, Visor v3]
+tags: [viewer, thatopen, streamlit, lage, pruefung, baugrundmodell]
+aliases: [Lage editor, Prüfstand, Viewer v3]
 ---
 
-# 20 Visor con controles de TwinBimM, Lage sobre plano y Prüfstand
+# 20 Viewer with TwinBimM controls, Lage on the plan and Prüfstand
 
 > [!NOTE]
-> Actualizado en [21](21_app_schritte_normen.md):
-> - La app ya no es Streamlit.
-> - Los avisos son por capas sin clasificar.
-> - La **calibración** es escala + punto de referencia + candado (las de dos puntos se convierten).
-> - La barra del visor es sólo de iconos.
+> Updated in [21](21_app_schritte_normen.md):
+> - The app is no longer Streamlit.
+> - The warnings are for unclassified Schichten.
+> - The **calibration** is scale + reference point + lock (two-point calibrations are converted).
+> - The viewer bar has icons only.
 >
-> Los controles TwinBimM, la cámara > 5 km y el Prüfstand de esta nota siguen igual.
+> The TwinBimM controls, the camera for > 5 km and the Prüfstand of this note stay the same.
 
-Ronda pedida por el usuario sobre la [app v2](19_app_v2.md): replicar los controles de su visor
-**TwinBimM** (That Open), corregir los problemas al mover la geometría, preparar todo para
-**Baugrundmodelle de más de 5 km**, colocar los sondeos **a mano sobre un PDF del plano** (vista de
-arriba o lateral) antes de modelar, **distancias propias en la fila** (BK1 → BK2 10 m, BK2 → BK3
-15 m), **ver las tablas antes de generar** el modelo, que el modelo **se ajuste solo** a cada
-cambio y poder **"einchecken"** el estado de revisión de la confianza.
+A round requested by the user on top of [app v2](19_app_v2.md): replicate the controls of their
+**TwinBimM** viewer (That Open), fix the problems when moving the geometry, get everything ready for
+**Baugrundmodelle of more than 5 km**, place the Bohrungen **by hand on a PDF of the plan** (top or
+side view) before modelling, **own distances in the row** (BK1 → BK2 10 m, BK2 → BK3 15 m), **see the
+tables before generating** the model, have the model **follow every change by itself**, and be able
+to **"einchecken"** the review state of the confidence.
 
 ```
-PDF ──► extracción ──► tablas (Bohrungen · Schichten · Lage & Unterlage)  ◄─┐
-                          │  correcciones, geprüft, distancias, plano PDF     │ eventos del visor
+PDF ──► extraction ──► tables (Bohrungen · Schichten · Lage & Unterlage)  ◄─┐
+                          │  corrections, geprüft, distances, plan PDF        │ viewer events
                           ▼                                                   │ (lage, station, gok,
-            [Baugrundmodell erzeugen] ──► modelo ──► visor That Open ─────────┘  kalibrierung, geprueft)
+            [Baugrundmodell erzeugen] ──► model ──► That Open viewer ─────────┘  kalibrierung, geprueft)
                           ▲                     │
-                          └── cada cambio ◄─────┘   Prüfstand ──► Einchecken ──► IFC con Pruefstand
+                          └── every change ◄────┘   Prüfstand ──► Einchecken ──► IFC with Pruefstand
 ```
 
-![Trasse sintética de 6 km en el visor: unidad seleccionada en verde W&F, propiedades, coordenadas reales](img/20_visor_trasse_6km.jpg)
+![Synthetic 6 km Trasse in the viewer: Einheit selected in W&F green, properties, real coordinates](img/20_visor_trasse_6km.jpg)
 
-## 1. Controles del visor (como TwinBimM)
+## 1. Viewer controls (like TwinBimM)
 
-Se leyó el código del visor del usuario (repositorio `TwinBimM-`, `frontend/src`) y se replicó lo que
-aplica a un Baugrundmodell, con la misma librería (`@thatopen/ui` 3.4, `@thatopen/ui-obc` 3.4,
+The code of the user's viewer (repository `TwinBimM-`, `frontend/src`) was read and what applies to a
+Baugrundmodell was replicated, with the same library (`@thatopen/ui` 3.4, `@thatopen/ui-obc` 3.4,
 `@thatopen/components-front` 3.6):
 
-| TwinBimM | Aquí | Nota |
+| TwinBimM | Here | Note |
 |---|---|---|
-| Tema oscuro BUI con colores W&F (`--wf-blue`, `--wf-green`) | igual | `html.bim-ui-dark`, fondo `#1a1d23` |
-| `PostproductionRenderer` (COLOR_SHADOWS, AO, aristas `#494b50`) | igual | **en movimiento sin sombras**, al parar imagen completa (§2) |
-| `bim-view-cube` arriba a la derecha | igual, caras OBEN/UNTEN/SÜD/NORD/OST/WEST | encuadra **toda la escena**, no el origen |
-| Barra inferior *Sichtbarkeit*: Alle anzeigen, Transparenz | igual (la transparencia conserva los colores de las unidades) | |
-| Barra inferior *Auswahl*: Fokus, Ausblenden, Isolieren, Einfärben | igual (`Highlighter` verde `#a2c513`, `Hider`) | |
-| Engranaje: Raster, Kameraprojektion | igual + *Orbit um Mauspunkt* + *Kanten und Schatten* | |
-| `⌖ Koord.` con HUD abajo a la izquierda | igual, pero en **Rechtswert / Hochwert / m NHN** (o estación) | |
-| Supr borra el plano de corte bajo el ratón | igual | |
-| — | *Ansicht* (Iso, Oben, Süd, Überhöhung 1–20×), *Schnitt* (O–W, N–S, doble clic, borrar), *Lage* (editor, §3) | propios del Baugrundmodell |
-| Panel lateral con modelos | panel *Baugrundmodell*: modelo, unidades (visibilidad, ◎ sólo esta), sondeos con estado de revisión, avisos | |
+| Dark BUI theme with W&F colours (`--wf-blue`, `--wf-green`) | same | `html.bim-ui-dark`, background `#1a1d23` |
+| `PostproductionRenderer` (COLOR_SHADOWS, AO, edges `#494b50`) | same | **no shadows while moving**, full image when it stops (§2) |
+| `bim-view-cube` at the top right | same, faces OBEN/UNTEN/SÜD/NORD/OST/WEST | frames **the whole scene**, not the origin |
+| Bottom bar *Sichtbarkeit*: Alle anzeigen, Transparenz | same (transparency keeps the colours of the Einheiten) | |
+| Bottom bar *Auswahl*: Fokus, Ausblenden, Isolieren, Einfärben | same (`Highlighter` green `#a2c513`, `Hider`) | |
+| Gear: Raster, Kameraprojektion | same + *Orbit um Mauspunkt* + *Kanten und Schatten* | |
+| `⌖ Koord.` with a HUD at the bottom left | same, but in **Rechtswert / Hochwert / m NHN** (or station) | |
+| Del deletes the clipping plane under the mouse | same | |
+| — | *Ansicht* (Iso, Oben, Süd, Überhöhung 1–20×), *Schnitt* (W–E, N–S, double click, delete), *Lage* (editor, §3) | specific to the Baugrundmodell |
+| Side panel with models | *Baugrundmodell* panel: model, Einheiten (visibility, ◎ only this one), Bohrungen with review state, warnings | |
 
-Los iconos se empaquetan sin red (`scripts/vendor.mjs` copia del paquete `@iconify-json/mdi` sólo
-los que usa `src/`): BUI los pediría si no a `api.iconify.design`, y en la red de la empresa puede no
-haber salida. Con poco ancho (columna de Streamlit) la barra muestra sólo iconos con tooltip.
+The icons are bundled without network (`scripts/vendor.mjs` copies from the `@iconify-json/mdi`
+package only those that `src/` uses): BUI would otherwise request them from `api.iconify.design`, and
+the company network may have no way out. With little width (a Streamlit column) the bar shows icons
+only, with tooltips.
 
-## 2. Mover la geometría y modelos de más de 5 km
+## 2. Moving the geometry and models over 5 km
 
-Los "problemas al mover la geometría" tenían tres causas, ninguna en los controles en sí:
+The "problems when moving the geometry" had three causes, none in the controls themselves:
 
-1. **El IFC declaraba milímetros**: `ifcopenshell.api.unit.assign_unit()` sin argumentos pone
-   *MILLIMETRE*, pero el modelador escribe metros. Todo visor mostraba el modelo **1000 veces más
-   pequeño** (una trasse de 6 km medía 6 m) y la georreferencia de `IfcMapConversion` quedaba mal.
-   Con la cámara de That Open (distancia mínima 6 m, near 1 m) se navegaba "dentro" del modelo.
-   Ahora la unidad es METRE explícita y una prueba lo exige (`calculate_unit_scale == 1`).
-2. **near/far fijos** (perspectiva 1 / 1000 m, ortográfica 0,1 / 1000 m a 200 m del objetivo): todo
-   lo que quedaba a más de 1 km desaparecía. `kamera.ts` los recalcula en cada movimiento con el
-   tamaño de la escena y la distancia (near = distancia/1000, far = distancia + 2 radios; en
-   ortográfica near negativo).
-3. **Raster y vistas fijos**: la rejilla crece con la escena (1 m … 100 m), el ViewCube y las vistas
-   encuadran la escena entera y el doble clic fija el punto de giro donde se pulsa.
+1. **The IFC declared millimetres**: `ifcopenshell.api.unit.assign_unit()` without arguments sets
+   *MILLIMETRE*, but the modeler writes metres. Every viewer showed the model **1000 times smaller**
+   (a 6 km Trasse measured 6 m) and the georeferencing of `IfcMapConversion` was wrong. With That
+   Open's camera (minimum distance 6 m, near 1 m) one navigated "inside" the model. Now the unit is
+   an explicit METRE and a test requires it (`calculate_unit_scale == 1`).
+2. **Fixed near/far** (perspective 1 / 1000 m, orthographic 0.1 / 1000 m at 200 m from the target):
+   everything more than 1 km away disappeared. `kamera.ts` recomputes them on every move from the
+   size of the scene and the distance (near = distance/1000, far = distance + 2 radii; in
+   orthographic a negative near).
+3. **Fixed grid and views**: the grid grows with the scene (1 m … 100 m), the ViewCube and the views
+   frame the whole scene and a double click sets the orbit point where one clicks.
 
-Un cuarto problema sólo aparecía al abrir la app: el primer encuadre llegaba con el iframe aún a 0 px
-de alto y dejaba la cámara en NaN (visor vacío). Ahora el encuadre espera a que el lienzo tenga
-tamaño y una cámara no finita se repara sola ([M25](16_lecciones_aprendidas.md#m-modelo-ifc-y-that-open)).
+A fourth problem only appeared when opening the app: the first framing arrived with the iframe still
+0 px high and left the camera at NaN (empty viewer). Now the framing waits until the canvas has a size
+and a non-finite camera repairs itself ([M25](16_lessons_learned.md#m-model-ifc-and-that-open)).
 
-Además el visor **dibuja bajo demanda** (`RendererMode.MANUAL`): mientras la cámara se mueve sin
-posproducción (fluido también con 20 000 nodos por superficie), 50 ms después de parar una imagen con
-sombras y aristas, en reposo un fotograma por segundo. En portátiles ahorra GPU y batería.
+In addition the viewer **draws on demand** (`RendererMode.MANUAL`): while the camera moves, without
+postproduction (smooth even with 20,000 nodes per surface); 50 ms after it stops, an image with
+shadows and edges; at rest, one frame per second. On laptops it saves GPU and battery.
 
-Prueba con la **trasse sintética de 6 km** (51 sondeos, `synthetisch.trasse`, ahora también como
-[ejemplo](../data/beispiele/README.md)): carga, far 24,6 km > 6,1 km de longitud, acercarse a 2 m
-sin recortes (near 0,02 m), coordenadas del HUD en EPSG:25832.
+Test with the **synthetic 6 km Trasse** (51 Bohrungen, `synthetisch.trasse`, now also an
+[example](../data/beispiele/README.md)): loading, far 24.6 km > 6.1 km length, getting as close as
+2 m without clipping (near 0.02 m), HUD coordinates in EPSG:25832.
 
-**Delimitación del modelo** (*Modellgrenze und Raster* en la barra lateral): el modelo ocupa la
-envolvente convexa de los sondeos + un buffer. Automático: medio espaciado entre sondeos (5–100 m);
-a mano hasta 5 km. La malla se limita a 30 000 nodos también con un raster puesto a mano: si no cabe,
-se hace más gruesa y se avisa (prueba `test_grosse_modellgrenze_von_hand`).
+**Model boundary** (*Modellgrenze und Raster* in the sidebar): the model covers the convex hull of
+the Bohrungen + a buffer. Automatic: half the spacing between Bohrungen (5–100 m); by hand up to 5 km.
+The mesh is limited to 30,000 nodes also with a grid set by hand: if it does not fit, it becomes
+coarser and a warning appears (test `test_grosse_modellgrenze_von_hand`).
 
-## 3. Lage: sondeos sobre el plano antes de modelar
+## 3. Lage: Bohrungen on the plan before modelling
 
-![Lageplan sintético 1:500 girado 10°, calibrado con B 1 y B 11; B 6 y BS 9 arrastrados desde la lista](img/20_lageplan_kalibriert.jpg)
+![Synthetic Lageplan 1:500 rotated by 10°, calibrated with B 1 and B 11; B 6 and BS 9 dragged from the list](img/20_lageplan_kalibriert.jpg)
 
-**Unterlage.** En la pestaña *Lage & Unterlage* se sube el PDF del plano y se elige la vista:
-*Lageplan (Draufsicht)* o *Längsschnitt (Seitenansicht)* y la página. PyMuPDF la convierte en imagen
-(≤ 6000 px, ≤ 300 dpi) y el visor la pone en la escena: el Lageplan horizontal sobre los sondeos, el
-Längsschnitt vertical detrás de la fila. *Im Viewer bearbeiten* abre el modo Lage: vista desde arriba
-(o desde el sur) ortográfica, encuadrada a la derecha del panel.
+**Unterlage.** In the *Lage & Unterlage* tab the PDF of the plan is uploaded and the view chosen:
+*Lageplan (Draufsicht)* or *Längsschnitt (Seitenansicht)*, and the page. PyMuPDF turns it into an
+image (≤ 6000 px, ≤ 300 dpi) and the viewer places it in the scene: the Lageplan horizontally over the
+Bohrungen, the Längsschnitt vertically behind the row. *Im Viewer bearbeiten* opens the Lage mode: an
+orthographic view from above (or from the south), framed to the right of the panel.
 
-**Calibrar con dos puntos de paso.** *Punkt 1* → clic en el plano → coordenadas a mano o *Bohrung*
-(toma las de un sondeo con coordenadas del PDF o de la tabla). Igual con el punto 2 y *Kalibrierung
-übernehmen*.
+**Calibrating with two control points.** *Punkt 1* → click on the plan → coordinates by hand or
+*Bohrung* (takes those of a Bohrung with coordinates from the PDF or the table). The same with point
+2 and *Kalibrierung übernehmen*.
 
-- Lageplan: **semejanza** (escala, giro, traslación) con números complejos, `w = A·q + B`,
-  `q = u − i·v` (las filas de la imagen bajan). Se muestra escala y giro: *1:500 · Drehung 10,0°*.
-- Längsschnitt: **afín por ejes** con escalas propias en estación y altura: *Länge 1:500 · Höhe 1:100
-  (Überhöhung 5,0×)*; la exageración del dibujo se deshace, la del visor es aparte.
-- Sin calibrar el plano se coloca a 1:1000 (y 1:100 en altura) junto a los sondeos, para empezar.
+- Lageplan: **similarity** (scale, rotation, translation) with complex numbers, `w = A·q + B`,
+  `q = u − i·v` (the image rows go down). Scale and rotation are shown: *1:500 · Drehung 10,0°*.
+- Längsschnitt: **affine by axes** with separate scales for station and height: *Länge 1:500 · Höhe
+  1:100 (Überhöhung 5,0×)*; the drawing's exaggeration is undone, the viewer's is separate.
+- Uncalibrated, the plan is placed at 1:1000 (and 1:100 in height) next to the Bohrungen, to get
+  started.
 
-**Mover sondeos.** Cada sondeo es una chincheta (columna con los colores de sus capas + marca con el
-código y el estado: verde revisado, naranja confianza < 0,6, gris fuera del modelo). En modo Lage:
+**Moving Bohrungen.** Each Bohrung is a pin (a column with the colours of its Schichten + a mark with
+the code and the state: green reviewed, orange confidence < 0.6, grey outside the model). In Lage
+mode:
 
-- Lageplan: arrastrar la marca → Rechts-/Hochwert en el sistema del plano (con EPSG si se indicó).
-- Längsschnitt: arrastrar a lo largo de la fila → **estación**; con Mayús → **cota de la boca (GOK)**.
-- Sondeos **sin posición** aparecen en una lista (*Ohne Lage*) y se arrastran a su sitio.
+- Lageplan: drag the mark → Rechts-/Hochwert in the system of the plan (with EPSG if given).
+- Längsschnitt: drag along the row → **station**; with Shift → **collar elevation (GOK)**.
+- Bohrungen **without a position** appear in a list (*Ohne Lage*) and are dragged to their place.
 
-Cada cambio va a Python como evento y queda marcado: `coord_source = "Plan (kalibriert)"`,
-`"manuell (Viewer)"` o `"Reihe (Station im Schnitt gesetzt)"`; la GOK como `gok_source = manuell`.
+Every change goes to Python as an event and is marked: `coord_source = "Plan (kalibriert)"`,
+`"manuell (Viewer)"` or `"Reihe (Station im Schnitt gesetzt)"`; the GOK as `gok_source = manuell`.
 
-**Precisión medida** (`apps/web/scripts/check.mjs` con [`scripts/testplan.py`](../scripts/testplan.py),
-planos sintéticos con verdad conocida, renderizados por la misma ruta que la app):
+**Measured precision** (`apps/web/scripts/check.mjs` with [`scripts/testplan.py`](../scripts/testplan.py),
+synthetic plans with known ground truth, rendered by the same route as the app):
 
-| Prueba | Resultado |
+| Test | Result |
 |---|---|
-| Lageplan 1:500 girado 10°: escala y giro calibrados | 1:499–1:501 · 10,0–10,1° |
-| Marca de B 7 sobre su símbolo tras calibrar | 0,1–0,4 px |
-| B 6 y BS 9 (sin coordenadas) arrastrados a su símbolo | 0,22–0,45 m |
-| Längsschnitt 1:500 / 1:100 calibrado | Länge 1:500 · Höhe 1:100 |
-| B 2 y B 3 arrastrados a su columna | estación 10,00 / 25,00 m (error ≤ 0,01 m) |
-| Mayús + arrastrar B 4 un metro hacia arriba | GOK 40,78 m (verdad 40,77) |
+| Lageplan 1:500 rotated by 10°: calibrated scale and rotation | 1:499–1:501 · 10.0–10.1° |
+| Mark of B 7 on its symbol after calibrating | 0.1–0.4 px |
+| B 6 and BS 9 (without coordinates) dragged to their symbol | 0.22–0.45 m |
+| Längsschnitt 1:500 / 1:100 calibrated | Länge 1:500 · Höhe 1:100 |
+| B 2 and B 3 dragged to their column | station 10.00 / 25.00 m (error ≤ 0.01 m) |
+| Shift + drag B 4 one metre up | GOK 40.78 m (truth 40.77) |
 
-Para picar con precisión hay que acercarse (el panel lo dice): sin zoom un píxel de pantalla puede
-ser medio metro.
+To pick precisely you have to zoom in (the panel says so): without zoom one screen pixel can be half a
+metre.
 
-## 4. Fila con distancias propias
+## 4. Row with own distances
 
-Sin coordenadas la Lage es una **Reihe** (Längsschnitt). En la tabla de la pestaña *Lage* cada sondeo
-tiene **Nr** (orden), **Abstand zum Vorgänger** y **Station**:
+Without coordinates the Lage is a **Reihe** (Längsschnitt). In the table of the *Lage* tab each
+Bohrung has **Nr** (order), **Abstand zum Vorgänger** and **Station**:
 
-- Abstand: BK1 → BK2 **10 m**, BK2 → BK3 **15 m** … (sin dato rige el *Standardabstand*).
-- Station: absoluta; la pone también el visor al arrastrar en el Längsschnitt.
-- Prioridad: estación puesta > distancia propia > distancia estándar. Con sólo distancias estándar
-  el modelo se marca *schematisch*; con distancias propias *Reihe (Abstand manuell)*.
+- Abstand: BK1 → BK2 **10 m**, BK2 → BK3 **15 m** … (without a value the *Standardabstand* applies).
+- Station: absolute; the viewer also sets it when dragging in the Längsschnitt.
+- Priority: set station > own distance > standard distance. With only standard distances the model is
+  marked *schematisch*; with own distances *Reihe (Abstand manuell)*.
 
-## 5. Tablas antes del modelo, generar y nachführen
+## 5. Tables before the model, Erzeugen and nachführen
 
-![Página: indicadores, Prüfstand, tablas editables y el botón Baugrundmodell erzeugen antes del visor](img/20_app_tabellen_vor_modell.jpg)
+![Page: indicators, Prüfstand, editable tables and the Baugrundmodell erzeugen button before the viewer](img/20_app_tabellen_vor_modell.jpg)
 
-1. Al subir el PDF se ven **las tablas** (*Bohrungen*, *Schichten*, *Lage & Unterlage*) y el visor
-   ya muestra los sondeos con su posición: **todavía no hay modelo**.
-2. *Baugrundmodell erzeugen* lo genera.
-3. Desde ahí, **cada cambio** (tabla, visor, ajustes, unidades) recalcula el modelo
-   (*Automatisch nachführen*, activado). Desactivado, el modelo queda congelado y aparece *Jetzt neu
-   rechnen*.
+1. After the PDF is uploaded, **the tables** are shown (*Bohrungen*, *Schichten*, *Lage &
+   Unterlage*) and the viewer already shows the Bohrungen at their positions: **there is no model
+   yet**.
+2. *Baugrundmodell erzeugen* generates it.
+3. From then on, **every change** (table, viewer, settings, Einheiten) recomputes the model
+   (*Automatisch nachführen*, on). Switched off, the model stays frozen and *Jetzt neu rechnen*
+   appears.
 
-La geometría se cachea por la entrada **sin las marcas de revisión**: marcar capas como revisadas no
-recalcula el modelo ni recarga el visor (el estado de revisión se ve en las chinchetas y va en el IFC
-de exportación, que se genera al pulsar la descarga).
+The geometry is cached by the input **without the review marks**: marking Schichten as reviewed does
+not recompute the model or reload the viewer (the review state is visible on the pins and goes into
+the export IFC, which is generated when the download is pressed).
 
-El **estado del proyecto** (correcciones, Lage, revisión, unterlage, eincheckungen) vive aparte de la
-extracción ([`ui/projekt.py`](../ui/projekt.py)), se guarda solo en disco por firma de los documentos
-y se recupera al volver a abrir el mismo PDF; *Korrekturen verwerfen* lo borra.
+The **project state** (corrections, Lage, review, Unterlage, eincheckungen) lives apart from the
+extraction ([`ui/projekt.py`](../ui/projekt.py)), is saved on disk automatically by the signature of
+the documents and is restored when the same PDF is opened again; *Korrekturen verwerfen* deletes it.
 
-## 6. Prüfstand y Einchecken
+## 6. Prüfstand and Einchecken
 
-- **Schichten**: tabla editable por sondeo (von, bis, Bodenart, Geprüft) con la confianza de la
-  extracción; corregir una capa la marca como revisada y como *korrigiert* (la confianza pasa a 1,0 y
-  la original se conserva). *Alle Schichten dieser Bohrung geprüft*, *Nächste ungeprüfte →*.
-- **Prüfstand** arriba: sondeos y capas revisados (barras), capas inseguras (< 0,6) sin revisar,
-  corregidas, posiciones puestas a mano.
-- **Einchecken** guarda una entrada con hora, contadores, comentario y la **huella del modelo** (clave
-  de sus entradas: el IFC lleva hora en la cabecera, [M24](16_lecciones_aprendidas.md#m-modelo-ifc-y-that-open));
-  si después cambia algo, el chip dice *seitdem geändert*. Historial en la pestaña *Prüfprotokoll*.
-- En el **IFC**: `CPset_Herkunft.Geprueft` por sondeo; `CPset_Schichtenverzeichnis.Geprueft`,
-  `Korrigiert`, `Konfidenz_Extraktion` por capa; `CPset_Baugrundmodell.Pruefstand` con el último
-  einchecken. En el visor, *Als geprüft markieren* en el panel de un sondeo.
+- **Schichten**: editable table per Bohrung (von, bis, Bodenart, Geprüft) with the extraction's
+  confidence; correcting a Schicht marks it as reviewed and as *korrigiert* (the confidence becomes
+  1.0 and the original is kept). *Alle Schichten dieser Bohrung geprüft*, *Nächste ungeprüfte →*.
+- **Prüfstand** at the top: Bohrungen and Schichten reviewed (bars), uncertain Schichten (< 0.6) not
+  reviewed, corrected ones, positions set by hand.
+- **Einchecken** stores an entry with the time, counters, a comment and the **model fingerprint**
+  (key of its inputs: the IFC carries the time in its header,
+  [M24](16_lessons_learned.md#m-model-ifc-and-that-open)); if something changes afterwards, the chip
+  says *seitdem geändert*. History in the *Prüfprotokoll* tab.
+- In the **IFC**: `CPset_Herkunft.Geprueft` per Bohrung; `CPset_Schichtenverzeichnis.Geprueft`,
+  `Korrigiert`, `Konfidenz_Extraktion` per Schicht; `CPset_Baugrundmodell.Pruefstand` with the last
+  einchecken. In the viewer, *Als geprüft markieren* in the panel of a Bohrung.
 
-## 7. Protocolo visor ↔ Streamlit
+## 7. Viewer ↔ Streamlit protocol
 
-| Dirección | Contenido |
+| Direction | Content |
 |---|---|
-| Python → visor (`streamlit:render`) | `ifc` (URL o nada antes de generar), `projekt` (firma: misma firma = la cámara se queda), `ursprung`, `epsg`, `modus`, `bohrungen` (chinchetas), `unterlage` (URL de la imagen, tamaño, calibración), `ueberhoehung`, `nr` (último evento aplicado), `bearbeiten` (contador: abre el modo Lage) |
-| visor → Python (`setComponentValue`) | `{typ, nr, projekt, …}` con `typ` ∈ `lage` (x, y), `station`, `gok`, `kalibrierung` (2 puntos, EPSG), `geprueft` |
+| Python → viewer (`streamlit:render`) | `ifc` (URL, or nothing before generating), `projekt` (signature: same signature = the camera stays), `ursprung`, `epsg`, `modus`, `bohrungen` (pins), `unterlage` (image URL, size, calibration), `ueberhoehung`, `nr` (last event applied), `bearbeiten` (counter: opens the Lage mode) |
+| viewer → Python (`setComponentValue`) | `{typ, nr, projekt, …}` with `typ` ∈ `lage` (x, y), `station`, `gok`, `kalibrierung` (2 points, EPSG), `geprueft` |
 
-Cada evento lleva un número creciente y la firma del proyecto: Python aplica cada número una sola
-vez (Streamlit repite el último valor en cada rerun) e ignora eventos de otro proyecto. El visor
-arranca su contador en el `nr` que recibe, para no repetir números tras volver a montarse.
-La página tiene un **esqueleto fijo de contenedores**: el iframe del visor no se vuelve a montar
-cuando cambian elementos de arriba (antes pasaba al pulsar *Erzeugen*, [X13](16_lecciones_aprendidas.md#x-entorno-de-trabajo)).
+Each event carries an increasing number and the project signature: Python applies each number only
+once (Streamlit repeats the last value on every rerun) and ignores events from another project. The
+viewer starts its counter at the `nr` it receives, so as not to repeat numbers after being re-mounted.
+The page has a **fixed skeleton of containers**: the viewer iframe is not re-mounted when elements
+above it change (it used to happen when pressing *Erzeugen*,
+[X13](16_lessons_learned.md#x-working-environment)).
 
-Marco de coordenadas: el IFC es local al origen del proyecto (`ursprung`, fijo, redondeado a 100 m)
-y se carga **sin** `COORDINATE_TO_ORIGIN`; three.js x = E − E₀, y = NHN (exagerado alrededor de una
-cota de referencia), −z = N − N₀. Así chinchetas, plano e IFC coinciden al centímetro (BK 1 de la
-trasse: R 565 000,00 / H 5 932 985,00 / GOK 45,00 como en el caso sintético).
+Coordinate frame: the IFC is local to the project origin (`ursprung`, fixed, rounded to 100 m) and is
+loaded **without** `COORDINATE_TO_ORIGIN`; three.js x = E − E₀, y = NHN (exaggerated around a
+reference elevation), −z = N − N₀. That way pins, plan and IFC coincide to the centimetre (BK 1 of the
+Trasse: R 565,000.00 / H 5,932,985.00 / GOK 45.00, as in the synthetic case).
 
-![Pestaña Lage & Unterlage con el Lageplan subido y el visor en modo Lage](img/20_app_lage_unterlage.jpg)
+![Lage & Unterlage tab with the uploaded Lageplan and the viewer in Lage mode](img/20_app_lage_unterlage.jpg)
 
-## 8. Piezas
+## 8. Pieces
 
-| Archivo | Qué hace |
+| File | What it does |
 |---|---|
-| [`apps/web/src/main.ts`](../apps/web/src/viewer/viewer.ts) | Mundo, posproducción, Highlighter/Hider/Clipper, barra inferior, engranaje, ViewCube, HUD, panel lateral, Streamlit |
-| [`apps/web/src/kamera.ts`](../apps/web/src/viewer/kamera.ts) | near/far dinámicos, rejilla, vistas, encuadre junto al panel |
-| [`apps/web/src/lage.ts`](../apps/web/src/viewer/lage.ts) | Chinchetas, plano, calibración, arrastre, lista sin posición, panel Lage |
-| [`apps/web/src/rahmen.ts`](../apps/web/src/viewer/rahmen.ts) | Marco de coordenadas y exageración |
-| [`apps/web/src/streamlit.ts`](../apps/web/src/viewer/kanal.ts) | Protocolo con Streamlit y eventos numerados |
-| [`ui/projekt.py`](../ui/projekt.py) | Estado del proyecto: correcciones, Reihe, Lage, eventos, Prüfstand, einchecken, guardar/cargar |
-| `ui/baugrundmodell.py` (eliminado, ver [21](21_app_schritte_normen.md)) | Página: tablas → Lage → erzeugen → visor → resultados |
-| [`ui/pipeline.py`](../ui/pipeline.py) | Extracción, `modell_bauen`/`ifc_bytes`, imagen del plano |
-| [`scripts/testplan.py`](../scripts/testplan.py) | Lageplan y Längsschnitt sintéticos con verdad conocida |
+| [`apps/web/src/main.ts`](../apps/web/src/viewer/viewer.ts) | World, postproduction, Highlighter/Hider/Clipper, bottom bar, gear, ViewCube, HUD, side panel, Streamlit |
+| [`apps/web/src/kamera.ts`](../apps/web/src/viewer/kamera.ts) | Dynamic near/far, grid, views, framing next to the panel |
+| [`apps/web/src/lage.ts`](../apps/web/src/viewer/lage.ts) | Pins, plan, calibration, dragging, list without a position, Lage panel |
+| [`apps/web/src/rahmen.ts`](../apps/web/src/viewer/rahmen.ts) | Coordinate frame and exaggeration |
+| [`apps/web/src/streamlit.ts`](../apps/web/src/viewer/kanal.ts) | Protocol with Streamlit and numbered events |
+| [`ui/projekt.py`](../ui/projekt.py) | Project state: corrections, Reihe, Lage, events, Prüfstand, einchecken, save/load |
+| `ui/baugrundmodell.py` (removed, see [21](21_app_schritte_normen.md)) | Page: tables → Lage → erzeugen → viewer → results |
+| [`ui/pipeline.py`](../ui/pipeline.py) | Extraction, `modell_bauen`/`ifc_bytes`, image of the plan |
+| [`scripts/testplan.py`](../scripts/testplan.py) | Synthetic Lageplan and Längsschnitt with known ground truth |
 
-## 9. Verificación
+## 9. Verification
 
-- `pytest tests` (app, **15**) y `pytest services/modeler/tests` (modelador, **36**): verdes.
-- `apps/web/scripts/check.mjs` (Chromium sin pantalla): **17/17** — trasse de 6 km (carga, far,
-  near al acercarse, HUD, selección, transparencia, corte), Lageplan (calibración, alineación,
-  arrastre de sondeos sin posición y de una marca), Längsschnitt (calibración, estaciones, GOK).
-- `scripts/check_app.mjs` con Streamlit: **7/7** — tablas y chinchetas antes del modelo, *Erzeugen*,
-  arrastrar BK2 en el visor → evento → Python recalcula → el visor recarga, einchecken, Lageplan
-  subido y *Im Viewer bearbeiten*.
-- Probado en Linux con SwiftShader (render por software: un fotograma con posproducción tarda
-  ~1 s; en un PC con GPU no). **Windows sin probar desde aquí.**
+- `pytest tests` (app, **15**) and `pytest services/modeler/tests` (modeler, **36**): green.
+- `apps/web/scripts/check.mjs` (headless Chromium): **17/17** — 6 km Trasse (loading, far, near when
+  zooming in, HUD, selection, transparency, section), Lageplan (calibration, alignment, dragging
+  Bohrungen without a position and a mark), Längsschnitt (calibration, stations, GOK).
+- `scripts/check_app.mjs` with Streamlit: **7/7** — tables and pins before the model, *Erzeugen*,
+  dragging BK2 in the viewer → event → Python recomputes → the viewer reloads, einchecken, Lageplan
+  uploaded and *Im Viewer bearbeiten*.
+- Tested on Linux with SwiftShader (software rendering: a frame with postproduction takes ~1 s; on a
+  PC with a GPU it does not). **Windows not tested from here.**
 
-## 10. Límites y siguientes pasos
+## 10. Limits and next steps
 
-1. El plano se calibra con 2 puntos: no corrige distorsiones (planos escaneados torcidos); con 3+
-   puntos se podría ajustar una afinidad general por mínimos cuadrados con residuos.
-2. La delimitación es la envolvente convexa: en trazados curvos incluye terreno sin sondeos; un
-   **pasillo** (buffer alrededor del eje) sería más honesto para trasses.
-3. Leer los símbolos de sondeo del plano automáticamente (texto + círculo) y proponer la posición
-   (docs/07); hoy se arrastran a mano.
-4. Modelos de contexto (eje del túnel, terreno) en el mismo visor alineados por georreferencia.
-5. Multiusuario y servidor: el estado se guarda en el disco local; con Supabase (arquitectura §5) el
-   Prüfstand sería compartido.
+1. The plan is calibrated with 2 points: it does not correct distortions (skewed scanned plans); with
+   3+ points a general affinity could be fitted by least squares with residuals.
+2. The boundary is the convex hull: on curved alignments it includes ground without Bohrungen; a
+   **corridor** (buffer around the alignment) would be more honest for Trassen.
+3. Read the Bohrung symbols on the plan automatically (text + circle) and propose the position
+   (docs/07); today they are dragged by hand.
+4. Context models (tunnel alignment, terrain) in the same viewer, aligned by georeferencing.
+5. Multi-user and server: the state is saved on the local disk; with Supabase (architecture §5) the
+   Prüfstand would be shared.
 
-Up: [Índice](README.md)
+Up: [Index](README.md)
 
-Related: [19 App v2](19_app_v2.md) · [18 Modelador de capas](18_modelador_capas.md) · [11 Decisiones](11_decisiones.md) · [16 Lecciones](16_lecciones_aprendidas.md) · [07 Coordenadas](07_coordenadas.md) · [Visor](../apps/web/README.md)
+Related: [19 App v2](19_app_v2.md) · [18 Layer modeler](18_layer_modeler.md) · [11 Decisions](11_decisions.md) · [16 Lessons](16_lessons_learned.md) · [07 Coordinates](07_coordinates.md) · [Viewer](../apps/web/README.md)

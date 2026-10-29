@@ -1,46 +1,46 @@
 ---
-title: "Plan de implementación: extracción v2"
+title: "Implementation plan: extraction v2"
 date: 2026-10-23
-tags: [geo_agent, plan, roadmap, extraccion]
-aliases: [Plan extracción v2, Roadmap extracción]
+tags: [geo_agent, plan, roadmap, extraction]
+aliases: [Extraction v2 plan, Extraction roadmap]
 ---
 
-# Plan de implementación: extracción v2
+# Implementation plan: extraction v2
 
-**Objetivo:** reemplazar los supuestos fijos de v1 por la extracción geométrica/estadística,
-recuperar los datos perdidos y hacerlo medible, sin romper el Excel actual. Este plan detalla las
-fases F0–F2 de la [arquitectura §11](ARQUITECTURA_BAUGRUNDMODELL.md#11-hoja-de-ruta) para la parte
-de extracción. Estimaciones orientativas para una persona.
+**Goal:** replace the fixed assumptions of v1 with the geometric/statistical extraction, recover the
+lost data and make it measurable, without breaking the current Excel. This plan details phases F0–F2
+of the [architecture §11](ARCHITECTURE_BAUGRUNDMODELL.md#11-roadmap) for the extraction part.
+Indicative estimates for one person.
 
-| Paso | Contenido | Archivos | Criterio de aceptación | Esfuerzo |
+| Step | Content | Files | Acceptance criterion | Effort |
 |---|---|---|---|---|
-| 0 | **Banco de pruebas**: mover generador sintético y métricas de `spikes/extraktion_v2` a `tests/`; añadir KPI de error silencioso; test de no-regresión del Excel con los PDFs de referencia | `tests/synth/`, `tests/test_extraction.py` | CI verde con v1 en A/A2; fallos documentados de v1 en A3/A4/B | 2–3 días |
-| 1 | **Modelo canónico con procedencia** (Pydantic) + adaptador v1 → modelo → Excel; **capa de primitivas** (única importación de PyMuPDF, [14 §4](14_licencias_terceros.md#4-capa-de-primitivas-hacer-ya)) | `geo_agent/model.py`, `geo_agent/primitives/`, `exporters/excel_writer.py` | Excel idéntico al actual; `import pymupdf` sólo en `primitives/` | 3–4 días |
-| 2 | **Bohrprofil v2 núcleo** según `prototyp_v3.py`: segmentos → columnas, rotación normalizada, cabecera/GOK genéricos, escala por candidatos con confirmación de etiquetas (incl. AAboveB de swissgeol), límites geométricos, convención techo/base, filtros de tabla/escala ([15](15_resultados_pdfs_reales.md)) | `geo_agent/bohrprofil/{columns,header,scale,text_assign}.py` | A–A5 y B al 100 % en CI; Wachenroth/Talheim como en [15](15_resultados_pdfs_reales.md); Excel de referencia sin regresión | 1–1,5 semanas |
-| 3 | **Clasificación**: sustantivo vs. adjetivo, eliminar "continuación" silenciosa, Schraffur + fusión + confianza | `geo_agent/soil.py`, `geo_agent/bohrprofil/hatch.py`, `validate/` | Error silencioso = 0 en el corpus; A5 genera su issue | 3–4 días |
-| 4 | **Grundwasser y Sondierungen** | `bohrprofil/symbols.py`, `bohrprofil/soundings.py` | Agua ±5 cm; DPH ≤ 1 N10; nuevas hojas/tablas en la salida | 4–5 días |
-| 5 | **Coordenadas**: tablas (lectura por celda), cabecera, CRS alemanes; Lageplan después | `lageplan/coord_tables.py`, `lageplan/georef.py` | Rechts-/Hochwert rellenos y verificados contra GOK | 3–4 días (+1 semana Lageplan) |
-| 6 | **Längsschnitt v2**: ejes genéricos, colores desde la leyenda, OCG, polígonos vectoriales, mini-columnas | `geo_agent/laengsschnitt/{axes,tunnel,geoslice}.py` | Mismo resultado que v1 en el plano de referencia + un segundo plano distinto | 1–1,5 semanas |
-| 7 | **swissgeol**: oráculo en el benchmark, listas de palabras clave, contacto upstream ([13](13_colaboracion_swisstopo.md)) | `tests/oracle_swissgeol.py` | Informe comparativo automático | 2 días |
-| 8 | **Corpus real**: 5–10 Gutachten públicos ([12](12_corpus_publico.md), `spikes/korpus/`), verdad semi-automática, calibrar umbrales y pesos | `spikes/korpus/manifest.tsv` → `tests/corpus/`, bucket privado, `tests/thresholds.yml` | Métricas reales publicadas en [09](09_validacion_benchmark.md) | continuo; se puede empezar ya (sólo depende de la red) |
+| 0 | **Test bench**: move the synthetic generator and the metrics from `spikes/extraktion_v2` to `tests/`; add the silent error KPI; non-regression test of the Excel with the reference PDFs | `tests/synth/`, `tests/test_extraction.py` | CI green with v1 on A/A2; v1 failures on A3/A4/B documented | 2–3 days |
+| 1 | **Canonical model with provenance** (Pydantic) + adapter v1 → model → Excel; **primitives layer** (the only PyMuPDF import, [14 §4](14_licensing.md#4-primitives-layer-do-it-now)) | `geo_agent/model.py`, `geo_agent/primitives/`, `exporters/excel_writer.py` | Excel identical to the current one; `import pymupdf` only in `primitives/` | 3–4 days |
+| 2 | **Bohrprofil v2 core** following `prototyp_v3.py`: segments → columns, normalised rotation, generic header/GOK, scale from candidates with label confirmation (incl. swissgeol's AAboveB), geometric boundaries, top/base convention, table/scale filters ([15](15_results_real_pdfs.md)) | `geo_agent/bohrprofil/{columns,header,scale,text_assign}.py` | A–A5 and B at 100 % in CI; Wachenroth/Talheim as in [15](15_results_real_pdfs.md); reference Excel without regression | 1–1.5 weeks |
+| 3 | **Classification**: noun vs. adjective, remove the silent "continuation", Schraffur + merge + confidence | `geo_agent/soil.py`, `geo_agent/bohrprofil/hatch.py`, `validate/` | Silent error = 0 on the corpus; A5 raises its issue | 3–4 days |
+| 4 | **Grundwasser and Sondierungen** | `bohrprofil/symbols.py`, `bohrprofil/soundings.py` | Water ±5 cm; DPH ≤ 1 N10; new sheets/tables in the output | 4–5 days |
+| 5 | **Coordinates**: tables (reading per cell), header, German CRSs; Lageplan later | `lageplan/coord_tables.py`, `lageplan/georef.py` | Rechts-/Hochwert filled in and verified against GOK | 3–4 days (+1 week Lageplan) |
+| 6 | **Längsschnitt v2**: generic axes, colours from the legend, OCG, vector polygons, mini-columns | `geo_agent/laengsschnitt/{axes,tunnel,geoslice}.py` | Same result as v1 on the reference drawing + a second, different drawing | 1–1.5 weeks |
+| 7 | **swissgeol**: oracle in the benchmark, keyword lists, upstream contact ([13](13_swisstopo_collaboration.md)) | `tests/oracle_swissgeol.py` | Automatic comparison report | 2 days |
+| 8 | **Real corpus**: 5–10 public Gutachten ([12](12_public_corpus.md), `spikes/korpus/`), semi-automatic ground truth, calibrate thresholds and weights | `spikes/korpus/manifest.tsv` → `tests/corpus/`, private bucket, `tests/thresholds.yml` | Real metrics published in [09](09_validation_benchmark.md) | ongoing; can start now (only depends on the network) |
 
-## Orden y dependencias
+## Order and dependencies
 
 ```
 0 ─► 1 ─► 2 ─► 3 ─► 4
           │         └─► 5
           └─────────────► 6
-0 ─► 7 (en paralelo)          8: reunir y filtrar el corpus ya; calibrar cuando 2 esté listo
+0 ─► 7 (in parallel)          8: gather and filter the corpus now; calibrate when 2 is ready
 ```
 
-## Reglas para la migración
+## Migration rules
 
-- v1 sigue disponible detrás de un flag hasta que v2 iguale o mejore todas las métricas del
-  corpus de referencia.
-- Cada detector nuevo entra con su caso sintético y su métrica.
-- Toda constante nueva va al perfil YAML o a `tests/thresholds.yml`, nunca hard-codeada.
-- Código portado de swissgeol: reimplementado y citado (licencia, [08 §5](08_swissgeol_reutilizacion.md#5-estrategias-de-reutilización)).
+- v1 stays available behind a flag until v2 matches or beats all metrics on the reference corpus.
+- Every new detector comes with its synthetic case and its metric.
+- Every new constant goes into the YAML profile or `tests/thresholds.yml`, never hard-coded.
+- Code ported from swissgeol: reimplemented and cited (license,
+  [08 §5](08_swissgeol_reuse.md#5-reuse-strategies)).
 
-Up: [Índice](README.md)
+Up: [Index](README.md)
 
-Related: [09 Validación](09_validacion_benchmark.md) · [11 Decisiones](11_decisiones.md) · [Arquitectura](ARQUITECTURA_BAUGRUNDMODELL.md) · [02 Bohrprofil](02_bohrprofil_generalizacion.md) · [03 Längsschnitt](03_laengsschnitt_generalizacion.md)
+Related: [09 Validation](09_validation_benchmark.md) · [11 Decisions](11_decisions.md) · [Architecture](ARCHITECTURE_BAUGRUNDMODELL.md) · [02 Bohrprofil](02_bohrprofil_generalization.md) · [03 Längsschnitt](03_laengsschnitt_generalization.md)

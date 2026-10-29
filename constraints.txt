@@ -1,5 +1,5 @@
 # Versionen, mit denen das Container-Image gebaut und geprueft wurde (python:3.13-slim, 28/28 check_app.mjs).
-# Erneuern: Image ohne -c bauen, pruefen, dann im Container pip freeze (docs/22_despliegue.md).
+# Erneuern: Image ohne -c bauen, pruefen, dann im Container pip freeze (docs/22_deployment.md).
 annotated-doc==0.0.5
 annotated-types==0.8.0
 anyio==4.15.1

@@ -4,7 +4,7 @@
     python screen_corpus.py --screen <ordner_mit_pdfs> <out>  # sichtet + wertet aus, schreibt report.md
 
 Die PDFs sind urheberrechtlich geschuetzt: nur intern zum Testen verwenden, nicht ins Repo
-committen (siehe docs/12_corpus_publico.md). Der Zielordner sollte ausserhalb des Repos liegen.
+committen (siehe docs/12_public_corpus.md). Der Zielordner sollte ausserhalb des Repos liegen.
 
 Sichtung je Seite: Textzeichen, Vektorpfade, Bilder (Bildflaeche > 80 % und kaum Text = Scan),
 Schlagworte (Bohrprofil-Indizien). Auswertung ohne Wahrheit = Selbstkonsistenz:

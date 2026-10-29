@@ -1,66 +1,68 @@
-# Colaborar en GroundTwin
+# Contributing to GroundTwin
 
-Gracias por ayudar. GroundTwin convierte Bodengutachten en PDF en un Baugrundmodell IFC 4.3. Un sondeo falso
-es peor que uno perdido, y por eso el proyecto tiene reglas estrictas sobre cómo se mide y se prueba.
-Las reglas completas están en [docs/16 Lecciones aprendidas](docs/16_lecciones_aprendidas.md).
+Thank you for helping. GroundTwin turns Bodengutachten in PDF into an IFC 4.3 Baugrundmodell. A false
+Bohrung is worse than a missing one, which is why the project has strict rules about how things are
+measured and tested. The full rules are in [docs/16 Lessons learned](docs/16_lessons_learned.md).
 
-## Preparar el entorno
+## Set up the environment
 
 ```bash
-python -m venv .venv && . .venv/bin/activate        # Windows: start.bat lo hace solo
-pip install -r requirements.txt -c constraints.txt  # Python 3.13; con otra versión, sin -c
-pip install -r requirements-ocr.txt -c constraints.txt   # opcional: OCR
-cd apps/web && npm ci                                # sólo si se cambia la página o el visor
+python -m venv .venv && . .venv/bin/activate        # Windows: start.bat does it for you
+pip install -r requirements.txt -c constraints.txt  # Python 3.13; with another version, without -c
+pip install -r requirements-ocr.txt -c constraints.txt   # optional: OCR
+cd apps/web && npm ci                                # only if you change the page or the viewer
 ```
 
-## Antes de cada pull request
+## Before every pull request
 
-1. **Pruebas:** `pytest tests` y `cd services/modeler && pytest tests`.
-2. **Página o visor cambiados** (`apps/web/src`):
-   - `cd apps/web && npm run build` y **subir `apps/web/dist`**: el servidor la usa sin Node.
-   - Comprobar con `scripts/check_app.mjs` (ver [README](README.md#pruebas)).
-3. **Extracción cambiada** (`spikes/extraktion_v2/prototyp_v4.py`): regresión sobre PDFs reales, casos
-   de estrés y sintéticos. Las cifras no deben empeorar:
+1. **Tests:** `pytest tests` and `cd services/modeler && pytest tests`.
+2. **Page or viewer changed** (`apps/web/src`):
+   - `cd apps/web && npm run build` and **commit `apps/web/dist`**: the server uses it without Node.
+   - Check with `scripts/check_app.mjs` (see the [README](README.md#tests)).
+3. **Extraction changed** (`spikes/extraktion_v2/prototyp_v4.py`): regression on real PDFs, stress
+   cases and synthetic ones. The figures must not get worse:
    ```bash
    python spikes/korpus/regression.py --module spikes/extraktion_v2/prototyp_v4.py \
-     --real <pdfs> --stress <carpeta> --synth <carpeta> --baseline spikes/korpus/baseline_v4.json
+     --real <pdfs> --stress <folder> --synth <folder> --baseline spikes/korpus/baseline_v4.json
    ```
-   Si una regla se toca, `ablation.py` muestra qué caso protege.
-4. **Modelador cambiado:**
-   - contactos exactos;
-   - sólidos cerrados;
-   - IFC sin errores;
-   - unidad METRE.
-5. **Dependencias cambiadas:** actualizar `constraints.txt` como se explica en
-   [docs/22 §8](docs/22_despliegue.md#8-dependencias-y-versiones).
+   If a rule is touched, `ablation.py` shows which case it protects.
+4. **Modeler changed:**
+   - exact contacts;
+   - closed solids;
+   - IFC without errors;
+   - unit METRE.
+5. **Dependencies changed:** update `constraints.txt` as explained in
+   [docs/22 §9](docs/22_deployment.md#9-dependencies-and-versions).
 
-GitHub ejecuta los puntos 1, 2 (compilación) y la imagen del contenedor en cada push
+GitHub runs points 1, 2 (build) and the container image on every push
 ([Prüfungen](.github/workflows/pruefungen.yml)).
 
-## Reglas del proyecto
+## Project rules
 
-- **Prueba ciega con cada PDF nuevo:**
-  1. Congelar las predicciones con `spikes/korpus/blind_test.py freeze`.
-  2. Subirlas al repositorio **antes** de abrir el PDF.
-  3. Después, transcribir la verdad en `spikes/korpus/groundtruth/`.
+- **Blind test with every new PDF:**
+  1. Freeze the predictions with `spikes/korpus/blind_test.py freeze`.
+  2. Push them to the repository **before** opening the PDF.
+  3. Afterwards, transcribe the ground truth in `spikes/korpus/groundtruth/`.
 
-  Las cifras ciegas y las de entrenamiento van siempre separadas.
-- **Reglas generales** basadas en rasgos del dibujo, nunca excepciones para un PDF o una oficina.
-- **Lo dudoso se marca** (issue, confianza baja, capa sin clasificar), nunca se esconde.
-- **Nada de PDFs de terceros en el repositorio:** sólo URL, `sha256` y datos factuales
+  Blind figures and training figures are always kept apart.
+- **General rules** based on features of the drawing, never exceptions for one PDF or one office.
+- **What is doubtful is marked** (issue, low confidence, unclassified Schicht), never hidden.
+- **No third-party PDFs in the repository:** only URL, `sha256` and factual data
   (`spikes/korpus/manifest.tsv`).
-- **Normas:** no copiar textos de DIN. La base de datos de normas guarda abreviaturas y colores con
-  la evidencia de cada dato. La app propone y nunca aplica una norma en silencio.
-- **Idiomas:**
-  - documentación en **español**, como notas enlazadas (frontmatter, `Up:` y `Related:`);
-  - código, comentarios y textos de la interfaz en **alemán**.
-- **Decisiones y lecciones:**
-  - una decisión nueva va a [docs/11](docs/11_decisiones.md) (D…);
-  - una lección, con la prueba que la vigila, a [docs/16](docs/16_lecciones_aprendidas.md).
+- **Standards:** do not copy texts of DIN standards. The norms database stores abbreviations and
+  colours with the evidence for every value. The app proposes and never applies a norm silently.
+- **Languages:**
+  - documentation in **English**, keeping the German technical terms (Bohrung, Schicht, GOK,
+    Lageplan… see the [glossary](docs/glossary.md)), as linked notes (frontmatter, `Up:` and
+    `Related:`);
+  - code, comments and interface texts in **German**.
+- **Decisions and lessons:**
+  - a new decision goes to [docs/11](docs/11_decisions.md) (D…);
+  - a lesson, with the test that watches it, to [docs/16](docs/16_lessons_learned.md).
 
-## Licencia de las contribuciones
+## License of contributions
 
-GroundTwin se publica bajo la [AGPL-3.0-or-later](LICENSE). Al enviar una contribución, aceptas que se
-publique bajo la misma licencia. Código o datos de terceros sólo con una licencia compatible, anotada
-en [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md). En concreto, nada de copiar código de
-swissgeol: sólo se reimplementan sus ideas ([docs/14](docs/14_licencias_terceros.md)).
+GroundTwin is published under the [AGPL-3.0-or-later](LICENSE). By sending a contribution, you agree
+that it is published under the same license. Third-party code or data only with a compatible license,
+noted in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md). In particular, do not copy code from
+swissgeol: only reimplement its ideas ([docs/14](docs/14_licensing.md)).

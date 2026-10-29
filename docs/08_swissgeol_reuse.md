@@ -1,157 +1,156 @@
 ---
-title: "swissgeol: qué hace, qué probamos y cómo reutilizarlo"
+title: "swissgeol: what it does, what we tested and how to reuse it"
 date: 2026-10-23
-tags: [swissgeol, reutilizacion, extraccion, licencias]
+tags: [swissgeol, reuse, extraction, licensing]
 aliases: [swissgeol, swissgeol-boreholes-dataextraction]
 ---
 
-# swissgeol: qué hace, qué probamos y cómo reutilizarlo
+# swissgeol: what it does, what we tested and how to reuse it
 
-**Conclusión:** `swissgeol-boreholes-dataextraction` (swisstopo) resuelve muy bien la parte
-**textual y estadística** de la estratigrafía —columnas de profundidad, bloques de descripción,
-emparejamiento— y es robusto al layout: sin cambios acertó 18/18 capas en nuestros layouts
-A, A2 y A3. No cubre lo **específico de Alemania y de planos CAD** (Schraffur, símbolo DIN de
-agua, CRS alemanes, Längsschnitt, túnel) y su asignación de nombres falla con diagramas
-vecinos. Recomendación: **portar sus algoritmos y su formato de evaluación**, usarlo como
-**segunda opinión** en el benchmark y **proponer contribuciones** upstream; no hacer fork ni
-dependencia del núcleo.
+**Conclusion:** `swissgeol-boreholes-dataextraction` (swisstopo) solves the **textual and
+statistical** part of the stratigraphy very well — depth columns, description blocks, matching —
+and it is robust to the layout: unchanged, it got 18/18 Schichten right in our layouts A, A2 and A3.
+It does not cover what is **specific to Germany and to CAD drawings** (Schraffur, DIN water symbol,
+German CRSs, Längsschnitt, tunnel), and its name assignment fails next to neighbouring diagrams.
+Recommendation: **port its algorithms and its evaluation format**, use it as a **second opinion** in
+the benchmark and **propose contributions** upstream; do not fork it or depend on its core.
 
-## 1. Ficha
+## 1. Fact sheet
 
 | | |
 |---|---|
-| Repo | <https://github.com/swisstopo/swissgeol-boreholes-dataextraction> (commit revisado `776ea39`, 2026-10-23) |
-| Licencia | **AGPL-3.0-only** (por PyMuPDF; dicen que cambiarían si quitan esa dependencia) |
-| Versión | v1.1.0 (2026-05-04), estado beta |
-| Stack | Python 3.11–3.13, PyMuPDF **1.26.3** (fijado), OpenCV contrib, scikit-learn/-image, FastAPI, AWS (Textract, Bedrock), MLflow |
-| Paquetes | `swissgeol_doc_processing` (geometría, texto, tablas, strip logs) y `extraction` (pipeline), instalables desde GitHub |
+| Repo | <https://github.com/swisstopo/swissgeol-boreholes-dataextraction> (reviewed commit `776ea39`, 2026-10-23) |
+| License | **AGPL-3.0-only** (because of PyMuPDF; they say they would change it if that dependency goes) |
+| Version | v1.1.0 (2026-05-04), beta |
+| Stack | Python 3.11–3.13, PyMuPDF **1.26.3** (pinned), OpenCV contrib, scikit-learn/-image, FastAPI, AWS (Textract, Bedrock), MLflow |
+| Packages | `swissgeol_doc_processing` (geometry, text, tables, strip logs) and `extraction` (pipeline), installable from GitHub |
 | CLI | `boreholes-extract-all`, `boreholes-extract-metadata`, `boreholes-score`, `boreholes-classify-descriptions` |
-| Entrada | PDFs con texto (escaneos con OCR previo: AWS Textract + `swissgeol-ocr`) |
-| Salida | `predictions.json` (sondeos → metadatos, capas con profundidades y bbox, agua) |
-| Clasificación | BERT por propiedad (litología, USCS, color, componentes…) publicados en HuggingFace `swissgeol/*`; alternativa con Claude vía AWS Bedrock |
+| Input | PDFs with text (scans with prior OCR: AWS Textract + `swissgeol-ocr`) |
+| Output | `predictions.json` (Bohrungen → metadata, Schichten with depths and bbox, water) |
+| Classification | BERT per property (lithology, USCS, colour, components…) published on HuggingFace `swissgeol/*`; alternative with Claude via AWS Bedrock |
 
-## 2. Mapa de módulos y relevancia para nosotros
+## 2. Module map and relevance for us
 
-| Módulo | Qué hace | Relevancia | Cómo usarlo |
+| Module | What it does | Relevance | How to use it |
 |---|---|---|---|
-| `extraction/features/stratigraphy/sidebar/*` | Tipos de columna de profundidad: **AAboveB** (`0.30` / `2.70` apilados = nuestro caso), AToB (`0.30–2.70`), LayerIdentifier (`a)`, `1)`), Protocol, Spülprobe | **Alta** | Portar AAboveB + su validador |
-| `…/sidebar/utils/a_above_b_sidebar_validator.py` | ≥ 3 entradas, estrictamente crecientes, **Pearson > 0,95**, límite de "ruido" | **Alta** | Criterio adoptado en [02 §3](02_bohrprofil_generalizacion.md#3-escala-vertical-por-regresión) |
-| `…/sidebar/extractor/a_above_b_sidebar_extractor.py` | Agrupa números en columnas, **excluye reglas** (progresiones aritméticas con 0), corrige OCR | **Alta** | Portar |
-| `extraction/features/extract.py` (`BoreholeExtractor`) | Candidatos de descripción por columna, puntuación geométrica (`score_match`), emparejamiento voraz sin solapes, diagonales de referencia | **Alta** | Portar ideas: puntuación + diagonales |
-| `…/stratigraphy/depth_description_alignment.py` | Emparejamiento líneas ↔ intervalos por **programación dinámica** | Media-alta | Portar para capas delgadas |
-| `…/layer/continuation_detection.py` | Sondeo que sigue en la página siguiente | Media | Portar |
-| `extraction/features/groundwater/*` | Palabras clave, símbolo suizo (dos líneas), texto en color minoritario | Media | Reusar listas y heurística de color; símbolo DIN propio ([06](06_grundwasser.md)) |
-| `extraction/features/metadata/*` | Nombre, cota, coordenadas cerca de palabras clave | Media | Estructura sí; validadores CRS alemanes propios ([07](07_coordenadas.md)) |
-| `swissgeol_doc_processing/geometry/line_detection.py` | Líneas por **Fast Line Detector sobre raster** | Baja para CAD vectorial | Para escaneos; en CAD usar `get_drawings()` |
-| `swissgeol_doc_processing/utils/strip_log_detection.py` | Localiza columnas gráficas en raster (morfología, Hough, FLD) | Media (fallback) | Localizar columnas en escaneos; no clasifica patrones ([04](04_schraffur_din4023.md)) |
-| `swissgeol_doc_processing/config/matching_params.yml` | Palabras de descripción, de agua, de coordenadas, pesos | Media | Partir de sus listas `de` y ampliar |
-| `extraction/evaluation/*`, `docs/groundtruth-json.md` | Ground truth por PDF, métricas por capa/intervalo/descripción/metadatos/agua, benchmark multi-dataset | **Alta** | Adoptar el formato ([09](09_validacion_benchmark.md)) |
-| `classification/*` | Clasificadores de descripciones (BERT suizo, Bedrock) | Baja-media | Sistemas suizos (USCS, EN main); referencia de diseño para nuestro parser DIN |
-| `app/*` + `Dockerfile` | API FastAPI (`extract_data`, `extract_stratigraphy`, …) | Media | Correr como servicio "oráculo" en el benchmark |
+| `extraction/features/stratigraphy/sidebar/*` | Types of depth column: **AAboveB** (`0.30` / `2.70` stacked = our case), AToB (`0.30–2.70`), LayerIdentifier (`a)`, `1)`), Protocol, Spülprobe | **High** | Port AAboveB + its validator |
+| `…/sidebar/utils/a_above_b_sidebar_validator.py` | ≥ 3 entries, strictly increasing, **Pearson > 0.95**, "noise" limit | **High** | Criterion adopted in [02 §3](02_bohrprofil_generalization.md#3-vertical-scale-by-regression) |
+| `…/sidebar/extractor/a_above_b_sidebar_extractor.py` | Groups numbers into columns, **excludes rulers** (arithmetic progressions with 0), fixes OCR | **High** | Port |
+| `extraction/features/extract.py` (`BoreholeExtractor`) | Description candidates per column, geometric scoring (`score_match`), greedy matching without overlaps, leader diagonals | **High** | Port the ideas: scoring + diagonals |
+| `…/stratigraphy/depth_description_alignment.py` | Matching lines ↔ intervals by **dynamic programming** | Medium-high | Port for thin Schichten |
+| `…/layer/continuation_detection.py` | Bohrung that continues on the next page | Medium | Port |
+| `extraction/features/groundwater/*` | Keywords, Swiss symbol (two lines), text in a minority colour | Medium | Reuse the lists and the colour heuristic; our own DIN symbol ([06](06_grundwasser.md)) |
+| `extraction/features/metadata/*` | Name, elevation, coordinates near keywords | Medium | Structure yes; our own German CRS validators ([07](07_coordinates.md)) |
+| `swissgeol_doc_processing/geometry/line_detection.py` | Lines by **Fast Line Detector on raster** | Low for vector CAD | For scans; in CAD use `get_drawings()` |
+| `swissgeol_doc_processing/utils/strip_log_detection.py` | Finds graphic columns in raster (morphology, Hough, FLD) | Medium (fallback) | Locate columns in scans; it does not classify patterns ([04](04_schraffur_din4023.md)) |
+| `swissgeol_doc_processing/config/matching_params.yml` | Description, water and coordinate words, weights | Medium | Start from their `de` lists and extend them |
+| `extraction/evaluation/*`, `docs/groundtruth-json.md` | Ground truth per PDF, metrics per Schicht/interval/description/metadata/water, multi-dataset benchmark | **High** | Adopt the format ([09](09_validation_benchmark.md)) |
+| `classification/*` | Description classifiers (Swiss BERT, Bedrock) | Low-medium | Swiss systems (USCS, EN main); design reference for our DIN parser |
+| `app/*` + `Dockerfile` | FastAPI API (`extract_data`, `extract_stratigraphy`, …) | Medium | Run as an "oracle" service in the benchmark |
 
-## 3. Diferencias de base
+## 3. Basic differences
 
 | | swissgeol | Geo_Agent |
 |---|---|---|
-| Documentos | Perfiles suizos heterogéneos, muchos **escaneados** | Planos **CAD vectoriales** alemanes DIN 4023 + Längsschnitt de túnel |
-| Líneas | Raster + FLD | Vectores exactos (`get_drawings`) |
-| Señal principal | Texto | Texto **+ geometría** (Schraffur, símbolos, curvas) |
-| CRS / alturas | LV95, LV03, `m ü. M.` | UTM 32/33, Gauß-Krüger, `m NHN` |
-| Clasificación | USCS, EN, litología suiza | DIN 4023 / EN ISO 14688, vocabulario de la leyenda |
-| Alcance | Sondeos | Sondeos + Sondierungen + sección + túnel + modelo 3D |
+| Documents | Heterogeneous Swiss logs, many **scanned** | German **vector CAD** drawings, DIN 4023 + tunnel Längsschnitt |
+| Lines | Raster + FLD | Exact vectors (`get_drawings`) |
+| Main signal | Text | Text **+ geometry** (Schraffur, symbols, curves) |
+| CRS / heights | LV95, LV03, `m ü. M.` | UTM 32/33, Gauß-Krüger, `m NHN` |
+| Classification | USCS, EN, Swiss lithology | DIN 4023 / EN ISO 14688, vocabulary from the legend |
+| Scope | Bohrungen | Bohrungen + Sondierungen + section + tunnel + 3D model |
 
-## 4. Prueba: swissgeol sin cambios sobre nuestros PDFs
+## 4. Test: swissgeol unchanged on our PDFs
 
-Instalado en un entorno aislado y ejecutado con `boreholes-extract-all` sobre 5 de los layouts
-sintéticos (A–A4 y B; A5 sólo difiere en la Schraffur, que swissgeol no lee) de [`spikes/extraktion_v2`](../spikes/extraktion_v2/README.md); evaluado con la misma
-métrica que v1 y v2 (`score_swissgeol.py`):
+Installed in an isolated environment and run with `boreholes-extract-all` on 5 of the synthetic
+layouts (A–A4 and B; A5 only differs in the Schraffur, which swissgeol does not read) from
+[`spikes/extraktion_v2`](../spikes/extraktion_v2/README.md); evaluated with the same metric as v1
+and v2 (`score_swissgeol.py`):
 
-| Layout | Sondeos | Límites | Bodenart (texto) | Agua | Cota | Coordenadas |
+| Layout | Bohrungen | Boundaries | Bodenart (text) | Water | Elevation | Coordinates |
 |---|---|---|---|---|---|---|
 | A | 3/3 | 18/18 | 18/18 | 0/3 | 0/3 | 0/3 |
 | A2 | 3/3 | 18/18 | 18/18 | 0/3 | 0/3 | 0/3 |
 | A3 | 3/3 | 18/18 | 18/18 | 0/3 | 0/3 | 0/3 |
 | A4 | 3/3 | 12/18 | 12/18 | 0/3 | 0/3 | 0/3 |
-| B | 0/2 correctos* | 0/12* | 0/12* | 0/2 | 0/2 | 0/2 |
+| B | 0/2 correct* | 0/12* | 0/12* | 0/2 | 0/2 | 0/2 |
 
-\* En B las capas y profundidades de ambos sondeos salen **correctas**, pero cada sondeo recibe
-el nombre del diagrama vecino (`DPH 1`, `DPH 2`) en vez de `BK 1`/`BK 2`, y el único registro
-llamado `BK 2` es un sondeo falso construido con la leyenda (3 capas sin profundidad). Con métrica
-por nombre cuenta como fallo, y en producción también lo sería (datos en el sondeo equivocado).
+\* In B the Schichten and depths of both Bohrungen come out **correct**, but each Bohrung gets the
+name of the neighbouring diagram (`DPH 1`, `DPH 2`) instead of `BK 1`/`BK 2`, and the only record
+called `BK 2` is a false Bohrung built from the legend (3 Schichten without depth). With a metric by
+name this counts as a failure, and in production it would be one too (data on the wrong Bohrung).
 
-Además, en **todos** los layouts la página de leyenda produce capas falsas: en A/A2/A3 se
-"continúa" el tercer sondeo en la página 2 (9 capas en vez de 6) y en A4/B aparece un sondeo
-extra sólo con entradas de la leyenda. Nuestra métrica (recall por profundidad) no penaliza esas
-capas sobrantes; una métrica de precisión sí lo haría.
+In addition, in **all** layouts the legend page produces false Schichten: in A/A2/A3 the third
+Bohrung is "continued" on page 2 (9 Schichten instead of 6), and in A4/B an extra Bohrung appears
+with only legend entries. Our metric (recall by depth) does not penalise those extra Schichten; a
+precision metric would.
 
-Lecturas:
-- Su detección de columna de profundidad y de bloques de descripción **es independiente del
-  layout**: confirma que el enfoque estadístico de [02](02_bohrprofil_generalizacion.md) es el
-  correcto.
-- Lo que falla es todo lo que depende de convenciones nacionales o de entender el dibujo:
-  símbolo de agua, `NHN`, CRS, asociación nombre ↔ columna cuando hay diagramas, y distinguir
-  una leyenda de un sondeo.
-- Nuestro prototipo v2 acierta además Schraffur, agua, GOK, coordenadas y DPH en los mismos PDFs
-  ([09](09_validacion_benchmark.md)).
+Readings:
+- Its detection of depth columns and description blocks **is layout-independent**: it confirms that
+  the statistical approach of [02](02_bohrprofil_generalization.md) is the right one.
+- What fails is everything that depends on national conventions or on understanding the drawing:
+  water symbol, `NHN`, CRS, the name ↔ column association when there are diagrams, and telling a
+  legend from a Bohrung.
+- Our prototype v2 also gets Schraffur, water, GOK, coordinates and DPH right on the same PDFs
+  ([09](09_validation_benchmark.md)).
 
-### Con PDFs reales
+### With real PDFs
 
-Detalle en [15](15_resultados_pdfs_reales.md):
-- **Wachenroth**: 6/6 sondeos, 18/18 límites y 6/6 cotas en las páginas individuales, pero
-  **5 sondeos falsos** (el corte en altura repetido y un informe de laboratorio) y 1 nivel
-  freático falso.
-- **Talheim** (páginas giradas, representación en altura): 0/10.
-- **Halle** (sin perfiles): **4 sondeos falsos** sacados de tablas.
+Details in [15](15_results_real_pdfs.md):
+- **Wachenroth**: 6/6 Bohrungen, 18/18 boundaries and 6/6 elevations on the individual pages, but
+  **5 false Bohrungen** (the repeated height section and a lab report) and 1 false Grundwasser
+  level.
+- **Talheim** (rotated pages, drawn by elevation): 0/10.
+- **Halle** (no logs): **4 false Bohrungen** taken from tables.
 
-Confirma la lectura de arriba: su núcleo encuentra bien profundidades y descripciones, pero
-falta saber qué es un sondeo y qué no.
+This confirms the reading above: its core finds depths and descriptions well, but it lacks knowing
+what is a Bohrung and what is not.
 
-**Prueba ciega** (Hausham con DC-Software y Rednitzhembach escaneado,
-[15 §6](15_resultados_pdfs_reales.md#6-prueba-ciega-hausham-y-rednitzhembach)):
-- swissgeol sacó **13/13 sondeos** y 4/4 niveles freáticos, y nuestro v3 **0/13**: su lectura de
-  etiquetas tolera formatos que no conocía (`0.20m`, OCR).
-- Pero dio 0/13 cotas e inventó 18 sondeos (las páginas de texto del registro de capas parecían
-  perfiles).
+**Blind test** (Hausham with DC-Software and scanned Rednitzhembach,
+[15 §6](15_results_real_pdfs.md#6-blind-test-hausham-and-rednitzhembach)):
+- swissgeol got **13/13 Bohrungen** and 4/4 Grundwasser levels, and our v3 **0/13**: its label
+  reading tolerates formats ours did not know (`0.20m`, OCR).
+- But it got 0/13 elevations and invented 18 Bohrungen (the text pages of the Schichtenverzeichnis
+  looked like logs).
 
-Esto refuerza la estrategia A: **portar su catálogo de formatos de etiqueta y su tolerancia al
-OCR**, y mantener nuestra validación geométrica (D26).
+This strengthens strategy A: **port its catalogue of label formats and its tolerance to OCR**, and
+keep our geometric validation (D26).
 
-## 5. Estrategias de reutilización
+## 5. Reuse strategies
 
-| Estrategia | Pros | Contras | Uso recomendado |
+| Strategy | Pros | Cons | Recommended use |
 |---|---|---|---|
-| **A. Portar algoritmos** (reimplementar ideas en `geo_agent`) | Control total, sin acoplamiento a una API beta, sin arrastrar AGPL si algún día se compra licencia comercial de PyMuPDF | Trabajo de reimplementación | **Núcleo**: AAboveB + validador, exclusión de reglas, puntuación de candidatos, diagonales, DP, continuación |
-| **B. Dependencia directa** (`pip install` de su wheel, llamar `AAboveBSidebarExtractor` etc.) | Rápido | API interna inestable, fija PyMuPDF 1.26.3 (nosotros 2.x), arrastra OpenCV/scikit/AWS | Sólo en scripts de evaluación |
-| **C. Servicio oráculo** (su API Docker) | Segunda opinión independiente; detecta regresiones nuestras | Otro servicio que operar | **Benchmark** y casos de baja confianza |
-| **D. Contribuir upstream** | Mejoras compartidas; swisstopo invita a colaborar | Coordinación, su roadmap manda | Adaptador de líneas vectoriales, CRS alemanes, símbolo DIN, clasificador de Schraffur |
-| E. Fork | — | Mantener un fork de un proyecto vivo | **No** |
+| **A. Port algorithms** (reimplement the ideas in `geo_agent`) | Full control, no coupling to a beta API, no AGPL carried along if a commercial PyMuPDF license is bought one day | Reimplementation work | **Core**: AAboveB + validator, ruler exclusion, candidate scoring, diagonals, DP, continuation |
+| **B. Direct dependency** (`pip install` of their wheel, call `AAboveBSidebarExtractor` etc.) | Fast | Unstable internal API, pins PyMuPDF 1.26.3 (we use 2.x), drags in OpenCV/scikit/AWS | Only in evaluation scripts |
+| **C. Oracle service** (their Docker API) | Independent second opinion; detects our regressions | Another service to operate | **Benchmark** and low-confidence cases |
+| **D. Contribute upstream** | Shared improvements; swisstopo invites collaboration | Coordination, their roadmap decides | Vector line adapter, German CRSs, DIN symbol, Schraffur classifier |
+| E. Fork | — | Maintaining a fork of a living project | **No** |
 
-### Licencia (decisión importante)
+### License (important decision)
 
-- swissgeol es **AGPL-3.0-only**. Copiar su código hace que esa parte de Geo_Agent sea AGPL.
-- Geo_Agent usa PyMuPDF (también AGPL o comercial): hoy, para uso **interno**, no cambia nada.
-- Si se ofrece como servicio a terceros o se compra la licencia comercial de PyMuPDF para cerrar el
-  código, el código copiado de swissgeol **seguiría siendo AGPL**. Por eso: **portar ideas
-  (A)**, citar la fuente en comentarios y, si se copia algo literal, aislarlo en un módulo marcado
-  como AGPL.
+- swissgeol is **AGPL-3.0-only**. Copying its code makes that part of Geo_Agent AGPL.
+- Geo_Agent uses PyMuPDF (also AGPL or commercial): today, for **internal** use, nothing changes.
+- If it is offered as a service to third parties, or the commercial PyMuPDF license is bought to
+  close the code, the code copied from swissgeol **would still be AGPL**. Therefore: **port ideas
+  (A)**, cite the source in comments and, if anything is copied literally, isolate it in a module
+  marked as AGPL.
 
-## 6. Adaptador propuesto: líneas vectoriales para su pipeline
+## 6. Proposed adapter: vector lines for their pipeline
 
-Su `Line(start: Point, end: Point)` (`swissgeol_doc_processing/geometry/geometry_dataclasses.py`)
-se alimenta hoy desde el raster (`detect_lines_fld`). Para CAD vectorial basta convertir los
-segmentos `l` de `page.get_drawings()` a `Line` y pasarlos como `LineDetectionResult`: líneas
-exactas, sin renderizar. Es la contribución upstream más pequeña y útil para ambos.
+Their `Line(start: Point, end: Point)` (`swissgeol_doc_processing/geometry/geometry_dataclasses.py`)
+is fed today from the raster (`detect_lines_fld`). For vector CAD it is enough to convert the `l`
+segments of `page.get_drawings()` to `Line` and pass them as a `LineDetectionResult`: exact lines,
+no rendering. It is the smallest and most useful upstream contribution for both sides.
 
-## 7. Plan concreto
+## 7. Concrete plan
 
-1. Portar AAboveB + validador + exclusión de reglas a `geo_agent/bohrprofil/scale.py` (con test).
-2. Portar puntuación de candidatos de descripción y diagonales → capas delgadas.
-3. Adoptar su formato `ground_truth.json` (+ extensiones) y sus métricas → [09](09_validacion_benchmark.md).
-4. Correr swissgeol como oráculo en el benchmark (Docker o venv aislado).
-5. Reusar listas de palabras clave (`matching_params.yml`, `de`) para agua, coordenadas y cota.
-6. Contactar a swisstopo: adaptador vectorial, CRS alemanes, símbolo DIN de agua, Schraffur.
-   Qué ganamos cada uno y borradores de issues/correo: [13 Colaboración](13_colaboracion_swisstopo.md).
+1. Port AAboveB + validator + ruler exclusion to `geo_agent/bohrprofil/scale.py` (with a test).
+2. Port the scoring of description candidates and the diagonals → thin Schichten.
+3. Adopt their `ground_truth.json` format (+ extensions) and their metrics → [09](09_validation_benchmark.md).
+4. Run swissgeol as an oracle in the benchmark (Docker or isolated venv).
+5. Reuse the keyword lists (`matching_params.yml`, `de`) for water, coordinates and elevation.
+6. Contact swisstopo: vector adapter, German CRSs, DIN water symbol, Schraffur. What each side gains
+   and drafts of issues/email: [13 Collaboration](13_swisstopo_collaboration.md).
 
-Up: [Índice](README.md)
+Up: [Index](README.md)
 
-Related: [13 Colaboración](13_colaboracion_swisstopo.md) · [14 Licencias](14_licencias_terceros.md) · [02 Bohrprofil](02_bohrprofil_generalizacion.md) · [04 Schraffur](04_schraffur_din4023.md) · [06 Grundwasser](06_grundwasser.md) · [07 Coordenadas](07_coordenadas.md) · [09 Validación](09_validacion_benchmark.md) · [11 Decisiones](11_decisiones.md)
+Related: [13 Collaboration](13_swisstopo_collaboration.md) · [14 Licensing](14_licensing.md) · [02 Bohrprofil](02_bohrprofil_generalization.md) · [04 Schraffur](04_schraffur_din4023.md) · [06 Grundwasser](06_grundwasser.md) · [07 Coordinates](07_coordinates.md) · [09 Validation](09_validation_benchmark.md) · [11 Decisions](11_decisions.md)

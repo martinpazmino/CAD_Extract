@@ -1,199 +1,201 @@
 ---
-title: "18 Modelador de capas (N3) y visor That Open"
+title: "18 Layer modeler (N3) and That Open viewer"
 date: 2026-10-27
-tags: [modelo, layer-cake, ifc, thatopen, baugrundmodell]
-aliases: [Modelador, Layer-Cake, Visor That Open]
+tags: [model, layer-cake, ifc, thatopen, baugrundmodell]
+aliases: [Modeler, Layer-cake, That Open viewer]
 ---
 
-# 18 Modelador de capas (N3) y visor That Open
+# 18 Layer modeler (N3) and That Open viewer
 
-Primer tramo del Baugrundmodell que **genera las Bodenschichten automáticamente**: de los sondeos
-extraídos (JSON canónico, [17](17_algoritmo_extraccion.md)) a unidades de modelo, superficies,
-**sólidos cerrados** por unidad, IFC 4.3 (`IfcGeomodel` + `IfcBorehole`) y un visor web sobre
-That Open Engine. Implementa los pasos 1–6 del algoritmo layer-cake de la
-[arquitectura §7.2](ARQUITECTURA_BAUGRUNDMODELL.md#72-algoritmo-layer-cake-n3).
+First stretch of the Baugrundmodell that **generates the Bodenschichten automatically**: from the
+extracted Bohrungen (canonical JSON, [17](17_extraction_algorithm.md)) to model Einheiten, surfaces,
+**closed solids** per Einheit, IFC 4.3 (`IfcGeomodel` + `IfcBorehole`) and a web viewer on That Open
+Engine. It implements steps 1–6 of the layer-cake algorithm in the
+[architecture §7.2](ARCHITECTURE_BAUGRUNDMODELL.md#72-layer-cake-algorithm-n3).
 
 ```
-PDF ─prototyp_v4─► JSON canónico ─python -m baugrundmodell─► modelo.ifc + informe.json ─► apps/web (That Open)
+PDF ─prototyp_v4─► canonical JSON ─python -m baugrundmodell─► model.ifc + report.json ─► apps/web (That Open)
                                         ▲
-                                        └─ einheiten.json (opcional: el geotécnico confirma o corrige las unidades)
+                                        └─ einheiten.json (optional: the geotechnical engineer confirms or corrects the Einheiten)
 ```
 
-| Código | Qué |
+| Code | What |
 |---|---|
-| [`services/modeler/`](../services/modeler/README.md) | Paquete `baugrundmodell` (Python): unidades, superficies, sólidos, IFC; 31 pruebas con verdad sintética |
-| [`apps/web/`](../apps/web/README.md) | Visor (Vite + TypeScript + `@thatopen/components` 3.6): unidades, propiedades, cortes, exageración vertical |
+| [`services/modeler/`](../services/modeler/README.md) | `baugrundmodell` package (Python): Einheiten, surfaces, solids, IFC; 31 tests with synthetic ground truth |
+| [`apps/web/`](../apps/web/README.md) | Viewer (Vite + TypeScript + `@thatopen/components` 3.6): Einheiten, properties, sections, vertical exaggeration |
 
-![Modelo demo, corte O–W con exageración 5×: lente de Kies local y Torf que se acuña](img/18_demo_schnitt.jpg)
+![Demo model, W–E section with 5× exaggeration: local Kies lens and Torf that pinches out](img/18_demo_schnitt.jpg)
 
-## 1. Unidades de modelo automáticas
+## 1. Automatic model Einheiten
 
-**Preparación por sondeo.** Fuera del modelo, con motivo en el informe y en el IFC
-(`Nicht_im_Modell`): sin coordenadas, otro CRS que la mayoría, sin cota de boca (GOK), sin capas,
-duplicado o en la misma posición que otro. Huecos entre capas → `unklassifiziert`; solapes → se
-recorta el techo. Una capa sin clase entre dos de la misma clase se asigna a esa clase **y se anota**
-(regla del proyecto: marcar, no esconder). Capas consecutivas de la misma clase se funden en un
-*Abschnitt*.
+**Preparation per Bohrung.** Left out of the model, with the reason in the report and in the IFC
+(`Nicht_im_Modell`): no coordinates, a different CRS from the majority, no collar elevation (GOK), no
+Schichten, duplicated or at the same position as another one. Gaps between Schichten →
+`unklassifiziert`; overlaps → the top is trimmed. A Schicht without a class between two of the same
+class is assigned to that class **and noted** (project rule: mark, do not hide). Consecutive
+Schichten of the same class are merged into an *Abschnitt*.
 
-**Correlación (alineamiento de secuencias).** Una unidad es una Bodenart en un lugar de la
-secuencia ("Sand 1", "Kies 1", "Sand 2"). Cada sondeo se alinea contra la secuencia común con
-programación dinámica:
+**Correlation (sequence alignment).** An Einheit is a Bodenart at one place in the sequence
+("Sand 1", "Kies 1", "Sand 2"). Each Bohrung is aligned against the common sequence with dynamic
+programming:
 
-| Operación | Significado | Coste |
+| Operation | Meaning | Cost |
 |---|---|---|
-| M | el Abschnitt pertenece a la unidad (misma clase) | hueco × 1/m + distancia de centros × 0,1/m, el menor entre cota NHN y profundidad bajo GOK ([19 §4](19_app_v2.md#4-correlación-con-relieve-fuerte)) |
-| S | la unidad **falta** en el sondeo (se acuña, espesor 0) | 2,0 |
-| E | el mismo Abschnitt cubre también la siguiente unidad de su clase (una lente intermedia falta) | 0,5 + coste de cota |
-| C | otro Abschnitt en la misma unidad (unidades del geotécnico con varias clases) | 0,2 + coste de cota |
-| N | el Abschnitt no encaja → unidad nueva | 3,0 |
-| T | la unidad queda **bajo la Endteufe**: desconocida, no "falta" | 0; 3,0 + hueco si la unidad está entera por encima del final |
+| M | the Abschnitt belongs to the Einheit (same class) | gap × 1/m + distance between centres × 0.1/m, the smaller of NHN elevation and depth below GOK ([19 §4](19_app_v2.md#4-correlation-with-strong-relief)) |
+| S | the Einheit is **missing** in the Bohrung (it pinches out, thickness 0) | 2.0 |
+| E | the same Abschnitt also covers the next Einheit of its class (an intermediate lens is missing) | 0.5 + elevation cost |
+| C | another Abschnitt in the same Einheit (the engineer's Einheiten with several classes) | 0.2 + elevation cost |
+| N | the Abschnitt does not fit → new Einheit | 3.0 |
+| T | the Einheit lies **below the Endteufe**: unknown, not "missing" | 0; 3.0 + gap if the Einheit lies entirely above the end |
 
-La cota de referencia de cada unidad es la media IDW de los demás sondeos (*leave-one-out*). La
-secuencia crece de forma progresiva (empieza el sondeo con más Abschnitte, después siempre el más
-cercano) y al final todos los sondeos se realinean contra la secuencia completa hasta que no aparecen
-unidades nuevas. Nombres: la clase, numerada si se repite.
+The reference elevation of each Einheit is the IDW mean of the other Bohrungen (*leave-one-out*).
+The sequence grows progressively (it starts with the Bohrung with the most Abschnitte, then always
+the closest one) and at the end all Bohrungen are realigned against the complete sequence until no
+new Einheiten appear. Names: the class, numbered if it repeats.
 
-**Confirmación del geotécnico.** El informe trae `vorlage_einheiten` en el formato de
-`--einheiten`; se puede renombrar, juntar clases (`{"name": "Sande und Kiese", "bodenarten":
-["Sand", "Kies"]}`) o reordenar y volver a ejecutar. Una clase que no cabe en ninguna unidad dada
-crea una unidad nueva **con aviso**.
+**Confirmation by the geotechnical engineer.** The report contains `vorlage_einheiten` in the format
+of `--einheiten`; Einheiten can be renamed, classes merged (`{"name": "Sande und Kiese",
+"bodenarten": ["Sand", "Kies"]}`) or reordered, and the run repeated. A class that fits no given
+Einheit creates a new Einheit **with a warning**.
 
-## 2. Contactos por sondeo
+## 2. Contacts per Bohrung
 
-Base de cada unidad en cada sondeo, de cuatro tipos:
+Base of each Einheit in each Bohrung, of four types:
 
-| Tipo | Cuándo | Uso |
+| Type | When | Use |
 |---|---|---|
-| exacto | límite entre dos Abschnitte | dato |
-| libre | la unidad termina dentro de un Abschnitt que cubre varias unidades (lente que falta) | se fija en la mitad interpolada de la unidad que se acuña, dentro del Abschnitt (margen 0,1 m), ordenado |
-| censurado | el sondeo termina en la unidad | base ≤ Endteufe − 0,5 m; si la superficie lo viola se añade ese punto (iterativo) |
-| desconocido | unidad bajo la Endteufe | sin dato; el recorte estratigráfico la mantiene por debajo |
+| exact | boundary between two Abschnitte | data |
+| free | the Einheit ends inside an Abschnitt that covers several Einheiten (missing lens) | set at the interpolated middle of the Einheit that pinches out, inside the Abschnitt (margin 0.1 m), ordered |
+| censored | the Bohrung ends in the Einheit | base ≤ Endteufe − 0.5 m; if the surface violates it, that point is added (iterative) |
+| unknown | Einheit below the Endteufe | no data; the stratigraphic trimming keeps it below |
 
-Ejemplo real (Berlín, 422C-460, un único Sand de 0 a 7,7 m sobre Kies): Sand 1 (base libre),
-Kies 1 **falta** (se acuña a 31,15 m NHN, la mitad de la lente de 422C-461), Sand 2 (base exacta
-28,55), Kies 2, Sand 3 (censurado).
+Real example (Berlin, 422C-460, a single Sand from 0 to 7.7 m above Kies): Sand 1 (free base),
+Kies 1 **missing** (it pinches out at 31.15 m NHN, the middle of the lens of 422C-461), Sand 2 (exact
+base 28.55), Kies 2, Sand 3 (censored).
 
-## 3. Superficies y sólidos
+## 3. Surfaces and solids
 
-1. **Dominio**: envolvente convexa de los sondeos + buffer (½ de la distancia mediana al vecino,
-   5–25 m); funciona con un sondeo (círculo) y con sondeos en línea (corredor).
-2. **Malla TIN común** a todas las superficies; los sondeos son **nodos** de la malla.
-3. **Interpolación exacta**: IDW (p = 2, por defecto) o spline de placa delgada con tendencia lineal
-   (`--methode tps`; con < 3 puntos o colineales cae a IDW). Exacta en los datos ⇒ el modelo
-   reproduce cada contacto (desviación medida: **0,0 m** en todos los casos).
-4. **Recorte estratigráfico** de arriba abajo `z_base_i = min(z_base_i, z_techo_i)`, nunca bajo la
-   base del modelo (= Endteufe más profunda); restos < 5 mm → 0.
-5. **Extensión de unidades que no están en todos los sondeos**: IDW sólo vale 0 exactamente en los
-   sondeos sin la unidad, así que una lente vista en un sondeo quedaba fina bajo todo el solar.
-   Indicador presente = 1 / falta = 0 (desconocido no cuenta) interpolado; donde < 0,5 la unidad se
-   colapsa a su mitad (la superior a su techo, la inferior a su base). En los sondeos no cambia nada.
-6. **Sólido cerrado** por unidad: TIN de techo + TIN de base + paredes en el borde. Donde la unidad
-   se acuña, techo y base comparten vértice y los triángulos planos se eliminan; comprobación de
-   cierre (cada arista igual de veces en ambos sentidos) y de volumen (malla = Σ área × espesor medio).
+1. **Domain**: convex hull of the Bohrungen + buffer (½ of the median distance to the neighbour,
+   5–25 m); it works with one Bohrung (circle) and with Bohrungen in a line (corridor).
+2. **A TIN mesh common** to all surfaces; the Bohrungen are **nodes** of the mesh.
+3. **Exact interpolation**: IDW (p = 2, by default) or a thin-plate spline with a linear trend
+   (`--methode tps`; with < 3 points or collinear ones it falls back to IDW). Exact at the data ⇒ the
+   model reproduces every contact (measured deviation: **0.0 m** in all cases).
+4. **Stratigraphic trimming** from top to bottom `z_base_i = min(z_base_i, z_top_i)`, never below the
+   base of the model (= deepest Endteufe); remainders < 5 mm → 0.
+5. **Extent of Einheiten that are not in every Bohrung**: IDW is only exactly 0 at the Bohrungen
+   without the Einheit, so a lens seen in one Bohrung stayed thin under the whole site. Indicator
+   present = 1 / missing = 0 (unknown does not count), interpolated; where it is < 0.5 the Einheit
+   collapses to its middle (the upper one to its top, the lower one to its base). At the Bohrungen
+   nothing changes.
+6. **Closed solid** per Einheit: top TIN + base TIN + walls at the edge. Where the Einheit pinches
+   out, top and base share a vertex and flat triangles are removed; a closure check (each edge used
+   equally often in both directions) and a volume check (mesh = Σ area × mean thickness).
 
 ## 4. IFC 4.3
 
-- `IfcGeomodel` ⊃ un `IfcGeotechnicalStratum` (SOLID, `IfcTriangulatedFaceSet` con `Closed`; antes
-  `IfcPolygonalFaceSet`, una entidad por cara: con trasses de 80 000 caras el IFC triplicaba) por
-  unidad, `Description = "Modelleinheit k/n"`; `CPset_Modelleinheit`: unidad, orden, clases, color,
-  volumen, espesor máx./medio, distancia máxima a un sondeo (incertidumbre), sondeos con la unidad
-  presente / ausente / desconocida, cerrado, avisos.
-- `CPset_Baugrundmodell` en el `IfcGeomodel`: método, malla, buffer, base, sondeos dentro y fuera
-  del modelo (con motivo), fuentes, versión.
-- `IfcBorehole` ⊃ estratos del sondeo (prismas, `Description = "Bohrsaeule"`) con la procedencia de
-  siempre (`CPset_Schichtenverzeichnis`, `CPset_Herkunft`). El exportador N1 del spike usa ahora el
-  mismo escritor.
-- Georreferencia `IfcMapConversion` + EPSG del JSON, origen = centroide redondeado (o el origen fijo
-  del proyecto que pasa la app). **Unidad de longitud METRE explícita** (antes mm por defecto de
-  ifcopenshell: el modelo salía 1000× pequeño, [M17](16_lecciones_aprendidas.md#m-modelo-ifc-y-that-open)).
-  Validación de esquema: **0 errores** (demo, Berlín, todos los casos de prueba).
+- `IfcGeomodel` ⊃ one `IfcGeotechnicalStratum` (SOLID, `IfcTriangulatedFaceSet` with `Closed`;
+  formerly `IfcPolygonalFaceSet`, one entity per face: with Trassen of 80,000 faces the IFC tripled)
+  per Einheit, `Description = "Modelleinheit k/n"`; `CPset_Modelleinheit`: Einheit, order, classes,
+  colour, volume, max./mean thickness, maximum distance to a Bohrung (uncertainty), Bohrungen with
+  the Einheit present / absent / unknown, closed, warnings.
+- `CPset_Baugrundmodell` on the `IfcGeomodel`: method, mesh, buffer, base, Bohrungen inside and
+  outside the model (with the reason), sources, version.
+- `IfcBorehole` ⊃ strata of the Bohrung (prisms, `Description = "Bohrsaeule"`) with the usual
+  provenance (`CPset_Schichtenverzeichnis`, `CPset_Herkunft`). The spike's N1 exporter now uses the
+  same writer.
+- Georeferencing `IfcMapConversion` + EPSG from the JSON, origin = rounded centroid (or the fixed
+  project origin passed by the app). **Explicit length unit METRE** (formerly mm by ifcopenshell's
+  default: the model came out 1000× too small, [M17](16_lessons_learned.md#m-model-ifc-and-that-open)).
+  Schema validation: **0 errors** (demo, Berlin, all test cases).
 
-## 5. Visor (`apps/web`)
+## 5. Viewer (`apps/web`)
 
 > [!NOTE]
-> Desde [20](20_lage_pruefung_viewer.md) el visor tiene los controles del TwinBimM (BUI, ViewCube,
-> posproducción, Highlighter/Hider, coordenadas), cámara para modelos de más de 5 km y el editor de
-> Lage sobre el PDF del plano. Lo de abajo describe la primera versión.
+> Since [20](20_lage_pruefung_viewer.md) the viewer has the controls of the TwinBimM (BUI,
+> ViewCube, postproduction, Highlighter/Hider, coordinates), a camera for models over 5 km and the
+> Lage editor on the PDF of the plan. What follows describes the first version.
 
-Carga por `?ifc=`, selector de archivo o arrastrar; añade `IFCBOREHOLE`, `IFCGEOMODEL`,
-`IFCGEOSLICE`, `IFCGEOTECHNICALSTRATUM` al importer ([M2](16_lecciones_aprendidas.md#m-modelo-ifc-y-that-open)).
-Lista de unidades (color, volumen, visibilidad), clic → propiedades con procedencia, etiquetas con el
-código de cada sondeo, sondeos on/off, unidades translúcidas, exageración vertical 1–10×, cortes
-O–W / N–S y doble clic para un plano. WASM de web-ifc y worker de Fragments se sirven **localmente**
-(`npm run vendor`): sin unpkg. `scripts/check.mjs` lo prueba sin pantalla (Chromium/Playwright):
-carga, unidades, etiquetas, selección por lista y por clic con exageración, corte, capturas.
+Loading by `?ifc=`, file picker or drag and drop; it adds `IFCBOREHOLE`, `IFCGEOMODEL`,
+`IFCGEOSLICE`, `IFCGEOTECHNICALSTRATUM` to the importer
+([M2](16_lessons_learned.md#m-model-ifc-and-that-open)). List of Einheiten (colour, volume,
+visibility), click → properties with provenance, labels with the code of each Bohrung, Bohrungen
+on/off, translucent Einheiten, vertical exaggeration 1–10×, W–E / N–S sections and double click for a
+plane. The web-ifc WASM and the Fragments worker are served **locally** (`npm run vendor`): no unpkg.
+`scripts/check.mjs` tests it without a screen (Chromium/Playwright): loading, Einheiten, labels,
+selection by list and by click with exaggeration, section, screenshots.
 
-![Berlín V-67b-VE: 5 sondeos georreferenciados, unidades translúcidas, exageración 5×](img/18_berlin_durchscheinend.jpg)
+![Berlin V-67b-VE: 5 georeferenced Bohrungen, translucent Einheiten, 5× exaggeration](img/18_berlin_durchscheinend.jpg)
 
-## 6. Resultados
+## 6. Results
 
-**Pruebas** (`pytest services/modeler/tests`, 36 verdes desde [20](20_lage_pruefung_viewer.md); incluyen la trasse de 6 km y la unidad METRE): invariantes en 6 casos × 2 métodos
-(contactos exactos, espesor ≥ 0, sólidos cerrados, volumen coherente), planos inclinados
-reproducidos exactamente con TPS (< 1 mm), acuñamiento, lente, censura, datos perturbados,
-geotécnico que junta clases, clase no prevista, orden de entrada indiferente, 1 y 2 sondeos,
-validez del IFC.
+**Tests** (`pytest services/modeler/tests`, 36 green since [20](20_lage_pruefung_viewer.md); they
+include the 6 km Trasse and the METRE unit): invariants in 6 cases × 2 methods (exact contacts,
+thickness ≥ 0, closed solids, consistent volume), inclined planes reproduced exactly with TPS
+(< 1 mm), pinch-out, lens, censoring, perturbed data, engineer merging classes, unexpected class,
+input order irrelevant, 1 and 2 Bohrungen, IFC validity.
 
-**Contra la verdad sintética** (dentro de la envolvente; volumen modelo / verdad):
+**Against the synthetic ground truth** (inside the hull; volume model / truth):
 
-| Caso | Método | RMS bases (m) | Unidades que no están en todos los sondeos |
+| Case | Method | RMS of bases (m) | Einheiten that are not in every Bohrung |
 |---|---|---|---|
-| geneigt (planos) | IDW / TPS | ≤ 0,19 / 0,00 | — (volúmenes 1,00) |
-| auskeilen (Torf en cuña) | IDW / TPS | ≤ 0,27 / ≤ 0,20 | Torf 0,68 / 0,85 (sin la regla 5: 0,89 / 0,97) |
-| linse (lente en 1 sondeo) | IDW / TPS | ≤ 0,75 / ≤ 0,76 | Kies 1,91 / 2,26 (**sin la regla 5: 6,31 / 8,00**) |
-| demo (12 sondeos) | IDW / TPS | ≤ 0,63 / ≤ 0,72 | Kies 0,70 / 0,83 · Torf 0,93 / 1,04 |
+| geneigt (planes) | IDW / TPS | ≤ 0.19 / 0.00 | — (volumes 1.00) |
+| auskeilen (Torf wedge) | IDW / TPS | ≤ 0.27 / ≤ 0.20 | Torf 0.68 / 0.85 (without rule 5: 0.89 / 0.97) |
+| linse (lens in 1 Bohrung) | IDW / TPS | ≤ 0.75 / ≤ 0.76 | Kies 1.91 / 2.26 (**without rule 5: 6.31 / 8.00**) |
+| demo (12 Bohrungen) | IDW / TPS | ≤ 0.63 / ≤ 0.72 | Kies 0.70 / 0.83 · Torf 0.93 / 1.04 |
 
-La regla 5 cambia un error cualitativo (una lente de un sondeo bajo todo el solar) por una
-subestimación moderada de las cuñas; los errores grandes de RMS están en los límites internos de
-la lente, que los sondeos no determinan.
+Rule 5 trades a qualitative error (a lens from one Bohrung under the whole site) for a moderate
+underestimation of the wedges; the large RMS errors are at the inner boundaries of the lens, which the
+Bohrungen do not determine.
 
-**Berlín** (datos reales, extracción de *entrenamiento*, [15](15_resultados_pdfs_reales.md)):
-5 de 7 sondeos con coordenadas (S2a y B 1/17 fuera: sin coordenadas, marcado en el IFC y en el
-visor). Unidades automáticas: Sand 1 (60 836 m³, en 5), **Kies 1** (lente sólo en 422C-461,
-falta en 4, 2 999 m³), Sand 2 (5), Kies 2 (2 presentes, 3 desconocidos bajo los sondeos cortos),
-Sand 3 (base = base del modelo). Malla 2,9 m, buffer 16 m, 1 705 nodos, 3 puntos de censura,
-sólidos cerrados, IFC 3,0 MB.
+**Berlin** (real data, *training* extraction, [15](15_results_real_pdfs.md)): 5 of 7 Bohrungen with
+coordinates (S2a and B 1/17 out: no coordinates, marked in the IFC and in the viewer). Automatic
+Einheiten: Sand 1 (60,836 m³, in 5), **Kies 1** (lens only in 422C-461, missing in 4, 2,999 m³),
+Sand 2 (5), Kies 2 (2 present, 3 unknown below the short Bohrungen), Sand 3 (base = base of the
+model). Mesh 2.9 m, buffer 16 m, 1,705 nodes, 3 censoring points, closed solids, IFC 3.0 MB.
 
 > [!NOTE]
-> Con la extracción v4 actual (ejemplo en [`data/beispiele`](../data/beispiele/README.md)), las capas
-> de 2,1–2,6 m de 422C-5526/5527 que antes quedaban sin clase se leen como Auffüllung (OCR sin
-> diéresis, regla B de docs/16) y el modelo de Berlín tiene **6 unidades** (Auffüllung entre Kies 1 y
-> Sand 2). Las cifras de arriba son las de la extracción anterior.
+> With the current v4 extraction (example in [`data/beispiele`](../data/beispiele/README.md)), the
+> Schichten of 2.1–2.6 m in 422C-5526/5527 that used to have no class are read as Auffüllung (OCR
+> without umlauts, rule B of docs/16) and the Berlin model has **6 Einheiten** (Auffüllung between
+> Kies 1 and Sand 2). The figures above are those of the previous extraction.
 
-No hay verdad 3D del subsuelo: el modelo es tan bueno como la extracción y la densidad de
-sondeos. Lo que sí se garantiza y se prueba es que respeta cada dato, que no inventa unidades
-fuera de lo observado y que todo lo supuesto (censura, extensión, unidades fuera) queda anotado.
+There is no 3D ground truth of the subsurface: the model is as good as the extraction and the density
+of Bohrungen. What is guaranteed and tested is that it honours every data point, that it does not
+invent Einheiten beyond what was observed, and that everything assumed (censoring, extent, Einheiten
+left out) is noted.
 
-## 7. Parámetros
+## 7. Parameters
 
-| Parámetro | Valor | Origen |
+| Parameter | Value | Origin |
 |---|---|---|
-| `K_FEHLT`, `K_NEU`, `K_SPALT`, `K_WEITER` | 2,0 · 3,0 · 0,5 · 0,2 | Una unidad nueva debe costar más que acuñarse; una lente intermedia, menos que dos ausencias |
-| `K_ABSTAND`, `K_MITTE` | 1,0/m · 0,1/m | El solape de cotas manda; el centro desempata (Berlín: Kies de 460 ↔ Kies inferior de 461) |
-| `K_UEBER_ENDE` | 3,0 + hueco | Una unidad entera por encima del final del sondeo no puede ser "desconocida" |
-| `ZENSUR_MARGE` | 0,5 m | La unidad en que termina el sondeo sigue al menos un poco |
-| `FREI_RAND` | 0,1 m | Límite libre no pegado al techo/base del Abschnitt |
-| `MIN_MAECHTIGKEIT` | 5 mm | Profundidades en cm |
-| `PRAESENZ_SCHWELLE` | 0,5 | La unidad termina a medio camino de los sondeos sin ella |
-| Buffer, malla | ½ dist. mediana (5–100 m, a mano hasta 5 km); √área / 40 (0,5–10 m), siempre ≤ 30 000 nodos | Tamaño del solar; trasses > 5 km ([20 §2](20_lage_pruefung_viewer.md#2-mover-la-geometría-y-modelos-de-más-de-5-km)) |
-| Base | Endteufe más profunda | No modelar bajo lo explorado |
+| `K_FEHLT`, `K_NEU`, `K_SPALT`, `K_WEITER` | 2.0 · 3.0 · 0.5 · 0.2 | A new Einheit must cost more than pinching out; an intermediate lens, less than two absences |
+| `K_ABSTAND`, `K_MITTE` | 1.0/m · 0.1/m | The overlap of elevations decides; the centre breaks ties (Berlin: Kies of 460 ↔ lower Kies of 461) |
+| `K_UEBER_ENDE` | 3.0 + gap | An Einheit entirely above the end of the Bohrung cannot be "unknown" |
+| `ZENSUR_MARGE` | 0.5 m | The Einheit in which the Bohrung ends continues at least a little |
+| `FREI_RAND` | 0.1 m | Free boundary not glued to the top/base of the Abschnitt |
+| `MIN_MAECHTIGKEIT` | 5 mm | Depths in cm |
+| `PRAESENZ_SCHWELLE` | 0.5 | The Einheit ends halfway to the Bohrungen without it |
+| Buffer, mesh | ½ median dist. (5–100 m, by hand up to 5 km); √area / 40 (0.5–10 m), always ≤ 30,000 nodes | Size of the site; Trassen > 5 km ([20 §2](20_lage_pruefung_viewer.md#2-moving-the-geometry-and-models-over-5-km)) |
+| Base | Deepest Endteufe | Do not model below what was explored |
 
-## 8. Límites y siguientes pasos
+## 8. Limits and next steps
 
-1. **Correlación sólo por clase y cota**: dos arenas distintas (p. ej. Talsand y Schmelzwassersand)
-   con la misma clase se juntan → hoy la corrige el geotécnico con `--einheiten`; después, clases
-   más finas desde la descripción (Nebenanteile, color, génesis) y la leyenda.
-2. Layer-cake: sin fallas, pliegues ni cuerpos repetidos; N4 (GemPy) para eso.
-3. Incertidumbre sólo como distancia máxima al sondeo; siguiente: kriging con varianza por vértice
-   y color en el visor.
-4. **Coordenadas siguen siendo el cuello de botella** (Berlín 5/7; el resto del corpus 0):
-   [07](07_coordenadas.md) y N2 Geoslice desde el Längsschnitt ([arquitectura §7.1](ARQUITECTURA_BAUGRUNDMODELL.md#71-escalera-de-niveles-cada-uno-es-entregable)).
-5. Superficie freática (Grundwasser) como superficie del modelo; Kennwerte por unidad
-   (`Pset_SolidStratumCapacity`).
-6. Visor: tapas de corte (ClipStyler de `components-front`), clic en procedencia → página del PDF
-   (pdf.js + bbox), edición de unidades en el navegador → `einheiten.json`.
-7. Supabase: guardar cada ejecución del modelo (`model_units`, parámetros, informe) junto a los
-   datos de los que sale.
+1. **Correlation only by class and elevation**: two different sands (e.g. Talsand and
+   Schmelzwassersand) with the same class are merged → today the engineer corrects it with
+   `--einheiten`; later, finer classes from the description (Nebenanteile, colour, genesis) and the
+   legend.
+2. Layer-cake: no faults, folds or repeated bodies; N4 (GemPy) for that.
+3. Uncertainty only as the maximum distance to a Bohrung; next: kriging with variance per vertex and
+   colour in the viewer.
+4. **Coordinates are still the bottleneck** (Berlin 5/7; the rest of the corpus 0):
+   [07](07_coordinates.md) and N2 Geoslice from the Längsschnitt
+   ([architecture §7.1](ARCHITECTURE_BAUGRUNDMODELL.md#71-ladder-of-levels-each-one-is-deliverable)).
+5. Grundwasser surface as a model surface; Kennwerte per Einheit (`Pset_SolidStratumCapacity`).
+6. Viewer: section caps (ClipStyler from `components-front`), click on the provenance → page of the
+   PDF (pdf.js + bbox), editing Einheiten in the browser → `einheiten.json`.
+7. Supabase: store each model run (`model_units`, parameters, report) next to the data it comes from.
 
-Up: [Índice](README.md)
+Up: [Index](README.md)
 
-Related: [20 Lage y Prüfstand](20_lage_pruefung_viewer.md) · [Arquitectura §7](ARQUITECTURA_BAUGRUNDMODELL.md#7-baugrundmodell-generación-de-geometrías) · [17 Algoritmo de extracción](17_algoritmo_extraccion.md) · [16 Lecciones](16_lecciones_aprendidas.md) · [11 Decisiones](11_decisiones.md) · [07 Coordenadas](07_coordenadas.md)
+Related: [20 Lage and Prüfstand](20_lage_pruefung_viewer.md) · [Architecture §7](ARCHITECTURE_BAUGRUNDMODELL.md#7-baugrundmodell-generating-the-geometry) · [17 Extraction algorithm](17_extraction_algorithm.md) · [16 Lessons](16_lessons_learned.md) · [11 Decisions](11_decisions.md) · [07 Coordinates](07_coordinates.md)

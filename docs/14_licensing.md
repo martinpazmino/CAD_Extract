@@ -1,106 +1,110 @@
 ---
-title: "Licencias: uso interno hoy, terceros mañana"
+title: "Licensing: internal use today, third parties tomorrow"
 date: 2026-10-25
-tags: [licencias, agpl, pymupdf, saas, decisiones]
-aliases: [Licencias, AGPL, Uso por terceros]
+tags: [licensing, agpl, pymupdf, saas, decisions]
+aliases: [Licensing, AGPL, Use by third parties]
 ---
 
-# Licencias: uso interno hoy, terceros mañana
+# Licensing: internal use today, third parties tomorrow
 
 > [!NOTE]
-> **Actualización 2026-10-29:** elegida la opción A. El repositorio se publica bajo **AGPL-3.0-or-later**
-> ([`LICENSE`](../LICENSE), [terceros](../THIRD_PARTY_LICENSES.md), D79) y la app enlaza su código fuente (*Quellcode*) para
-> cumplir el § 13 cuando está en línea ([22](22_despliegue.md)). B y C siguen abiertas si un día hace falta código cerrado.
+> **Update 2026-10-29:** option A was chosen. The repository is published under
+> **AGPL-3.0-or-later** ([`LICENSE`](../LICENSE), [third parties](../THIRD_PARTY_LICENSES.md), D79)
+> and the app links its source code (*Quellcode*) to comply with § 13 when it is online
+> ([22](22_deployment.md)). B and C remain open should closed code ever be needed.
 
-**Conclusión:** para el uso **interno** la licencia AGPL de PyMuPDF (y de swissgeol) no plantea
-problemas prácticos. Para ofrecer Geo_Agent **a terceros** habrá que elegir entre publicar el
-código bajo AGPL, comprar la licencia comercial de PyMuPDF o cambiar la librería PDF. La decisión
-puede esperar si desde ya se cumplen dos reglas baratas:
-1. **todo PyMuPDF detrás de una capa de primitivas propia**;
-2. **no copiar código de swissgeol**, sólo reimplementar sus ideas.
+**Conclusion:** for **internal** use, the AGPL license of PyMuPDF (and of swissgeol) poses no
+practical problems. To offer Geo_Agent **to third parties**, one has to choose between publishing
+the code under the AGPL, buying the commercial PyMuPDF license or changing the PDF library. The
+decision can wait if two cheap rules are followed from now on:
+1. **all of PyMuPDF behind our own primitives layer**;
+2. **do not copy code from swissgeol**, only reimplement its ideas.
 
-Con eso cambiar de librería queda en un módulo, y es viable: ver la prueba de §3.
+With that, changing the library stays within one module, and it is feasible: see the test in §3.
 
 > [!IMPORTANT]
-> No es asesoramiento jurídico. Antes de ofrecer el servicio a terceros, revisar con un abogado
-> la AGPL-3.0 y las condiciones de Artifex.
+> This is not legal advice. Before offering the service to third parties, review the AGPL-3.0 and
+> Artifex's conditions with a lawyer.
 
-## 1. Qué exige la AGPL y cuándo
+## 1. What the AGPL requires and when
 
-| Escenario | Obligación práctica (AGPL-3.0) |
+| Scenario | Practical obligation (AGPL-3.0) |
 |---|---|
-| Uso interno (empleados, `localhost`, red de la empresa) | Ninguna hacia fuera. Los únicos "usuarios" son internos. |
-| Entregar el software a un cliente (instalación) | Entregar también el código fuente de toda la aplicación bajo AGPL |
-| **SaaS para terceros** (web) | § 13: ofrecer a los usuarios remotos el código fuente de la versión que ejecutan |
+| Internal use (employees, `localhost`, company network) | None towards the outside. The only "users" are internal. |
+| Handing the software to a client (installation) | Also hand over the source code of the whole application under the AGPL |
+| **SaaS for third parties** (web) | § 13: offer remote users the source code of the version they run |
 
-PyMuPDF se distribuye bajo AGPL o bajo **licencia comercial de Artifex** (precio a consultar).
-swissgeol es **AGPL-3.0-only** sin licencia alternativa ([08](08_swissgeol_reutilizacion.md)).
+PyMuPDF is distributed under the AGPL or under a **commercial license from Artifex** (price on
+request). swissgeol is **AGPL-3.0-only** without an alternative license ([08](08_swissgeol_reuse.md)).
 
-## 2. Opciones para terceros
+## 2. Options for third parties
 
-| Opción | Coste | Consecuencia |
+| Option | Cost | Consequence |
 |---|---|---|
-| A. Publicar Geo_Agent como AGPL | 0 € de licencia | El código es público; el negocio está en el servicio, el soporte y los datos (que no son código) |
-| B. Licencia comercial de PyMuPDF | Según Artifex | Código cerrado posible, **salvo** lo que se haya copiado de swissgeol (seguiría siendo AGPL) |
-| C. Cambiar a una librería permisiva (pypdfium2) | Trabajo de adaptación (capa de primitivas) | Sin restricción de licencia de PyMuPDF |
+| A. Publish Geo_Agent as AGPL | €0 in licenses | The code is public; the business is in the service, the support and the data (which are not code) |
+| B. Commercial PyMuPDF license | According to Artifex | Closed code possible, **except** whatever was copied from swissgeol (it would remain AGPL) |
+| C. Switch to a permissive library (pypdfium2) | Adaptation work (primitives layer) | No PyMuPDF license restriction |
 
-Recomendación: decidir cuando haya un caso de negocio concreto. Hasta entonces, mantener abiertas
-B y C con las dos reglas de la conclusión.
+Recommendation: decide when there is a concrete business case. Until then, keep B and C open with
+the two rules of the conclusion.
 
-## 3. Prueba: ¿se puede sustituir PyMuPDF?
+## 3. Test: can PyMuPDF be replaced?
 
-Mismo PDF sintético (layout B), primitivas vectoriales que necesita la extracción v2:
+Same synthetic PDF (layout B), the vector primitives that extraction v2 needs:
 
-| Librería | Licencia | Paths | Segmentos / curvas | Relleno, trazo, guiones | Capas OCG | Tiempo |
+| Library | License | Paths | Segments / curves | Fill, stroke, dashes | OCG layers | Time |
 |---|---|---|---|---|---|---|
-| PyMuPDF 2.0 | AGPL / comercial | 30 | 1 866 ítems (1 704 curvas) | sí | sí, con nombre (`layer`) | 0,35 s |
-| **pypdfium2 5.14** | **BSD-3 / Apache-2.0** | **30** (mismos objetos) | 5 839 segmentos (5 112 Bézier) | sí (`GetFillColor`, `GetDashCount`) | marca `OC` presente; nombre de la capa **[a verificar]** | 0,08 s |
-| pdfplumber 0.11 / pdfminer.six | MIT | (se aplanan) | 77 líneas, 444 curvas | guiones sí; rectángulos no reconocidos en este PDF | no | 0,16 s |
+| PyMuPDF 2.0 | AGPL / commercial | 30 | 1,866 items (1,704 curves) | yes | yes, with name (`layer`) | 0.35 s |
+| **pypdfium2 5.14** | **BSD-3 / Apache-2.0** | **30** (same objects) | 5,839 segments (5,112 Bézier) | yes (`GetFillColor`, `GetDashCount`) | `OC` mark present; layer name **[to be verified]** | 0.08 s |
+| pdfplumber 0.11 / pdfminer.six | MIT | (flattened) | 77 lines, 444 curves | dashes yes; rectangles not recognised in this PDF | no | 0.16 s |
 
-Lectura: **pypdfium2** conserva el mismo modelo de objetos (un path = un objeto con segmentos y
-estilo) y es el candidato natural para la opción C. pdfplumber cambia el modelo y, al ser Python
-puro, probablemente sea lento con los > 150 000 paths del Längsschnitt **[a verificar]**.
-Faltaría en pypdfium2: agrupar caracteres en palabras (PyMuPDF lo da hecho), `find_tables` y
-resolver nombres de capas OCG.
+Reading: **pypdfium2** keeps the same object model (one path = one object with segments and style)
+and is the natural candidate for option C. pdfplumber changes the model and, being pure Python, is
+probably slow with the > 150,000 paths of the Längsschnitt **[to be verified]**. Missing in
+pypdfium2: grouping characters into words (PyMuPDF does it for us), `find_tables` and resolving the
+names of OCG layers.
 
-## 4. Capa de primitivas (hacer ya)
+## 4. Primitives layer (do it now)
 
 ```
 geo_agent/primitives/
   model.py            Word(text, bbox, font, size, color) · Path(segments, fill, stroke, dashes, layer, bbox)
-  pymupdf_backend.py  única importación de pymupdf en todo el extractor
-  pdfium_backend.py   (cuando haga falta) misma interfaz con pypdfium2
+  pymupdf_backend.py  the only pymupdf import in the whole extractor
+  pdfium_backend.py   (when needed) same interface with pypdfium2
 ```
 
-Los extractores (`bohrprofil/`, `laengsschnitt/`, `hatch.py`…) sólo ven `Word` y `Path`. Además
-sirve para cachear las primitivas en Storage ([arquitectura §6.2](ARQUITECTURA_BAUGRUNDMODELL.md#62-primitivas-una-sola-vez-por-documento-cacheadas))
-y para tests sin PDF.
+The extractors (`bohrprofil/`, `laengsschnitt/`, `hatch.py`…) only see `Word` and `Path`. It also
+serves to cache the primitives in Storage
+([architecture §6.2](ARCHITECTURE_BAUGRUNDMODELL.md#62-primitives-once-per-document-cached)) and for
+tests without a PDF.
 
-## 5. Resto de dependencias
+## 5. Other dependencies
 
-| Componente | Licencia | ¿Problema para SaaS cerrado? |
+| Component | License | Problem for a closed SaaS? |
 |---|---|---|
-| IfcOpenShell | LGPL-3.0 | No (obligaciones sólo al distribuir la librería modificada) |
+| IfcOpenShell | LGPL-3.0 | No (obligations only when distributing a modified library) |
 | That Open (`@thatopen/*`) | MIT | No |
-| web-ifc | MPL-2.0 | No (copyleft sólo por archivo modificado) |
+| web-ifc | MPL-2.0 | No (copyleft only per modified file) |
 | three.js, numpy, shapely, openpyxl | MIT / BSD | No |
 | Streamlit | Apache-2.0 | No |
 | Supabase (self-hosted) | Apache-2.0 | No |
-| GemPy (si se usa) | **[a verificar]** | Revisar antes de integrarlo |
+| GemPy (if used) | **[to be verified]** | Review before integrating it |
 
-## 6. Otros requisitos cuando lleguen terceros
+## 6. Other requirements once third parties come
 
-- **RGPD:** contrato de encargo (AVV) con clientes y con los proveedores (Supabase, hosting, LLM);
-  región UE; borrado de documentos.
-- **Confidencialidad:** separación por cliente con RLS ya prevista en el
-  [esquema](ARQUITECTURA_BAUGRUNDMODELL.md#52-esquema-supabase-borrador-de-migración); cifrado y
-  buckets privados.
-- **LLM:** contrato sin entrenamiento con los datos y retención mínima, o desactivable por cliente.
-- **Responsabilidad:** la app extrae y propone; la interpretación y la firma son del geotécnico
-  (DGGT Empf. Nr. 4). Dejarlo en las condiciones de uso y en la UI (estado "no aprobado").
-- **Normas DIN:** no reproducir textos de normas; los patrones se toman de la leyenda de cada
-  documento.
+- **GDPR:** data processing agreement (AVV/DPA) with clients and with the providers (Supabase,
+  hosting, LLM); EU region; deletion of documents.
+- **Confidentiality:** separation per client with RLS, already planned in the
+  [schema](ARCHITECTURE_BAUGRUNDMODELL.md#52-supabase-schema-draft-migration); encryption and
+  private buckets.
+- **LLM:** a contract without training on the data and with minimal retention, or switchable off per
+  client.
+- **Liability:** the app extracts and proposes; the interpretation and the signature belong to the
+  geotechnical engineer (DGGT Empf. Nr. 4). State it in the terms of use and in the UI ("not
+  approved" status).
+- **DIN standards:** do not reproduce texts of standards; the patterns are taken from the legend of
+  each document.
 
-Up: [Índice](README.md)
+Up: [Index](README.md)
 
-Related: [08 swissgeol](08_swissgeol_reutilizacion.md) · [11 Decisiones](11_decisiones.md) · [12 Corpus](12_corpus_publico.md) · [Arquitectura](ARQUITECTURA_BAUGRUNDMODELL.md) · [22 En línea](22_despliegue.md)
+Related: [08 swissgeol](08_swissgeol_reuse.md) · [11 Decisions](11_decisions.md) · [12 Corpus](12_public_corpus.md) · [Architecture](ARCHITECTURE_BAUGRUNDMODELL.md) · [22 Online](22_deployment.md)

@@ -1,67 +1,65 @@
 ---
-title: "Colaboración con swisstopo: qué nos dan y qué les damos"
+title: "Collaboration with swisstopo: what they give us and what we give them"
 date: 2026-10-25
-tags: [swissgeol, colaboracion, open-source]
-aliases: [Colaboración swisstopo, swisstopo]
+tags: [swissgeol, collaboration, open-source]
+aliases: [swisstopo collaboration, swisstopo]
 ---
 
-# Colaboración con swisstopo: qué nos dan y qué les damos
+# Collaboration with swisstopo: what they give us and what we give them
 
-**Conclusión:** la colaboración tiene sentido para ambos porque los proyectos se complementan.
-swisstopo tiene un núcleo textual/estadístico maduro, una infraestructura de evaluación y
-experiencia con documentos muy heterogéneos. Nosotros aportamos lo que a ellos les falta para
-**PDFs CAD vectoriales**, la **lectura del dibujo** y las **convenciones alemanas**. El proyecto
-invita explícitamente a otras organizaciones a contribuir y a hablar de partnerships
-(README de su repo). Empezar con poco riesgo: dos issues con reproductores sintéticos y un
-correo de presentación.
+**Conclusion:** collaboration makes sense for both sides because the projects complement each
+other. swisstopo has a mature textual/statistical core, an evaluation infrastructure and experience
+with very heterogeneous documents. We bring what they lack for **vector CAD PDFs**, **reading the
+drawing** and **German conventions**. The project explicitly invites other organisations to
+contribute and to talk about partnerships (README of their repo). Start with little risk: two issues
+with synthetic reproducers and an introduction email.
 
-## 1. Qué puede aportar swisstopo
+## 1. What swisstopo can contribute
 
-| Aporte | Para qué nos sirve | Cómo pedirlo |
+| Contribution | What it does for us | How to ask for it |
 |---|---|---|
-| Algoritmos probados (columnas AAboveB, emparejamiento, diagonales, continuación) | Núcleo de [02](02_bohrprofil_generalizacion.md) sin reinventar | Ya es público; portar ideas ([08](08_swissgeol_reutilizacion.md)) |
-| **Experiencia** con miles de perfiles de layouts desconocidos | Evitar errores que ya resolvieron (OCR, multipágina, tablas) | Conversación técnica / revisión de nuestro diseño |
-| **Evaluación**: formato `ground_truth.json`, métricas, `--benchmark` | Medir igual que ellos; comparar resultados | Público; confirmar que las extensiones propias son aceptables |
-| **Corpus suizo con verdad** (si pueden compartir una parte) | Probar generalidad con documentos de otro país | Preguntar; sus datos están en un S3 privado |
-| Ruta **OCR** (`swissgeol-ocr`, AWS Textract) y modelos BERT de descripciones (HuggingFace `swissgeol/*`) | Gutachten escaneados; clasificación de descripciones en alemán | Público; preguntar por la aplicabilidad al vocabulario DIN |
-| Hoja de ruta compartida | Saber qué van a construir (fecha, método de perforación…) para no duplicar | Conversación |
+| Proven algorithms (AAboveB columns, matching, diagonals, continuation) | The core of [02](02_bohrprofil_generalization.md) without reinventing it | Already public; port the ideas ([08](08_swissgeol_reuse.md)) |
+| **Experience** with thousands of logs of unknown layouts | Avoid errors they already solved (OCR, multi-page, tables) | Technical conversation / review of our design |
+| **Evaluation**: `ground_truth.json` format, metrics, `--benchmark` | Measure the same way they do; compare results | Public; confirm that our extensions are acceptable |
+| **Swiss corpus with ground truth** (if they can share part of it) | Test generality with documents from another country | Ask; their data is in a private S3 |
+| **OCR** route (`swissgeol-ocr`, AWS Textract) and BERT description models (HuggingFace `swissgeol/*`) | Scanned Gutachten; classification of German descriptions | Public; ask about applicability to the DIN vocabulary |
+| Shared roadmap | Know what they will build (date, drilling method…) so as not to duplicate it | Conversation |
 
-## 2. Qué podemos aportar nosotros
+## 2. What we can contribute
 
-| Aporte | Valor para ellos | Esfuerzo | Ya probado |
+| Contribution | Value for them | Effort | Already tested |
 |---|---|---|---|
-| **Reportes de errores con reproductor sintético** (§4) | Arreglan fallos reales: nombre del diagrama vecino asignado al sondeo, leyenda tratada como sondeo | Bajo | Sí ([08 §4](08_swissgeol_reutilizacion.md#4-prueba-swissgeol-sin-cambios-sobre-nuestros-pdfs)) |
-| **Generador de PDFs sintéticos** con verdad | Tests de regresión sin problemas de copyright | Bajo | Sí ([spike](../spikes/extraktion_v2/README.md)) |
-| **Líneas desde vectores** (`get_drawings()` → su `Line`) en vez de FLD sobre raster | Exactitud y velocidad en PDFs nativos digitales | Bajo-medio | Diseño ([08 §6](08_swissgeol_reutilizacion.md#6-adaptador-propuesto-líneas-vectoriales-para-su-pipeline)) |
-| **Clasificación de Schraffur con la leyenda** | Su detector de strip logs localiza pero no clasifica | Medio | Sí, sintético ([04](04_schraffur_din4023.md)) |
-| **Convenciones alemanas**: claves de cota `NHN/NN`, CRS UTM/Gauß-Krüger, símbolo de agua DIN 4023 | Abre el proyecto a perfiles alemanes | Medio | Agua y coordenadas, sintético ([06](06_grundwasser.md), [07](07_coordenadas.md)) |
-| **Digitalización de Sondierungen** (DPH/CPT) | Dato nuevo para su base | Medio | DPH, sintético ([05](05_sondierungen.md)) |
-| Exportación **IFC 4.3** de sondeos | Puente a BIM / swissgeol 3D | Medio | Sí ([spike IFC](../spikes/ifc_thatopen/README.md)) |
+| **Bug reports with a synthetic reproducer** (§4) | They fix real failures: name of the neighbouring diagram assigned to the Bohrung, legend treated as a Bohrung | Low | Yes ([08 §4](08_swissgeol_reuse.md#4-test-swissgeol-unchanged-on-our-pdfs)) |
+| **Generator of synthetic PDFs** with ground truth | Regression tests without copyright problems | Low | Yes ([spike](../spikes/extraktion_v2/README.md)) |
+| **Lines from vectors** (`get_drawings()` → their `Line`) instead of FLD on raster | Accuracy and speed on digitally born PDFs | Low-medium | Design ([08 §6](08_swissgeol_reuse.md#6-proposed-adapter-vector-lines-for-their-pipeline)) |
+| **Schraffur classification with the legend** | Their strip log detector locates but does not classify | Medium | Yes, synthetic ([04](04_schraffur_din4023.md)) |
+| **German conventions**: elevation keys `NHN/NN`, UTM/Gauß-Krüger CRS, DIN 4023 water symbol | Opens the project to German logs | Medium | Water and coordinates, synthetic ([06](06_grundwasser.md), [07](07_coordinates.md)) |
+| **Digitising Sondierungen** (DPH/CPT) | New data for their database | Medium | DPH, synthetic ([05](05_sondierungen.md)) |
+| **IFC 4.3** export of Bohrungen | Bridge to BIM / swissgeol 3D | Medium | Yes ([IFC spike](../spikes/ifc_thatopen/README.md)) |
 
-## 3. Forma de colaborar y propiedad intelectual
+## 3. How to collaborate and intellectual property
 
-- Su repo no tiene CLA ni `CONTRIBUTING` (revisado en el commit `776ea39`): las contribuciones
-  entran bajo **AGPL-3.0-only**. El copyright de lo que escribimos sigue siendo nuestro, así que
-  podemos usar *nuestro* código también bajo otra licencia **[confirmar con ellos y con un
-  abogado]**. Lo que no podemos es llevarnos *su* código a un producto cerrado
-  ([14](14_licencias_terceros.md)).
-- Contribuir piezas **pequeñas y aisladas** (adaptador vectorial, validadores CRS, detector de
-  símbolo). El núcleo propio (fusión, Längsschnitt, modelo, IFC) se queda en Geo_Agent.
-- Respetar su hoja de ruta: aceptan contribuciones "compatibles con su mandato". Preguntar antes
-  de PRs grandes.
+- Their repo has no CLA and no `CONTRIBUTING` (checked at commit `776ea39`): contributions go in under
+  **AGPL-3.0-only**. The copyright of what we write remains ours, so we can also use *our* code
+  under another license **[confirm with them and with a lawyer]**. What we cannot do is take *their*
+  code into a closed product ([14](14_licensing.md)).
+- Contribute **small, isolated** pieces (vector adapter, CRS validators, symbol detector). Our own
+  core (merge, Längsschnitt, model, IFC) stays in Geo_Agent.
+- Respect their roadmap: they accept contributions "compatible with their mandate". Ask before large
+  PRs.
 
-## 4. Primeros pasos
+## 4. First steps
 
-Los envía el equipo; Claude no publica nada en repos ajenos.
+The team sends these; Claude does not publish anything in other people's repos.
 
-1. **Issue 1: nombre del sondeo** (borrador abajo) con `synth_B.pdf` adjunto.
-2. **Issue 2: la leyenda produce capas o sondeos falsos** con `synth_A.pdf` / `synth_A4.pdf`.
-3. **Correo de presentación** al contacto del proyecto (de `publiccode.yml`: Stijn Vermeeren,
+1. **Issue 1: name of the Bohrung** (draft below) with `synth_B.pdf` attached.
+2. **Issue 2: the legend produces false Schichten or Bohrungen** with `synth_A.pdf` / `synth_A4.pdf`.
+3. **Introduction email** to the project contact (from `publiccode.yml`: Stijn Vermeeren,
    `stijn.vermeeren@swisstopo.ch`).
-4. Si responden: PR pequeño con el adaptador de líneas vectoriales y una propuesta de módulo de
-   convenciones alemanas.
+4. If they reply: a small PR with the vector line adapter and a proposal for a module of German
+   conventions.
 
-### Borrador issue 1 (inglés)
+### Draft issue 1
 
 ```text
 Title: Borehole name assigned from neighbouring diagram title (e.g. "DPH 1") instead of the borehole header
@@ -77,7 +75,7 @@ Attached: synth_B.pdf (synthetic, no copyright restrictions) and its ground trut
 Expected: name taken from the header above the depth sidebar / strip log.
 ```
 
-### Borrador issue 2 (inglés)
+### Draft issue 2
 
 ```text
 Title: Legend page ("Zeichenerklärung") parsed as a borehole / continuation of the last borehole
@@ -90,7 +88,7 @@ Possible signal: legend swatches are isolated small rectangles with a name to th
 not a contiguous strip log; the page also contains a "Zeichenerklärung/Legende" heading.
 ```
 
-### Borrador correo (inglés)
+### Draft email
 
 ```text
 Subject: German DIN 4023 profiles – possible collaboration on swissgeol-boreholes-dataextraction
@@ -116,6 +114,6 @@ Kind regards,
 <Name>, <Organisation>
 ```
 
-Up: [Índice](README.md)
+Up: [Index](README.md)
 
-Related: [08 swissgeol](08_swissgeol_reutilizacion.md) · [14 Licencias](14_licencias_terceros.md) · [12 Corpus](12_corpus_publico.md) · [11 Decisiones](11_decisiones.md)
+Related: [08 swissgeol](08_swissgeol_reuse.md) · [14 Licensing](14_licensing.md) · [12 Corpus](12_public_corpus.md) · [11 Decisions](11_decisions.md)

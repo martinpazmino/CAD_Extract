@@ -1,153 +1,155 @@
 ---
-title: "Bohrprofil: extracción independiente del layout"
+title: "Bohrprofil: layout-independent extraction"
 date: 2026-10-23
-tags: [geo_agent, extraccion, bohrprofil, generalizacion]
-aliases: [Bohrprofil v2, Generalización Bohrprofil]
+tags: [geo_agent, extraction, bohrprofil, generalization]
+aliases: [Bohrprofil v2, Bohrprofil generalization]
 ---
 
-# Bohrprofil: extracción independiente del layout
+# Bohrprofil: layout-independent extraction
 
-**Idea central:** dejar de buscar los datos *en una posición* y buscarlos *por su relación*:
-la columna es un apilamiento de rectángulos, las profundidades son números cuya posición `y`
-correlaciona linealmente con su valor, y la descripción es el bloque de texto alineado a la
-derecha de la columna. Así el mismo código sirve para cualquier oficina y escala.
+**Central idea:** stop looking for the data *at a position* and look for it *by its relation*. The
+column is a stack of rectangles, the depths are numbers whose `y` position correlates linearly with
+their value, and the description is the block of text aligned to the right of the column. That way
+the same code works for any office and any scale.
 
-**Estado:** probado en el prototipo
-[`spikes/extraktion_v2/prototyp_v2.py`](../spikes/extraktion_v2/prototyp_v2.py) sobre los 6
-layouts sintéticos (17 sondeos, 102 capas): **102/102 capas** con límite, Bodenart y texto
-correctos, también en A3, A4 y B, donde v1 falla, y la contradicción deliberada de A5 se reporta
-como issue ([01](01_diagnostico_layout_fijo.md)).
+**Status:** tested in the prototype
+[`spikes/extraktion_v2/prototyp_v2.py`](../spikes/extraktion_v2/prototyp_v2.py) on the 6 synthetic
+layouts (17 Bohrungen, 102 Schichten): **102/102 Schichten** with correct boundary, Bodenart and
+text, also in A3, A4 and B, where v1 fails, and the deliberate contradiction of A5 is reported as an
+issue ([01](01_diagnosis_fixed_layout.md)).
 
-**Con PDFs reales** (Wachenroth, Talheim) hicieron falta siete cambios: geometría reducida a
-segmentos, normalización de la rotación, escala elegida por confirmación de etiquetas, filtros de
-tablas y escalas normalizadas, entre otros. El resultado es
-[`prototyp_v3.py`](../spikes/extraktion_v2/prototyp_v3.py). En la **prueba ciega** con dos PDFs
-nuevos v3 sacó **0/13**: etiquetas `0.20m`, escala ajustada a la hoja y un escaneo. Tras corregirlo
-(incluido un adaptador raster que da los mismos segmentos desde la imagen) llega a **29/29 sondeos
-y 143/143 límites** en los cinco PDFs reales, sin regresión en los sintéticos. Detalle y límites en
-[15 Resultados reales](15_resultados_pdfs_reales.md). El método descrito abajo sigue siendo el
-mismo; las variantes de v3 se indican con **(v3)**.
+**With real PDFs** (Wachenroth, Talheim) seven changes were needed, among them: geometry reduced to
+segments, rotation normalisation, scale chosen by label confirmation, table filters and normalised
+scales. The result is [`prototyp_v3.py`](../spikes/extraktion_v2/prototyp_v3.py). In the **blind
+test** with two new PDFs, v3 scored **0/13**: labels like `0.20m`, a scale fitted to the sheet and a
+scan. After fixing that (including a raster adapter that produces the same segments from the image)
+it reaches **29/29 Bohrungen and 143/143 boundaries** in the five real PDFs, with no regression on
+the synthetic ones. Details and limits in [15 Real results](15_results_real_pdfs.md). The method
+described below is still the same; the v3 variants are marked **(v3)**.
 
 ## Pipeline
 
 ```
-words + drawings ─► 1 columnas ─► 2 cabecera (ID, GOK) ─► 3 escala y→Tiefe ─► límites
+words + drawings ─► 1 columns ─► 2 header (ID, GOK) ─► 3 scale y→Tiefe ─► boundaries
                                                                │
-              4 bloque de descripción ◄──────────────────────────┘
+              4 description block ◄────────────────────────────┘
                      │
-              5 clasificación texto ─┐
-              6 Schraffur (→ 04) ────┴► fusión + confianza + issues
+              5 text classification ─┐
+              6 Schraffur (→ 04) ────┴► merge + confidence + issues
 ```
 
-## 1. Columnas por geometría
+## 1. Columns from geometry
 
-- Candidatos: paths cerrados con relleno, forma rectangular (`re` o 4 segmentos ortogonales),
-  ancho 8–80 pt. Se agrupan por `(x0, x1)` con tolerancia 0,8 pt y se encadenan si
-  `|y1_i − y0_{i+1}| ≤ 0,8 pt`. Una cadena de ≥ 2 rectángulos es una columna.
-  (`find_columns` en el prototipo.)
-- Las muestras de la leyenda no forman cadenas (hay huecos entre ellas) y los marcos de
-  diagramas no tienen relleno: se excluyen solos.
-- **(v3)** Más general: reducir todo (líneas, rectángulos, quads) a **segmentos**, unir los
-  colineales, y definir la columna como **par de verticales con trazo** (8–80 pt, alto ≥ 2,5 ×
-  ancho). Los límites son horizontales continuas que tocan **ambos** bordes (±0,6 pt), así que
-  la Schraffur queda fuera. De los candidatos anidados se queda el de bordes más gruesos. Funciona
-  igual con rectángulos (sintéticos), segmentos sueltos (Wachenroth) y bordes por tramos con
-  máscaras blancas (Talheim).
-- **Fallbacks** para planos donde la columna no está hecha de rectángulos:
-  1. líneas horizontales que cruzan un mismo intervalo `x` (los límites de capa);
-  2. raster: el detector de *strip logs* de swissgeol (`swissgeol_doc_processing/utils/strip_log_detection.py`)
-     localiza columnas gráficas en imágenes → [08](08_swissgeol_reutilizacion.md).
+- Candidates: closed filled paths with a rectangular shape (`re` or 4 orthogonal segments), 8–80 pt
+  wide. They are grouped by `(x0, x1)` with a tolerance of 0.8 pt and chained if
+  `|y1_i − y0_{i+1}| ≤ 0.8 pt`. A chain of ≥ 2 rectangles is a column (`find_columns` in the
+  prototype).
+- The legend samples do not form chains (there are gaps between them) and diagram frames have no
+  fill, so they are excluded automatically.
+- **(v3)** More general: reduce everything (lines, rectangles, quads) to **segments**, merge the
+  collinear ones, and define the column as a **pair of stroked verticals** (8–80 pt, height
+  ≥ 2.5 × width). Boundaries are continuous horizontals that touch **both** edges (±0.6 pt), so the
+  Schraffur stays out. Of nested candidates, the one with the thickest edges is kept. This works the
+  same with rectangles (synthetic), loose segments (Wachenroth) and edges drawn in pieces with
+  white masks (Talheim).
+- **Fallbacks** for drawings where the column is not made of rectangles:
+  1. horizontal lines crossing the same `x` interval (the Schicht boundaries);
+  2. raster: the swissgeol *strip log* detector (`swissgeol_doc_processing/utils/strip_log_detection.py`)
+     finds graphic columns in images → [08](08_swissgeol_reuse.md).
 
-## 2. Cabecera: nombre y GOK
+## 2. Header: name and GOK
 
-- Nombre: la línea de texto más baja por encima de la columna (≤ 70 pt) que cumpla
-  `^(B|BK|KB|RKS|BS|GWM)\s*\d+[a-z]?(/\d{2})?$`. Los prefijos válidos vienen del perfil.
-- Las Sondierungen (`DPH`, `DPL`, `DS`, `CPT`, `SRS`) usan otra regex y otro extractor
-  → [05](05_sondierungen.md). **Ojo:** swissgeol confunde aquí el nombre: en el layout B asigna a
-  cada Bohrung el título del diagrama DPH vecino ([08](08_swissgeol_reutilizacion.md#4-prueba-swissgeol-sin-cambios-sobre-nuestros-pdfs)).
-- GOK: `(?:NHN|NN)\s*±x,xx\s*m` o `±x,xx\s*m\s*(?:NHN|NN)` en la zona de cabecera
-  (cubre `NHN+6,20m`, `Ansatzhöhe: 5.47 m NHN`, `GOK = 5,47 mNN`).
+- Name: the lowest line of text above the column (≤ 70 pt) that matches
+  `^(B|BK|KB|RKS|BS|GWM)\s*\d+[a-z]?(/\d{2})?$`. The valid prefixes come from the profile.
+- The Sondierungen (`DPH`, `DPL`, `DS`, `CPT`, `SRS`) use another regex and another extractor
+  → [05](05_sondierungen.md). **Careful:** swissgeol gets the name wrong here: in layout B it
+  assigns each Bohrung the title of the neighbouring DPH diagram
+  ([08](08_swissgeol_reuse.md#4-test-swissgeol-unchanged-on-our-pdfs)).
+- GOK: `(?:NHN|NN)\s*±x,xx\s*m` or `±x,xx\s*m\s*(?:NHN|NN)` in the header area (covers
+  `NHN+6,20m`, `Ansatzhöhe: 5.47 m NHN`, `GOK = 5,47 mNN`).
 
-## 3. Escala vertical por regresión
+## 3. Vertical scale by regression
 
-1. Candidatos: números con decimales cerca de la columna (−120…+60 pt en `x`), excluyendo los
-   que van entre paréntesis o con signo (son NHN, no profundidad).
-2. Agrupar por columna de texto (borde derecho alineado) y, por grupo, exigir ≥ 3 valores,
-   **estrictamente crecientes** y con **correlación de Pearson > 0,95** entre `y` y valor
-   (exactamente el criterio de `AAboveBSidebarValidator` de swissgeol).
-3. Ajuste `Tiefe = a·y + b`. De `a` sale la escala real: `M = a / 0,000352778` (1 pt = 0,3528 mm).
-   El prototipo recupera **1:100 y 1:50** sin configuración; se contrasta con el texto `M 1:…`.
-4. **(v3)** Con planos reales las etiquetas pueden estar **desplazadas** (líneas de referencia) y
-   rotular el **techo** (con 0,00) o la **base**. Por eso v3 genera candidatos de escala:
-   - directa, con la etiqueta sobre la línea;
-   - por orden, con la k-ésima etiqueta en el k-ésimo límite;
-   - el texto `M 1:xx` / `Höhenmaßstab 1 : 75`.
+1. Candidates: numbers with decimals near the column (−120…+60 pt in `x`), excluding those in
+   brackets or with a sign (they are NHN, not depth).
+2. Group them by text column (right-aligned edge) and, per group, require ≥ 3 values that are
+   **strictly increasing** with a **Pearson correlation > 0.95** between `y` and value (exactly the
+   criterion of swissgeol's `AAboveBSidebarValidator`).
+3. Fit `Tiefe = a·y + b`. The real scale follows from `a`: `M = a / 0.000352778`
+   (1 pt = 0.3528 mm). The prototype recovers **1:100 and 1:50** without configuration; the result
+   is checked against the text `M 1:…`.
+4. **(v3)** In real drawings the labels can be **offset** (leader lines) and can label the **top**
+   (with 0.00) or the **base**. That is why v3 generates scale candidates:
+   - direct, with the label on the line;
+   - by order, with the k-th label at the k-th boundary;
+   - the text `M 1:xx` / `Höhenmaßstab 1 : 75`.
 
-   Se elige el candidato con más **etiquetas confirmadas** por algún límite (±3 cm) y sólo se
-   aceptan **escalas normalizadas** (±4 %). La confirmación etiqueta↔límite es 1:1.
-5. Robustez adicional de swissgeol que conviene portar:
-   - quitar iterativamente la entrada que más empeora el ajuste (`remove_entry_by_correlation_gradient`);
-   - descartar **reglas/escalas** (`0, 1, 2, 3 m…`): progresiones aritméticas que contienen 0
+   The candidate with the most **labels confirmed** by some boundary (±3 cm) wins, and only
+   **normalised scales** (±4 %) are accepted. The label↔boundary confirmation is 1:1.
+5. Further robustness from swissgeol worth porting:
+   - iteratively remove the entry that worsens the fit most (`remove_entry_by_correlation_gradient`);
+   - discard **rulers/scales** (`0, 1, 2, 3 m…`): arithmetic progressions that contain 0
      (`_arithmetic_progression_entries`);
-   - corregir errores OCR de punto decimal (`fix_ocr_mistakes`), sólo relevante con escaneos.
+   - fix OCR decimal-point errors (`fix_ocr_mistakes`), only relevant for scans.
 
-## 4. Límites y descripción
+## 4. Boundaries and description
 
-- **Los límites salen de la geometría** (borde inferior de cada rectángulo) y se convierten con
-  la regresión; la etiqueta más cercana (< 6 pt) **confirma** el valor (|Δ| ≤ 2 cm). Límite sin
-  etiqueta → issue; etiqueta sin límite → issue.
-- Comprobación NHN: si hay valores NHN (paréntesis o con signo) junto al límite,
-  `GOK − Tiefe = NHN` (ya existe en v1, `geo_agent/bohrprofil.py:203`).
-- **Bloque de descripción:** líneas de texto (no numéricas, sin fecha) a la derecha de la
-  columna y antes de la columna siguiente; el borde izquierdo es la moda de `x0` (texto alineado
-  a la izquierda). Cada línea se asigna a la capa cuyo intervalo `[y0, y1)` contiene su `y0`.
-  Esto resuelve A3 (texto más cerca) y B (texto más lejos).
-- **Capas delgadas con líneas de referencia** (texto desplazado con una diagonal hacia su capa):
-  swissgeol ya lo resuelve con `get_diagonals_near_textlines` + `compute_entries_shift`
-  (desplaza la zona de la etiqueta según la diagonal) y un emparejamiento por **programación
-  dinámica** (`depth_description_alignment.py`). No está en el prototipo; portar.
+- **The boundaries come from the geometry** (lower edge of each rectangle) and are converted with
+  the regression; the closest label (< 6 pt) **confirms** the value (|Δ| ≤ 2 cm). Boundary without
+  a label → issue; label without a boundary → issue.
+- NHN check: if there are NHN values (in brackets or with a sign) next to the boundary,
+  `GOK − Tiefe = NHN` (already in v1, `geo_agent/bohrprofil.py:203`).
+- **Description block:** lines of text (not numeric, no date) to the right of the column and before
+  the next column; the left edge is the mode of `x0` (left-aligned text). Each line is assigned to
+  the Schicht whose interval `[y0, y1)` contains its `y0`. This solves A3 (text closer) and B
+  (text further away).
+- **Thin Schichten with leader lines** (text offset, with a diagonal pointing to its Schicht):
+  swissgeol already solves this with `get_diagonals_near_textlines` + `compute_entries_shift`
+  (shifts the label area along the diagonal) and a matching by **dynamic programming**
+  (`depth_description_alignment.py`). Not in the prototype; to be ported.
 
-## 5. Clasificación del texto: sustantivo, no adjetivo
+## 5. Classifying the text: noun, not adjective
 
-El fallo silencioso de A3 viene de `soil.classify` buscando subcadenas: `sandig` → *Sand*.
-Regla DIN 4023 / EN ISO 14688: la **fracción principal es un sustantivo** (mayúscula:
-*Sand, Kies, Mittelsand, Geschiebemergel*); las secundarias son adjetivos en `-ig`
-(*sandig, kiesig, schluffig*). Cambios:
+The silent failure in A3 comes from `soil.classify` searching for substrings: `sandig` → *Sand*.
+DIN 4023 / EN ISO 14688 rule: the **main fraction is a noun** (capitalised: *Sand, Kies,
+Mittelsand, Geschiebemergel*); the secondary ones are adjectives ending in `-ig` (*sandig, kiesig,
+schluffig*). Changes:
 
-- La palabra cabeza debe ser sustantivo (mayúscula inicial, no termina en `-ig`/`-haltig`).
-- Si la primera palabra no es sustantivo → **issue**, nunca "continuación de la capa anterior"
+- The head word must be a noun (initial capital, does not end in `-ig`/`-haltig`).
+- If the first word is not a noun → **issue**, never "continuation of the previous Schicht"
   (`geo_agent/bohrprofil.py:186-190`).
-- El vocabulario regional (Lauenburger Ton, Klei…) se carga de la leyenda o del perfil, no del
-  código.
-- Parseo completo de Nebenanteile, consistencia, etc.: ver
-  [arquitectura §6.5](ARQUITECTURA_BAUGRUNDMODELL.md#65-parser-de-descripciones-din-4023--din-en-iso-14688-1).
+- Regional vocabulary (Lauenburger Ton, Klei…) is loaded from the legend or the profile, not from
+  the code.
+- Full parsing of Nebenanteile, consistency, etc.: see
+  [architecture §6.5](ARCHITECTURE_BAUGRUNDMODELL.md#65-description-parser-din-4023--din-en-iso-14688-1).
 
-## 6. Fusión y confianza
+## 6. Merging and confidence
 
-Cada capa reúne señales independientes; la confianza es el acuerdo entre ellas
-(`Layer.confidence` en el prototipo):
+Each Schicht gathers independent signals; the confidence is the agreement between them
+(`Layer.confidence` in the prototype):
 
-| Señal | Peso orientativo |
+| Signal | Indicative weight |
 |---|---|
-| Límite geométrico confirmado por etiqueta | 0,4 (0,2 sin etiqueta) |
-| Bodenart por texto (sustantivo reconocido) | +0,3 |
-| Bodenart por Schraffur coincide con texto ([04](04_schraffur_din4023.md)) | +0,3 |
+| Geometric boundary confirmed by a label | 0.4 (0.2 without a label) |
+| Bodenart from the text (noun recognised) | +0.3 |
+| Bodenart from the Schraffur matches the text ([04](04_schraffur_din4023.md)) | +0.3 |
 
-Verde/amarillo en el Excel se deriva de este valor. Los pesos se calibran con el corpus real.
+Green/yellow in the Excel is derived from this value. The weights are calibrated with the real
+corpus.
 
-## 7. Qué queda como configuración (perfil)
+## 7. What remains as configuration (profile)
 
-Sólo pistas, nunca posiciones: prefijos de ID, regex de profundidad/NHN, idioma, vocabulario
-regional, escala esperada. Ver formato en
-[arquitectura §6.10](ARQUITECTURA_BAUGRUNDMODELL.md#610-perfiles-de-layout).
+Only hints, never positions: ID prefixes, depth/NHN regex, language, regional vocabulary, expected
+scale. See the format in
+[architecture §6.10](ARCHITECTURE_BAUGRUNDMODELL.md#610-layout-profiles).
 
-## 8. Casos aún no cubiertos
+## 8. Cases not yet covered
 
-- Páginas rotadas (`/Rotate`) y texto vertical → normalizar con `page.rotation_matrix` **[a verificar]**.
-- Sondeos que continúan en la página siguiente → swissgeol `layer/continuation_detection.py`.
-- PDFs escaneados → OCR previo (swissgeol usa AWS Textract + `swissgeol-ocr`); confianza menor.
-- Varias columnas por sondeo (p. ej. Stratigraphie + Bodenart): elegir la que tiene Schraffur.
+- Rotated pages (`/Rotate`) and vertical text → normalise with `page.rotation_matrix` **[to be verified]**.
+- Bohrungen that continue on the next page → swissgeol `layer/continuation_detection.py`.
+- Scanned PDFs → OCR first (swissgeol uses AWS Textract + `swissgeol-ocr`); lower confidence.
+- Several columns per Bohrung (e.g. stratigraphy + Bodenart): choose the one with the Schraffur.
 
-Up: [Índice](README.md)
+Up: [Index](README.md)
 
-Related: [01 Diagnóstico](01_diagnostico_layout_fijo.md) · [04 Schraffur](04_schraffur_din4023.md) · [08 swissgeol](08_swissgeol_reutilizacion.md) · [09 Validación](09_validacion_benchmark.md) · [Arquitectura](ARQUITECTURA_BAUGRUNDMODELL.md)
+Related: [01 Diagnosis](01_diagnosis_fixed_layout.md) · [04 Schraffur](04_schraffur_din4023.md) · [08 swissgeol](08_swissgeol_reuse.md) · [09 Validation](09_validation_benchmark.md) · [Architecture](ARCHITECTURE_BAUGRUNDMODELL.md)

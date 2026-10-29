@@ -1,74 +1,73 @@
 ---
-title: "Coordenadas y georreferencia de los sondeos"
+title: "Coordinates and georeferencing of the Bohrungen"
 date: 2026-10-23
-tags: [geo_agent, extraccion, coordenadas, crs, georreferencia]
-aliases: [Coordenadas, Rechtswert Hochwert, Georreferencia]
+tags: [geo_agent, extraction, coordinates, crs, georeferencing]
+aliases: [Coordinates, Rechtswert Hochwert, Georeferencing]
 ---
 
-# Coordenadas y georreferencia de los sondeos
+# Coordinates and georeferencing of the Bohrungen
 
-**Conclusión:** Rechts-/Hochwert no están en el Bohrprofil (`geo_agent/excel_writer.py:145-147`
-los deja vacíos), pero casi siempre están en **otro lugar del Gutachten**: una tabla de
-Aufschlüsse, el Lageplan o el eje del proyecto. Sin coordenadas no hay modelo 3D real, así que
-esta es la extracción que desbloquea el Baugrundmodell.
+**Conclusion:** Rechts-/Hochwert are not in the Bohrprofil (`geo_agent/excel_writer.py:145-147`
+leaves them empty), but they are almost always **somewhere else in the Gutachten**: a table of
+Aufschlüsse, the Lageplan or the project alignment. Without coordinates there is no real 3D model,
+so this is the extraction that unlocks the Baugrundmodell.
 
-**Estado:** tabla probada en el prototipo (`coordinate_table` en
-[`prototyp_v2.py`](../spikes/extraktion_v2/prototyp_v2.py)): **17/17** sondeos con Ost-/Nordwert
-exactos. Lageplan y eje: diseño. swissgeol sin cambios: **0/14** (sólo valida CRS suizos).
-**Con un PDF real** (Halle): la tabla de niveles freáticos se lee **26/26** con el mismo método
-de celdas. Ninguno de los tres Gutachten reales trae tabla de coordenadas
-([15](15_resultados_pdfs_reales.md)).
+**Status:** table tested in the prototype (`coordinate_table` in
+[`prototyp_v2.py`](../spikes/extraktion_v2/prototyp_v2.py)): **17/17** Bohrungen with exact
+Ost-/Nordwert. Lageplan and alignment: design. swissgeol unchanged: **0/14** (it only validates
+Swiss CRSs). **With a real PDF** (Halle): the table of Grundwasser levels is read **26/26** with the
+same cell-based method. None of the three real Gutachten contains a coordinate table
+([15](15_results_real_pdfs.md)).
 
-## 1. Fuentes, por orden de preferencia
+## 1. Sources, in order of preference
 
-| # | Fuente | Método | Confianza |
+| # | Source | Method | Confidence |
 |---|---|---|---|
-| 1 | Tabla "Lage- und Höhenverzeichnis der Aufschlüsse" (Anlage) | `page.find_tables()` + lectura por celda | alta, y trae la GOK para cruzar con el Bohrprofil |
-| 2 | Texto en la cabecera del sondeo (`R = …`, `H = …`, `E/N`, `Ostwert/Nordwert`) | regex cerca de palabras clave | media-alta |
-| 3 | Lageplan PDF | símbolos de sondeo + etiqueta; transformación afín con ≥ 3 etiquetas de la cuadrícula; residuos | media |
-| 4 | Eje (LandXML de Civil 3D) + estación del Längsschnitt + offset rotulado | `XY = eje(estación) + offset` | media |
-| 5 | Entrada manual / CSV en la UI | — | según usuario |
+| 1 | Table "Lage- und Höhenverzeichnis der Aufschlüsse" (Anlage) | `page.find_tables()` + reading per cell | high, and it brings the GOK to cross-check with the Bohrprofil |
+| 2 | Text in the header of the Bohrung (`R = …`, `H = …`, `E/N`, `Ostwert/Nordwert`) | regex near keywords | medium-high |
+| 3 | Lageplan PDF | Bohrung symbols + label; affine transformation with ≥ 3 grid labels; residuals | medium |
+| 4 | Alignment (LandXML from Civil 3D) + station from the Längsschnitt + labelled offset | `XY = alignment(station) + offset` | medium |
+| 5 | Manual input / CSV in the UI | — | depends on the user |
 
-## 2. Trampa verificada en la lectura de tablas
+## 2. Verified trap when reading tables
 
-`tab.extract()` de PyMuPDF devolvió `565 081,64` como `"56508164\n,"` (pierde los espacios de
-millares y separa la coma). Solución probada: leer cada celda con
-`page.get_text("words", clip=celda)` y unir las palabras. Generalizable: **nunca parsear números
-desde texto "aplanado"**; siempre desde palabras con su bbox.
+PyMuPDF's `tab.extract()` returned `565 081,64` as `"56508164\n,"` (it loses the thousands spaces
+and separates the comma). Tested solution: read each cell with `page.get_text("words", clip=cell)`
+and join the words. Generalisable: **never parse numbers from "flattened" text**; always from words
+with their bbox.
 
-## 3. Sistemas de referencia en Alemania
+## 3. Reference systems in Germany
 
-| CRS | EPSG | Rasgo para detectarlo |
+| CRS | EPSG | How to recognise it |
 |---|---|---|
-| ETRS89 / UTM 32N | 25832 | Este 6 dígitos (280 000–920 000) o 8 con prefijo de zona `32…`; Norte 7 dígitos (5,2–6,1 M) |
-| ETRS89 / UTM 33N | 25833 | ídem con prefijo `33…` (este de Alemania) |
-| DHDN / Gauß-Krüger zonas 2–5 | 31466–31469 | `R` 7 dígitos empezando por la zona (2…5), `H` 7 dígitos |
-| Alturas | DHHN2016 y DHHN92 (`NHN`); antiguo DHHN12 (`NN`) | texto `m NHN` / `m NN`; diferencias de pocos cm a dm según la región → registrar el sistema |
+| ETRS89 / UTM 32N | 25832 | Easting 6 digits (280,000–920,000) or 8 with the zone prefix `32…`; northing 7 digits (5.2–6.1 M) |
+| ETRS89 / UTM 33N | 25833 | same with the prefix `33…` (eastern Germany) |
+| DHDN / Gauß-Krüger zones 2–5 | 31466–31469 | `R` 7 digits starting with the zone (2…5), `H` 7 digits |
+| Heights | DHHN2016 and DHHN92 (`NHN`); old DHHN12 (`NN`) | text `m NHN` / `m NN`; differences of a few cm to dm depending on the region → record the system |
 
-Reglas: plausibilidad de rangos, quitar prefijo de zona, detectar ejes intercambiados (swissgeol
-hace lo mismo para LV95/LV03: `coordinate_extraction.py`, "Swapping coordinates"). Si sólo hay
-Gauß-Krüger, transformar con `pyproj` al CRS del proyecto y guardar el original.
+Rules: plausibility of ranges, strip the zone prefix, detect swapped axes (swissgeol does the same
+for LV95/LV03: `coordinate_extraction.py`, "Swapping coordinates"). If there is only Gauß-Krüger,
+transform with `pyproj` to the project CRS and keep the original.
 
-## 4. Validaciones cruzadas
+## 4. Cross-checks
 
-- GOK de la tabla = GOK del Bohrprofil (±2 cm).
-- Distancia del sondeo al eje ≈ offset rotulado en el Längsschnitt.
-- Estación del sondeo en el Längsschnitt ≈ estación proyectada de su XY sobre el eje.
-- Todos los sondeos dentro de la envolvente del Lageplan.
+- GOK in the table = GOK in the Bohrprofil (±2 cm).
+- Distance of the Bohrung from the alignment ≈ offset labelled in the Längsschnitt.
+- Station of the Bohrung in the Längsschnitt ≈ projected station of its XY on the alignment.
+- All Bohrungen inside the envelope of the Lageplan.
 
-## 5. Qué reutilizar de swissgeol
+## 5. What to reuse from swissgeol
 
-La estructura de `CoordinateExtractor`: palabras clave (`Koordinaten`, `Koord.`), etiquetas `X/Y`,
-búsqueda cerca de la palabra clave y selección de la mejor coincidencia por página. Hay que
-reescribir los validadores (`LV95Coordinate`, `LV03Coordinate`) para los CRS alemanes →
-[08](08_swissgeol_reutilizacion.md).
+The structure of `CoordinateExtractor`: keywords (`Koordinaten`, `Koord.`), `X/Y` labels, a search
+near the keyword and choosing the best match per page. The validators (`LV95Coordinate`,
+`LV03Coordinate`) have to be rewritten for the German CRSs → [08](08_swissgeol_reuse.md).
 
-## 6. Modelo de datos
+## 6. Data model
 
-`boreholes.collar geometry(PointZ)` con el SRID del proyecto (Z = GOK), más `coord_source` y
-`confidence` en `provenance`. En IFC: `IfcMapConversion` + `IfcProjectedCRS` (verificado en el
-[spike IFC](../spikes/ifc_thatopen/README.md)).
+`boreholes.collar geometry(PointZ)` with the project SRID (Z = GOK), plus `coord_source` and
+`confidence` in `provenance`. In IFC: `IfcMapConversion` + `IfcProjectedCRS` (verified in the
+[IFC spike](../spikes/ifc_thatopen/README.md)).
 
-Up: [Índice](README.md)
+Up: [Index](README.md)
 
-Related: [02 Bohrprofil](02_bohrprofil_generalizacion.md) · [03 Längsschnitt](03_laengsschnitt_generalizacion.md) · [08 swissgeol](08_swissgeol_reutilizacion.md) · [Arquitectura](ARQUITECTURA_BAUGRUNDMODELL.md)
+Related: [02 Bohrprofil](02_bohrprofil_generalization.md) · [03 Längsschnitt](03_laengsschnitt_generalization.md) · [08 swissgeol](08_swissgeol_reuse.md) · [Architecture](ARCHITECTURE_BAUGRUNDMODELL.md)

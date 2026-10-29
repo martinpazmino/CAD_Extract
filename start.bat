@@ -1,5 +1,5 @@
 @echo off
-REM Geo_Agent starten (Windows): Doppelklick oder "start.bat" in der Eingabeaufforderung.
+REM GroundTwin starten (Windows): Doppelklick oder "start.bat" in der Eingabeaufforderung.
 REM Baugrundmodell-App (Schritt-App im Browser): http://localhost:8500 - der Browser oeffnet sich selbst.
 REM Beim ersten Start wird .venv angelegt und alles installiert (einige Minuten).
 cd /d "%~dp0"

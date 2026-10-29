@@ -1,91 +1,92 @@
 ---
-title: "Corpus real: Gutachten públicos para probar la extracción"
+title: "Real corpus: public Gutachten to test the extraction"
 date: 2026-10-25
-tags: [corpus, validacion, gutachten, datos]
-aliases: [Corpus público, Gutachten de prueba]
+tags: [corpus, validation, gutachten, data]
+aliases: [Public corpus, Test Gutachten]
 ---
 
-# Corpus real: Gutachten públicos para probar la extracción
+# Real corpus: public Gutachten to test the extraction
 
-**Conclusión:** no hace falta esperar a tener Gutachten propios. En Alemania se publican muchos
-Baugrundgutachten completos, con Bohrprofile DIN 4023, Rammsondierungen y Lageplan, en la
-participación pública de **Bebauungspläne**, en **Planfeststellungen** (UVP-Verbund) y en portales
-de **transparencia** (p. ej. Hamburgo). Hay 16 candidatos de 8 Länder en
-[`spikes/korpus/manifest.tsv`](../spikes/korpus/manifest.tsv) y un script que los descarga, filtra y
-evalúa.
+**Conclusion:** there is no need to wait for our own Gutachten. In Germany many complete
+Baugrundgutachten, with DIN 4023 Bohrprofile, Rammsondierungen and a Lageplan, are published in the
+public participation for **Bebauungspläne**, in **Planfeststellungen** (UVP-Verbund) and on
+**transparency** portals (e.g. Hamburg). There are 16 candidates from 8 Länder in
+[`spikes/korpus/manifest.tsv`](../spikes/korpus/manifest.tsv) and a script that downloads, filters
+and evaluates them.
 
-**Estado (2026-10-25):** la descarga automática está bloqueada por la red del entorno de Claude
-(403 en `www.dresden.de`, `daten.transparenz.hamburg.de`, `www.ditzingen.de`, …). El equipo subió
-a mano **5 PDFs**: 3 de entrenamiento (Wachenroth, Talheim, Halle) y 2 de **prueba ciega**
-(Hausham, Rednitzhembach). La verdad está transcrita en
-[`spikes/korpus/groundtruth/`](../spikes/korpus/groundtruth/talheim.json) y los resultados en
-[15](15_resultados_pdfs_reales.md). Para la próxima ronda ciega: GGU-STRATIG, WinBohr, otro
-escaneado y uno con tabla de coordenadas.
+**Status (2026-10-25):** the automatic download is blocked by the network of Claude's environment
+(403 on `www.dresden.de`, `daten.transparenz.hamburg.de`, `www.ditzingen.de`, …). The team uploaded
+**5 PDFs** by hand: 3 for training (Wachenroth, Talheim, Halle) and 2 for the **blind test**
+(Hausham, Rednitzhembach). The ground truth is transcribed in
+[`spikes/korpus/groundtruth/`](../spikes/korpus/groundtruth/talheim.json) and the results are in
+[15](15_results_real_pdfs.md). For the next blind round: GGU-STRATIG, WinBohr, another scanned one
+and one with a coordinate table.
 
-## 1. Cómo desbloquearlo (elige una)
+## 1. How to unblock it (pick one)
 
-1. **Permitir los dominios** en la configuración del entorno (Network access → Allowed domains):
-   los hosts de la columna `url` del manifest. Después: `python screen_corpus.py --download <dir>`.
-2. **Descargar a mano** (navegador) los PDFs que interesen, dejarlos en una carpeta fuera del
-   repo y ejecutar `python screen_corpus.py --screen <dir> <salida>`.
-3. Subirlos a la sesión de Claude para que los evalúe (no se commitean).
+1. **Allow the domains** in the environment settings (Network access → Allowed domains): the hosts
+   in the `url` column of the manifest. Then: `python screen_corpus.py --download <dir>`.
+2. **Download by hand** (browser) the PDFs of interest, put them in a folder outside the repo and
+   run `python screen_corpus.py --screen <dir> <output>`.
+3. Upload them to the Claude session so that it evaluates them (they are not committed).
 
-## 2. Qué buscar (5–10 bien elegidos > 50 al azar)
+## 2. What to look for (5–10 well chosen > 50 at random)
 
-| Criterio | Por qué |
+| Criterion | Why |
 |---|---|
-| Distinto **software** (`Producer`/`Creator`: GGU-STRATIG, DC-BOHR, WinBohr, AutoCAD…) | Es lo que más cambia el layout |
-| Distintas **oficinas** y **Länder** | Convenciones locales (IDs, `NHN`/`NN`, CRS) |
-| Con **Rammsondierung DPH** y, si hay, **CPT** | [05](05_sondierungen.md) |
-| Con **Lageplan** y/o tabla de coordenadas | [07](07_coordenadas.md) |
-| Al menos 1–2 con **Längsschnitt / Baugrundschnitt** (ideal: túnel, p. ej. `offenstetten`) | [03](03_laengsschnitt_generalizacion.md) |
-| Al menos 1 **escaneado** | Medir la ruta OCR y que el filtro lo detecte |
+| Different **software** (`Producer`/`Creator`: GGU-STRATIG, DC-BOHR, WinBohr, AutoCAD…) | It is what changes the layout most |
+| Different **offices** and **Länder** | Local conventions (IDs, `NHN`/`NN`, CRS) |
+| With **Rammsondierung DPH** and, if available, **CPT** | [05](05_sondierungen.md) |
+| With a **Lageplan** and/or a coordinate table | [07](07_coordinates.md) |
+| At least 1–2 with a **Längsschnitt / Baugrundschnitt** (ideally a tunnel, e.g. `offenstetten`) | [03](03_laengsschnitt_generalization.md) |
+| At least 1 **scanned** | Measure the OCR route and check that the filter detects it |
 
-El script ya informa de `producer/creator`, páginas vectoriales vs. escaneadas, páginas
-candidatas a Bohrprofil y la escala rotulada (`M 1:…`).
+The script already reports `producer/creator`, vector vs. scanned pages, candidate Bohrprofil pages
+and the labelled scale (`M 1:…`).
 
-## 3. Evaluación sin verdad (primera pasada)
+## 3. Evaluation without ground truth (first pass)
 
-Sin ground truth sólo se mide **autoconsistencia** (`screen_corpus.py`):
+Without ground truth only **self-consistency** can be measured (`screen_corpus.py`):
 
-| Indicador | Señal de problema |
+| Indicator | Sign of a problem |
 |---|---|
-| Sondeos detectados v1 / v2 vs. sondeos rotulados en la portada/Lageplan | faltan o sobran sondeos |
-| Escala de la regresión (v2) vs. `M 1:…` del texto | columna o etiquetas mal encontradas |
-| % límites confirmados por etiqueta | geometría y texto no coinciden |
-| % texto = Schraffur | clasificador de Schraffur o parser de texto fallan |
-| Aritmética NHN (v1) | profundidades mal leídas |
-| Issues por capa | dónde mirar primero |
+| Bohrungen detected by v1 / v2 vs. Bohrungen labelled on the cover/Lageplan | Bohrungen missing or extra |
+| Scale from the regression (v2) vs. `M 1:…` in the text | column or labels found wrongly |
+| % boundaries confirmed by a label | geometry and text disagree |
+| % text = Schraffur | the Schraffur classifier or the text parser fails |
+| NHN arithmetic (v1) | depths misread |
+| Issues per Schicht | where to look first |
 
-Más una miniatura de cada página de Bohrprofil para revisión visual. Con eso se eligen los 5–10
-documentos y se crea la **verdad semi-automática** (v2 → corrección humana → `ground_truth.json`,
-[09 §2](09_validacion_benchmark.md#2-formato-de-verdad-ground-truth)).
+Plus a thumbnail of each Bohrprofil page for visual review. With that, the 5–10 documents are
+chosen and the **semi-automatic ground truth** is created (v2 → human correction →
+`ground_truth.json`, [09 §2](09_validation_benchmark.md#2-ground-truth-format)).
 
-## 4. Uso legal de los PDFs
+## 4. Legal use of the PDFs
 
 > [!IMPORTANT]
-> No es asesoramiento jurídico. Los Gutachten son obras protegidas de las oficinas que los
-> firman, aunque estén publicados.
+> This is not legal advice. The Gutachten are protected works of the offices that sign them, even
+> when they are published.
 
-- **Uso interno para pruebas.** Para esto parece aplicar el § 44b UrhG (*Text und Data Mining*
-  sobre obras accesibles legalmente). Si el titular ha excluido el TDM de forma legible por
-  máquina, no se usa. Las copias se borran cuando ya no hacen falta.
-- **No redistribuir:** los PDFs no van al repo (`data/*.pdf` ya está en `.gitignore`). El repo sólo
-  guarda el manifest (URL + nota) y, cuando existan, los `sha256` y la verdad anotada.
-- **Datos personales:** los Gutachten nombran a ingenieros, propietarios o direcciones. No
-  publicar extractos fuera del equipo.
-- Para el uso con **terceros** el corpus de pruebas no cambia, pero sí la licencia del software
-  ([14](14_licencias_terceros.md)).
+- **Internal use for testing.** § 44b UrhG (*Text und Data Mining* on lawfully accessible works)
+  seems to apply here. If the rights holder has opted out of TDM in a machine-readable way, the
+  document is not used. Copies are deleted when they are no longer needed.
+- **No redistribution:** the PDFs do not go into the repo (`data/*.pdf` is already in
+  `.gitignore`). The repo only keeps the manifest (URL + note) and, once they exist, the `sha256`
+  and the annotated ground truth.
+- **Personal data:** the Gutachten name engineers, owners or addresses. Do not publish excerpts
+  outside the team.
+- For use with **third parties** the test corpus does not change, but the software license does
+  ([14](14_licensing.md)).
 
-## 5. Otras fuentes a explorar
+## 5. Other sources to explore
 
-- Bases de datos de sondeos de los servicios geológicos de los Länder (p. ej. NIBIS/LBEG,
-  geoportales de Hamburgo o Berlín). Suelen ser **escaneos** de Schichtenverzeichnisse: sirven
-  para la ruta OCR, no para la vectorial.
-- Ejemplos sintéticos compartibles: el generador
-  [`synth_bohrprofil.py`](../spikes/extraktion_v2/synth_bohrprofil.py) no tiene restricciones y
-  sirve para reproducir errores ante terceros, p. ej. swisstopo ([13](13_colaboracion_swisstopo.md)).
+- Borehole databases of the geological surveys of the Länder (e.g. NIBIS/LBEG, geoportals of
+  Hamburg or Berlin). They are usually **scans** of Schichtenverzeichnisse: useful for the OCR
+  route, not for the vector one.
+- Shareable synthetic examples: the generator
+  [`synth_bohrprofil.py`](../spikes/extraktion_v2/synth_bohrprofil.py) has no restrictions and
+  can reproduce errors for third parties, e.g. swisstopo ([13](13_swisstopo_collaboration.md)).
 
-Up: [Índice](README.md)
+Up: [Index](README.md)
 
-Related: [09 Validación](09_validacion_benchmark.md) · [10 Plan](10_plan_implementacion.md) · [14 Licencias](14_licencias_terceros.md) · [13 swisstopo](13_colaboracion_swisstopo.md)
+Related: [09 Validation](09_validation_benchmark.md) · [10 Plan](10_implementation_plan.md) · [14 Licensing](14_licensing.md) · [13 swisstopo](13_swisstopo_collaboration.md)

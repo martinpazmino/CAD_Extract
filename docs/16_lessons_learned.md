@@ -1,204 +1,208 @@
 ---
-title: "Lecciones aprendidas (memoria del proyecto)"
+title: "Lessons learned (project memory)"
 date: 2026-10-26
-tags: [lecciones, memoria, extraccion, validacion]
-aliases: [Lessons learned, Lecciones, Memoria]
+tags: [lessons, memory, extraction, validation]
+aliases: [Lessons learned, Lessons, Memory]
 ---
 
-# Lecciones aprendidas (memoria del proyecto)
+# Lessons learned (project memory)
 
-**Para qué sirve esta nota:** todo lo aprendido, escrito como **reglas explícitas** que cualquier
-persona (o agente) debe respetar al tocar la extracción. Cada regla dice qué hacer, por qué
-(evidencia) y qué prueba la vigila. Si una regla deja de cumplirse, una prueba debe ponerse roja.
+**What this note is for:** everything learned, written as **explicit rules** that any person (or
+agent) must respect when touching the extraction. Each rule says what to do, why (evidence) and
+which test watches it. If a rule stops being met, a test must turn red.
 
-**Objetivo del proyecto (no perderlo de vista):** desde un Bodengutachten en PDF, construir el
-**Baugrundmodell**: datos de sondeos validados y trazables → Supabase → geometrías IFC 4.3 en
-That Open Engine ([Arquitectura](ARQUITECTURA_BAUGRUNDMODELL.md)). La extracción no es el fin:
-importa que cada dato llegue al modelo **con su procedencia y su confianza**, y que un dato
-dudoso quede **marcado**, nunca escondido.
+**Goal of the project (do not lose sight of it):** from a Bodengutachten in PDF, build the
+**Baugrundmodell**: validated, traceable Bohrung data → Supabase → IFC 4.3 geometry in That Open
+Engine ([Architecture](ARCHITECTURE_BAUGRUNDMODELL.md)). The extraction is not the end: what
+matters is that every value reaches the model **with its provenance and its confidence**, and that a
+doubtful value stays **marked**, never hidden.
 
 > [!IMPORTANT]
-> Las reglas L1–L18 vienen de PDFs reales ([15](15_resultados_pdfs_reales.md)). Las cifras
-> después de cada corrección son de entrenamiento; las rondas ciegas dieron **0/13** y **11/29**.
-> Una regla nueva sólo se acepta si no rompe el conjunto de regresión (§P5).
+> Rules L1–L18 come from real PDFs ([15](15_results_real_pdfs.md)). The figures after each fix are
+> training figures; the blind rounds gave **0/13** and **11/29**. A new rule is only accepted if it
+> does not break the regression set (§P5).
 
-## P. Proceso y medición
+## P. Process and measurement
 
-| # | Regla | Por qué / evidencia |
+| # | Rule | Why / evidence |
 |---|---|---|
-| P1 | **Medir a ciegas antes de corregir.** Congelar predicciones de todo PDF nuevo antes de abrirlo | v3 sacó 29/29 en entrenamiento y **0/13** en la primera ronda ciega ([15 §6](15_resultados_pdfs_reales.md#6-prueba-ciega-hausham-y-rednitzhembach)) |
-| P2 | **Subir las predicciones congeladas al repo** (con `sha256` del PDF y revisión del código) **antes** de transcribir la verdad | El historial de git demuestra el orden; ronda 3: `5325ead`/`2d4d5e7` → verdad `acc5cd5` (D29) |
-| P3 | Separar siempre **cifras ciegas** de **cifras de entrenamiento** en todo informe | Evita el autoengaño (D24) |
-| P4 | La métrica principal es el **error silencioso**: un dato erróneo marcado como seguro. Un sondeo falso es peor que uno no encontrado | v1 marcaba en verde Bodenarten erróneas ([01](01_diagnostico_layout_fijo.md)); swissgeol inventó 55 sondeos en 9 PDFs |
-| P5 | **Todo cambio se mide contra el conjunto completo** (PDFs reales + sintéticos) antes de subirlo | Una regla de la ronda 3 rompió B 4 de Rednitzhembach y sólo el conjunto de regresión lo detectó |
-| P6 | Una regla nueva debe ser **general** (describir un rasgo del dibujo), nunca una excepción por PDF, oficina o coordenada | Las posiciones fijas de v1 son la causa raíz de su 0/58 |
-| P7 | La verdad se transcribe **de la imagen** y se coteja con una segunda fuente (Schichtenverzeichnis, informe) cuando exista | El Schichtenverzeichnis confirmó 14/14 sondeos transcritos |
-| P8 | Los PDFs **no** se suben al repo; sólo URL, `sha256` y datos factuales | Uso interno de obras ajenas (D16, D23) |
-| P9 | **Perturbar los PDFs que ya funcionan** (girar, escalar, rasterizar) con la misma verdad: encuentra fallos que los originales esconden | Girar Wesel destapó que el lector del Schichtenverzeichnis usaba coordenadas sin rotar |
-| P10 | **Ablación**: apagar cada regla y ver qué caso empeora. Una regla que no empeora nada no está protegida por ningún test | [`ablation.py`](../spikes/korpus/ablation.py): 22 de 28 reglas protegidas ([tabla](../spikes/korpus/ablation_v4.md)) |
-| P11 | Un **caso de estrés por lección**: el fallo real se convierte en un PDF mínimo que lo reproduce. Escribir el caso para una regla sin protección suele destapar un fallo nuevo | [`stress_cases.py`](../spikes/extraktion_v2/stress_cases.py), 17 casos; s15 destapó el fallo de L14 |
-| P12 | Medir también la **precisión al centímetro** (límites exactos), no sólo la tolerancia de 5 cm | v3 414/515 exactos, v4 509/515 tras T2 |
+| P1 | **Measure blind before fixing.** Freeze the predictions for every new PDF before opening it | v3 got 29/29 in training and **0/13** in the first blind round ([15 §6](15_results_real_pdfs.md#6-blind-test-hausham-and-rednitzhembach)) |
+| P2 | **Push the frozen predictions to the repo** (with the `sha256` of the PDF and the code revision) **before** transcribing the ground truth | The git history proves the order; round 3: `5325ead`/`2d4d5e7` → ground truth `acc5cd5` (D29) |
+| P3 | Always separate **blind figures** from **training figures** in every report | Avoids fooling ourselves (D24) |
+| P4 | The main metric is the **silent error**: a wrong value marked as certain. A false Bohrung is worse than one not found | v1 marked wrong Bodenarten green ([01](01_diagnosis_fixed_layout.md)); swissgeol invented 55 Bohrungen in 9 PDFs |
+| P5 | **Every change is measured against the full set** (real PDFs + synthetic) before it is pushed | A rule from round 3 broke B 4 of Rednitzhembach and only the regression set caught it |
+| P6 | A new rule must be **general** (describe a feature of the drawing), never an exception for a PDF, an office or a coordinate | The fixed positions of v1 are the root cause of its 0/58 |
+| P7 | The ground truth is transcribed **from the image** and checked against a second source (Schichtenverzeichnis, report) when there is one | The Schichtenverzeichnis confirmed 14/14 transcribed Bohrungen |
+| P8 | The PDFs are **not** pushed to the repo; only URL, `sha256` and factual data | Internal use of other people's work (D16, D23) |
+| P9 | **Perturb the PDFs that already work** (rotate, scale, rasterise) with the same ground truth: it finds failures the originals hide | Rotating Wesel revealed that the Schichtenverzeichnis reader used unrotated coordinates |
+| P10 | **Ablation**: switch off each rule and see which case gets worse. A rule whose removal makes nothing worse is not protected by any test | [`ablation.py`](../spikes/korpus/ablation.py): 22 of 28 rules protected ([table](../spikes/korpus/ablation_v4.md)) |
+| P11 | **One stress case per lesson**: the real failure becomes a minimal PDF that reproduces it. Writing the case for an unprotected rule often uncovers a new failure | [`stress_cases.py`](../spikes/extraktion_v2/stress_cases.py), 17 cases; s15 uncovered the L14 failure |
+| P12 | Also measure **precision to the centimetre** (exact boundaries), not only the 5 cm tolerance | v3 414/515 exact, v4 509/515 after T2 |
 
-## E. Entrada: qué tipo de PDF es
+## E. Input: what kind of PDF it is
 
-| # | Regla | Evidencia |
+| # | Rule | Evidence |
 |---|---|---|
-| L1 | No asumir rectángulos ni rellenos: **reducir todo a segmentos** | Ghostscript/PDF24 dejó Wachenroth en 965 segmentos sueltos |
-| L2 | **Normalizar la rotación** (`page.rotation_matrix`) de palabras y paths antes de cualquier geometría | Talheim (`/Rotate 90`), Marl S.19, Wesel S.17 (`/Rotate 270`) |
-| L11 | **Escaneo = misma lógica**: segmentos desde la imagen (OpenCV) y texto desde la capa OCR | Rednitzhembach 4/4 tras el adaptador raster |
-| L17 | **AutoCAD con fuentes SHX**: el texto del dibujo son líneas; no hay capa de texto aunque sea vectorial. Detectarlo (muchos paths, casi sin palabras) y pasar por OCR | Wesel S.17: 1389 paths, 18 "palabras" sueltas |
-| L18 | **Raster sin capa de texto** (capturas de portales, escaneos de archivo): hace falta OCR propio | Berlín: 11 sondeos en imágenes; OCR (RapidOCR) lee profundidades y cotas con confianza 0,6–0,9 |
-| E1 | Clasificar cada página **antes** de extraer: vector+texto · vector sin texto (SHX) · raster+OCR · raster sin texto | Las cuatro clases aparecieron en 9 Gutachten |
-| E2 | Un escaneo puede traer **ruido vectorial** (cientos de paths del software de OCR): con imagen > 80 % es escaneo igual, y se usan segmentos de imagen **y** vectoriales | KB5 suizo: 220 paths |
-| E3 | **Todo módulo toma las primitivas de la misma capa normalizada** (E1); nunca `page.get_text()` directo | El lector del SV falló en páginas giradas por saltarse la rotación |
-| L18b | La capa OCR de un escaneo **pierde texto** ("2 / I", etiquetas de B 4): complementarla con OCR propio donde no hay palabras | A7367, Rednitzhembach |
-| E4 | El OCR lee la Schraffur de Kies (círculos) como `000`: no contar esos tokens como texto | Caso s12 |
-| E5 | El tamaño de página de un escaneo (o de un PDF impreso reducido) **no** es el del papel: el `M 1:100` del cajetín no da la escala en puntos PDF; mandan las etiquetas. Si el cajetín las contradice, el sondeo sale **sin capas** y con aviso | KB5; perturbación al 70 %: límites falsos 57 → 2 |
-| E7 | En raster, una columna dibujada sólo con **rellenos de color sin borde** no da líneas oscuras: hace falta detectar bordes entre colores (gradiente), no sólo umbral de negro | Perturbación raster de Hausham (DC-Software) |
-| E6 | El OCR **pierde espacios** (`KeinWasser`, `RKS 1-Betonweg`, `GW2.53m`, `36,25mNHN`): todo patrón de texto debe aceptar espacios opcionales y no depender de `\b` entre letra y cifra | Perturbación raster: GW-Status 3/20 |
+| L1 | Do not assume rectangles or fills: **reduce everything to segments** | Ghostscript/PDF24 left Wachenroth as 965 loose segments |
+| L2 | **Normalise the rotation** (`page.rotation_matrix`) of words and paths before any geometry | Talheim (`/Rotate 90`), Marl p. 19, Wesel p. 17 (`/Rotate 270`) |
+| L11 | **Scan = same logic**: segments from the image (OpenCV) and text from the OCR layer | Rednitzhembach 4/4 after the raster adapter |
+| L17 | **AutoCAD with SHX fonts**: the text of the drawing is lines; there is no text layer even though it is vector. Detect it (many paths, almost no words) and send it through OCR | Wesel p. 17: 1389 paths, 18 loose "words" |
+| L18 | **Raster without a text layer** (portal screenshots, archive scans): our own OCR is needed | Berlin: 11 Bohrungen in images; OCR (RapidOCR) reads depths and elevations with confidence 0.6–0.9 |
+| E1 | Classify every page **before** extracting: vector+text · vector without text (SHX) · raster+OCR · raster without text | All four classes appeared in 9 Gutachten |
+| E2 | A scan can carry **vector noise** (hundreds of paths from the OCR software): with an image > 80 % it is still a scan, and both image **and** vector segments are used | Swiss KB5: 220 paths |
+| E3 | **Every module takes its primitives from the same normalised layer** (E1); never `page.get_text()` directly | The SV reader failed on rotated pages because it skipped the rotation |
+| L18b | The OCR layer of a scan **loses text** ("2 / I", labels of B 4): complement it with our own OCR where there are no words | A7367, Rednitzhembach |
+| E4 | OCR reads the Schraffur of Kies (circles) as `000`: do not count those tokens as text | Case s12 |
+| E5 | The page size of a scan (or of a reduced printed PDF) is **not** that of the paper: the `M 1:100` in the title block does not give the scale in PDF points; the labels decide. If the title block contradicts them, the Bohrung comes out **without Schichten** and with a warning | KB5; perturbation at 70 %: false boundaries 57 → 2 |
+| E7 | In raster, a column drawn only with **colour fills without an outline** gives no dark lines: edges between colours (gradient) have to be detected, not only a black threshold | Raster perturbation of Hausham (DC-Software) |
+| E6 | OCR **loses spaces** (`KeinWasser`, `RKS 1-Betonweg`, `GW2.53m`, `36,25mNHN`): every text pattern must accept optional spaces and must not depend on `\b` between a letter and a digit | Raster perturbation: GW status 3/20 |
 
-## G. Geometría: columna y límites
+## G. Geometry: column and boundaries
 
-| # | Regla | Evidencia |
+| # | Rule | Evidence |
 |---|---|---|
-| G1 | Columna = **par de verticales con trazo**, ancho 8–80 pt, alto ≥ 2,5 × ancho | Funciona en 7 oficinas distintas |
-| G2 | Límite = horizontal **continua** (no discontinua) que toca **ambos bordes** (±0,6 pt; escaneo ±1,6 pt) | L6: la Schraffur de Ton y la doble línea de Schwarzdecke cruzaban la columna |
-| G3 | Columnas anidadas (franja interior, tubo de GWM): quedarse con la de **bordes más gruesos** | Talheim GWM |
-| G4 | Una columna con números dentro es una **tabla**, no un sondeo | L5: tabla "B 6" de Wachenroth a M 1:12 |
-| G5 | Cada límite debe estar **confirmado 1:1 por una etiqueta**; si no, se marca (no se borra) | Talheim BK5: 1 límite extra marcado |
+| G1 | Column = **pair of stroked verticals**, width 8–80 pt, height ≥ 2.5 × width | Works in 7 different offices |
+| G2 | Boundary = **continuous** (not dashed) horizontal that touches **both edges** (±0.6 pt; scan ±1.6 pt) | L6: the Schraffur of Ton and the double line of Schwarzdecke crossed the column |
+| G3 | Nested columns (inner strip, GWM pipe): keep the one with the **thickest edges** | Talheim GWM |
+| G4 | A column with numbers inside is a **table**, not a Bohrung | L5: table "B 6" of Wachenroth at M 1:12 |
+| G5 | Every boundary must be **confirmed 1:1 by a label**; otherwise it is marked (not deleted) | Talheim BK5: 1 extra boundary marked |
 
-## T. Etiquetas, escala y cabeceras
+## T. Labels, scale and headers
 
-| # | Regla | Evidencia |
+| # | Rule | Evidence |
 |---|---|---|
-| L3 | La **posición** de la etiqueta no es fiable (desplazada, encima, debajo); unas oficinas rotulan el **techo** (con 0,00), otras la **base**. La escala se elige por **cuántas etiquetas confirma** cada candidato (directa, por orden, texto `1:75`) | Talheim 65/65 |
-| L8 | Etiquetas con unidad pegada (`0.20m`), coma o punto decimal | Hausham (DC-Software) |
-| L9 | Escalas no normalizadas existen (perfil ajustado a la hoja, M ≈ 1:35; Triefenstein 1:30): válidas si ≥ 80 % de ≥ 3 etiquetas las confirman | Hausham RKS, Triefenstein |
-| L14 | Un grupo de valores en **progresión aritmética** es un **eje** (regla de cotas, escala de un diagrama DPH), no etiquetas de capa, **si** tiene paso redondo (0,1 · 0,25 · 0,3 · 0,5 · 1 m…) y ≥ 8 valores, o más valores que límites la columna. Capas de igual espesor (0,4 · 0,8 · 1,2…) siguen siendo etiquetas | Marl BS 10 (eje DPH); caso s15 (la primera versión de la regla borraba etiquetas reales) |
-| L15 | Una columna de valores **en pares** (Von/Bis de muestras) no son etiquetas de capa | Marl (IDAT/GeoDin) |
-| L15b | Columna sin ninguna etiqueta confirmada mientras las vecinas sí tienen → no es un perfil (p. ej. plano de ejecución de GWM). Si **ninguna** columna de la página tiene etiquetas (OCR perdido), se acepta la escala del cajetín y se marca | Marl GWM 10; Rednitzhembach B 4 |
-| L4 | En la representación en altura la cabecera queda muy por encima de la columna: asociar cabecera con la columna **debajo**, sin límite vertical | Wachenroth corte, Talheim |
-| L13 | La cabecera puede llevar **sufijo**: `RKS 1 - Betonweg 0+050`, `B 1 Bohrung Nr.` | Triefenstein 0/5 por esta causa |
-| T1 | Códigos de terceros no siguen el patrón `B 1`: `422C-460`, `B 7/16`, `S 2a`, `DS 1/17`. La lista de prefijos debe ser **configurable** y ampliarse desde la leyenda y el Lageplan del propio documento | Berlín |
-| L12 | El mismo sondeo aparece en hoja propia y en el corte: preferir la **hoja titulada** y con menos sondeos; la confirmación < 50 % no cuenta | Wachenroth B 2, Rednitzhembach B 4 |
-| T2 | Un límite confirmado por etiqueta se entrega con el **valor impreso** (3,50), no con la geometría (3,49) | Precisión exacta 414 → 509 de 515 |
-| T3 | Hoja con **una sola cabecera**: se ancla a la columna con más etiquetas aunque la cabecera esté lejos (formularios con cabecera centrada) | KB5 |
-| T4 | Si las líneas no cuadran pero las etiquetas forman una **recta limpia** con escala normalizada: los límites son las etiquetas, las líneas sólo confirman | KB5 (Schraffur raster crea líneas de más) |
-| T5 | Una columna con ≥ 3 profundidades **dentro** es la columna de profundidades del formulario, no el perfil | KB5 |
+| L3 | The **position** of the label is not reliable (offset, above, below); some offices label the **top** (with 0.00), others the **base**. The scale is chosen by **how many labels** each candidate confirms (direct, by order, text `1:75`) | Talheim 65/65 |
+| L8 | Labels with the unit attached (`0.20m`), decimal comma or point | Hausham (DC-Software) |
+| L9 | Non-normalised scales exist (log fitted to the sheet, M ≈ 1:35; Triefenstein 1:30): valid if ≥ 80 % of ≥ 3 labels confirm them | Hausham RKS, Triefenstein |
+| L14 | A group of values in **arithmetic progression** is an **axis** (elevation ruler, scale of a DPH diagram), not Schicht labels, **if** it has a round step (0.1 · 0.25 · 0.3 · 0.5 · 1 m…) and ≥ 8 values, or more values than the column has boundaries. Schichten of equal thickness (0.4 · 0.8 · 1.2…) are still labels | Marl BS 10 (DPH axis); case s15 (the first version of the rule deleted real labels) |
+| L15 | A column of values **in pairs** (Von/Bis of samples) are not Schicht labels | Marl (IDAT/GeoDin) |
+| L15b | A column without any confirmed label while the neighbouring ones have them → it is not a log (e.g. GWM construction drawing). If **no** column on the page has labels (OCR lost), the title-block scale is accepted and marked | Marl GWM 10; Rednitzhembach B 4 |
+| L4 | In the height representation the header sits far above the column: associate the header with the column **below** it, without a vertical limit | Wachenroth section, Talheim |
+| L13 | The header can carry a **suffix**: `RKS 1 - Betonweg 0+050`, `B 1 Bohrung Nr.` | Triefenstein 0/5 because of this |
+| T1 | Third-party codes do not follow the `B 1` pattern: `422C-460`, `B 7/16`, `S 2a`, `DS 1/17`. The prefix list must be **configurable** and extended from the legend and the Lageplan of the document itself | Berlin |
+| L12 | The same Bohrung appears on its own sheet and in the section: prefer the **titled sheet** with fewer Bohrungen; a confirmation < 50 % does not count | Wachenroth B 2, Rednitzhembach B 4 |
+| T2 | A boundary confirmed by a label is delivered with the **printed value** (3.50), not the geometry (3.49) | Exact precision 414 → 509 of 515 |
+| T3 | Sheet with **a single header**: it is anchored to the column with the most labels even if the header is far away (forms with a centred header) | KB5 |
+| T4 | If the lines do not fit but the labels form a **clean straight line** with a normalised scale: the boundaries are the labels, the lines only confirm | KB5 (raster Schraffur creates extra lines) |
+| T5 | A column with ≥ 3 depths **inside** it is the depth column of the form, not the log | KB5 |
 
-## B. Texto y Bodenart
+## B. Text and Bodenart
 
-| # | Regla | Evidencia |
+| # | Rule | Evidence |
 |---|---|---|
-| L7 | Clasificar por el **sustantivo** principal, no por subcadenas: `Sandstein` es roca, `Tonstein` roca, `Beton`/`Schwarzdecke` antrópicos, `Oberboden` = Mutterboden | v1: Sandstein→Sand, Beton→Ton marcados "seguros" |
-| L16 | Si no hay sustantivo, usar la **abreviatura** DIN 4023 / EN ISO 14688 del inicio (`U, t, s´` → Schluff; `fS` → Sand; `A (S, u´)` → Auffüllung; `Gr`, `Sa`, `Si`, `Cl`) | Triefenstein, Marl |
-| B1 | El texto puede venir con **líneas de referencia** (no centrado en la capa): asignar por la convención de etiquetas o por la línea guía, no sólo por la `y` | Marl BS 10: 5 capas sin Bodenart |
-| B2 | Guardar siempre el **texto original** junto a la clase | Trazabilidad (modelo §5.1) |
-| B3 | Leer la descripción por **norma** con evidencia por dato (DIN 4023 / ISO 14688-1 / DIN 18196 / práctica / sólo color): preparar el texto (coma decimal ≠ separador, palabras pegadas `FeinsandbisMittelsand`, apóstrofos y sobrerrayas), principal = primer sustantivo o Kurzzeichen, *Auffüllung*/*Mutterboden*/nombre geológico + suelo = material; materiales extraños por **inicio de palabra** (`Toneisenstein` no es hierro) | [21 §3](21_app_schritte_normen.md#3-mini-base-de-datos-de-normas) |
-| B4 | Lo que la norma lee distinto que la extracción se **marca**, no se cambia: "Sand/Auffullung" es relleno (13 capas de Berlín); `Mg` es ambiguo (Geschiebemergel / made ground); la Bodengruppe sólo si está escrita | Berlín, `test_normen.py` |
+| L7 | Classify by the main **noun**, not by substrings: `Sandstein` is rock, `Tonstein` rock, `Beton`/`Schwarzdecke` man-made, `Oberboden` = Mutterboden | v1: Sandstein→Sand, Beton→Ton marked "certain" |
+| L16 | If there is no noun, use the DIN 4023 / EN ISO 14688 **abbreviation** at the start (`U, t, s´` → Schluff; `fS` → Sand; `A (S, u´)` → Auffüllung; `Gr`, `Sa`, `Si`, `Cl`) | Triefenstein, Marl |
+| B1 | The text can come with **leader lines** (not centred on the Schicht): assign it by the label convention or by the leader line, not only by `y` | Marl BS 10: 5 Schichten without Bodenart |
+| B2 | Always keep the **original text** next to the class | Traceability (model §5.1) |
+| B3 | Read the description **by norm** with evidence per value (DIN 4023 / ISO 14688-1 / DIN 18196 / practice / colour only): prepare the text (decimal comma ≠ separator, joined words `FeinsandbisMittelsand`, apostrophes and overlines), main = first noun or Kurzzeichen, *Auffüllung*/*Mutterboden*/geological name + soil = material; foreign materials by **word start** (`Toneisenstein` is not iron) | [21 §3](21_app_schritte_normen.md#3-mini-database-of-norms) |
+| B4 | What the norm reads differently from the extraction is **marked**, not changed: "Sand/Auffullung" is fill (13 Schichten in Berlin); `Mg` is ambiguous (Geschiebemergel / made ground); the Bodengruppe only if it is written | Berlin, `test_normen.py` |
 
-## W. Agua
+## W. Water
 
-| # | Regla | Evidencia |
+| # | Rule | Evidence |
 |---|---|---|
-| W1 | El triángulo puede estar junto a la **columna vecina**; asigna el sondeo el extremo de la **línea de agua** | Talheim |
-| L10 | No son agua: triángulos en serie alineada (regla de cotas), triángulo con una cota al lado, triángulo en la GOK | Hausham |
-| L10b | El agua también llega como **texto**: `GW 2.53m`, `Wasserstand nach Sondierung 3,00 m`, `Wasseranschnitt 3.8`, "Ruhewasser" | Hausham, Triefenstein, Berlín |
-| W2 | "kein Grundwasser", "trocken", "kein Wassereintritt" son **datos**, no ausencias | Wachenroth 6/6, Wesel |
-| W3 | Falta: símbolos de la leyenda ("angebohrt" con dos trazos) | Talheim BK2 (único GW perdido del entrenamiento) |
-| W4 | Falta: el **símbolo de agua en raster** (▽ ▼ dibujados en un escaneo); hoy sólo se detecta como vector o como texto. Probado: contornos triangulares de OpenCV encuentran la Schraffur (146 GW falsos) y no el símbolo, ni siquiera exigiendo línea de agua → regla apagada; siguiente intento: plantilla del símbolo tomada de la leyenda | Perturbación raster: Hausham GW 4/4 → 0/4 |
+| W1 | The triangle can sit next to the **neighbouring column**; the end of the **water line** assigns the Bohrung | Talheim |
+| L10 | Not water: triangles in an aligned series (elevation ruler), a triangle with an elevation next to it, a triangle at the GOK | Hausham |
+| L10b | Water also comes as **text**: `GW 2.53m`, `Wasserstand nach Sondierung 3,00 m`, `Wasseranschnitt 3.8`, "Ruhewasser" | Hausham, Triefenstein, Berlin |
+| W2 | "kein Grundwasser", "trocken", "kein Wassereintritt" are **data**, not absences | Wachenroth 6/6, Wesel |
+| W3 | Missing: symbols from the legend ("angebohrt" with two strokes) | Talheim BK2 (the only GW lost in training) |
+| W4 | Missing: the **water symbol in raster** (▽ ▼ drawn in a scan); today it is only detected as vector or as text. Tried: OpenCV triangular contours find the Schraffur (146 false GW) and not the symbol, even when requiring a water line → rule switched off; next attempt: a template of the symbol taken from the legend | Raster perturbation: Hausham GW 4/4 → 0/4 |
 
-## S. Segundas fuentes y contraste
+## S. Second sources and cross-checks
 
-| # | Regla | Evidencia |
+| # | Rule | Evidence |
 |---|---|---|
-| S1 | El **Schichtenverzeichnis** (formulario DIN 4022) es la fuente más estable: profundidad en la columna 1, denominación bajo `a)`, agua en la columna 3. Leerlo **siempre** y contrastarlo 1:1 con el perfil | Hausham 9/9 y Triefenstein 5/5 "SV ok"; Wesel 24/24 sólo desde ahí (D30) |
-| S2 | Leer números de tablas **por celda** con sus palabras y bbox, nunca desde texto aplanado | `565 081,64` salió como `"56508164\n,"` ([07](07_coordenadas.md)) |
-| S3 | El título de un formulario puede estar **espaciado** (`S c h i c h t e n v e r z e i c h n i s`) y el texto **duplicado** (dos capas): normalizar antes de buscar | Wesel |
-| S4 | Las Rammsondierungen pueden venir como **tabla de valores** (N10 cada 10 cm) en lugar de curva | Triefenstein S.32–35 |
-| S5 | Las coordenadas aparecen en tablas, en cajetines de portales (`Rechtswert (UTM 33N): 394774,3`) o en el Lageplan; sin ellas no hay 3D real | Berlín (en imagen), Halle (tabla de GW 26/26) |
-| S6 | El perfil puede ser **sólo una tabla de texto** (Tiefe \| Beschreibung) sin columna gráfica; aceptarla sólo si ≥ 60 % de los intervalos dan una Bodenart (las tablas DPH y de laboratorio no) | A7367 (Suiza) |
-| S8 | El Schichtenverzeichnis **escaneado** se lee igual por OCR si el lector usa las primitivas comunes: el OCR pega el marcador al texto (`a)Auffullung`), quita diéresis (`Auffullung`) y espacios (`B1` en una página, `B 1` en otra): comparar códigos **normalizados** y aceptar formas sin diéresis | Perturbación raster: Triefenstein 0/5 → 5/5, Wesel 0/24 → 24/24 |
-| S7 | Etiqueta y valor del cajetín pueden ser **bloques separados** en la misma fila (`Höhe in m ü.M.:` · `668.99`): unir por fila antes de buscar | A7367 |
+| S1 | The **Schichtenverzeichnis** (DIN 4022 form) is the most stable source: depth in column 1, name under `a)`, water in column 3. **Always** read it and compare it 1:1 with the log | Hausham 9/9 and Triefenstein 5/5 "SV ok"; Wesel 24/24 only from there (D30) |
+| S2 | Read numbers from tables **per cell** with their words and bbox, never from flattened text | `565 081,64` came out as `"56508164\n,"` ([07](07_coordinates.md)) |
+| S3 | The title of a form can be **spaced out** (`S c h i c h t e n v e r z e i c h n i s`) and the text **duplicated** (two layers): normalise before searching | Wesel |
+| S4 | Rammsondierungen can come as a **table of values** (N10 every 10 cm) instead of a curve | Triefenstein pp. 32–35 |
+| S5 | Coordinates appear in tables, in portal title blocks (`Rechtswert (UTM 33N): 394774,3`) or in the Lageplan; without them there is no real 3D | Berlin (in an image), Halle (GW table 26/26) |
+| S6 | The log can be **only a text table** (Tiefe \| Beschreibung) without a graphic column; accept it only if ≥ 60 % of the intervals give a Bodenart (DPH and lab tables do not) | A7367 (Switzerland) |
+| S8 | A **scanned** Schichtenverzeichnis is read the same way through OCR if the reader uses the common primitives: OCR glues the marker to the text (`a)Auffullung`), drops umlauts (`Auffullung`) and spaces (`B1` on one page, `B 1` on another): compare **normalised** codes and accept forms without umlauts | Raster perturbation: Triefenstein 0/5 → 5/5, Wesel 0/24 → 24/24 |
+| S7 | Label and value in the title block can be **separate blocks** on the same row (`Höhe in m ü.M.:` · `668.99`): join by row before searching | A7367 |
 
-## R. swissgeol: qué copiar y qué no
+## R. swissgeol: what to copy and what not
 
-| # | Regla | Evidencia |
+| # | Rule | Evidence |
 |---|---|---|
-| R1 | Copiar su **tolerancia de formatos** en etiquetas (unidades, OCR, posiciones) y la exclusión de progresiones aritméticas | swissgeol 13/13 en la ronda ciega 2 donde v3 sacó 0 |
-| R2 | No copiar su asignación de sondeos sin validación geométrica: genera **muchos falsos** y no lee cotas alemanas | 55 sondeos falsos y 6/50 GOK en 9 PDFs |
-| R3 | Licencia AGPL (como PyMuPDF): uso interno sin problema; para terceros, capa de primitivas propia (D17, D18) | [14](14_licencias_terceros.md) |
+| R1 | Copy its **tolerance of formats** in labels (units, OCR, positions) and the exclusion of arithmetic progressions | swissgeol 13/13 in blind round 2 where v3 got 0 |
+| R2 | Do not copy its assignment of Bohrungen without geometric validation: it produces **many false ones** and does not read German elevations | 55 false Bohrungen and 6/50 GOK in 9 PDFs |
+| R3 | AGPL license (like PyMuPDF): internal use without problems; for third parties, our own primitives layer (D17, D18) | [14](14_licensing.md) |
 
-## M. Modelo, IFC y That Open
+## M. Model, IFC and That Open
 
-| # | Regla | Evidencia |
+| # | Rule | Evidence |
 |---|---|---|
-| M1 | IFC 4.3: `IfcBorehole` ⊃ `IfcGeotechnicalStratum`; modelo en `IfcGeomodel`; georreferencia con `IfcMapConversion` + `IfcProjectedCRS` | Spike validado sin errores de esquema |
-| M2 | El `IfcImporter` de That Open **descarta** las clases geotécnicas por defecto: añadir `IFCBOREHOLE`, `IFCGEOMODEL`, `IFCGEOTECHNICALSTRATUM` a `importer.classes.elements` | 0 → 16 elementos con geometría |
-| M3 | Encapsular el escritor IFC: IFC 4.4 sustituye `IfcGeotechnicalStratum` por `IfcGeoScienceFeature` | Borrador 4.4 |
-| M4 | Sin coordenadas, el modelo de sección (estación, NHN) ya aporta valor; con coordenadas locales del Lageplan se puede montar un 3D relativo | [Arquitectura §7.1](ARQUITECTURA_BAUGRUNDMODELL.md#71-escalera-de-niveles-cada-uno-es-entregable) |
-| M5 | Un **Pset vacío** es IFC inválido: crear el Pset sólo si hay valores | Exportador: 5 errores de esquema → 0 |
-| M6 | PostGIS instalado en `extensions`: **cualificar** `extensions.geometry`, si no la migración sólo funciona dentro de Supabase | [Spike Supabase](../spikes/supabase/README.md) |
-| M7 | La cadena completa ya funciona con un PDF real: OCR → JSON canónico → PostGIS → IFC 4.3 georreferenciado → That Open (80 estratos) | Berlín ([15 §8](15_resultados_pdfs_reales.md)) |
-| M8 | **Bajo la Endteufe es desconocido, no ausente**: tratarlo como ausencia acuña las unidades profundas en cada sondeo corto | Caso `zensiert`, Berlín ([18](18_modelador_capas.md)) |
-| M9 | La misma Bodenart a otra cota es **otra unidad** (Sand 1 / Sand 2): correlacionar por clase **y** cota, no sólo por nombre | Berlín 422C-461: dos niveles de Kies |
-| M10 | Una lente que falta dentro de un Abschnitt continuo: el límite es **libre** dentro del Abschnitt; colocarlo en la mitad interpolada de la lente, no en un límite de capa | Caso `linse`, Berlín 422C-460 |
-| M11 | Sondeos como **nodos** de la malla + interpolador exacto ⇒ el modelo reproduce cada contacto (comprobarlo siempre: desviación máxima en el informe) | 0,0 m en todos los casos |
-| M12 | IDW sólo llega a 0 en los propios sondeos: una unidad vista en un sondeo se extiende fina bajo todo el solar. Limitar la extensión (indicador de presencia) | Volumen de lente ×6,3 → ×1,9 |
-| M13 | Umbrales de espesor en las **superficies**, no sólo en la malla: si no, el volumen del IFC y el del modelo difieren | La prueba de volumen lo detectó (5 m³) |
-| M14 | Para leer geología hace falta **exageración vertical** (solar 150 m × 20 m); escalar `model.object` en y alrededor de la base: el raycast de Fragments usa `matrixWorld` y sigue funcionando. Transparencia con `depthWrite: false` | Capturas del visor |
-| M15 | Con relieve (Talheim: GOK 749–772 m) la correlación por cota absoluta parte una misma capa superficial en varias unidades: comparar también la **profundidad bajo GOK** y quedarse con la menor distancia | 15 → 6 unidades ([19](19_app_v2.md)) |
-| M16 | Un modelo sin coordenadas sólo es honesto como **esquema**: decirlo en la app, en el IFC (`Lage`) y en el visor (`Lagebezug`) | App v2 |
-| M17 | `ifcopenshell.api.unit.assign_unit()` **sin argumentos pone milímetros**: con coordenadas en metros el modelo sale 1000× pequeño en cualquier visor y la `IfcMapConversion` queda mal. Unidades explícitas y prueba `calculate_unit_scale == 1` | Trasse de 6 km medía 6 m ([20 §2](20_lage_pruefung_viewer.md#2-mover-la-geometría-y-modelos-de-más-de-5-km)) |
-| M18 | Cámara de That Open: perspectiva near 1 / far 1000, ortográfica 0,1 / 1000 a 200 m del objetivo: **todo lo > 1 km desaparece**. Recalcular near/far en cada movimiento con el tamaño de la escena (ortográfica: near negativo) | Trasse: far 24,6 km, near 0,02 m de cerca |
-| M19 | Un IFC ya local al origen del proyecto se carga **sin `COORDINATE_TO_ORIGIN`** (web-ifc lo desplaza por defecto): así IFC y escena comparten coordenadas. Para IFC con coordenadas globales grandes hay que dejarlo activo | Chinchetas = IFC al cm |
-| M20 | Calibrar un plano con 2 puntos: Lageplan = **semejanza** (complejos, `q = u − i·v` porque las filas bajan); Längsschnitt = **escalas propias** en estación y altura (la exageración del dibujo se deshace). Mostrar escala y giro resultantes para que el usuario detecte un mal punto | 1:500 / 10,0°; 1:500 / 1:100 |
-| M21 | BUI 3.4: `Component.create` decide con/sin estado por la **aridad** de la plantilla (`() =>` devuelve un elemento, no `[el, update]`); tooltips con `<bim-tooltip>` dentro del botón (`tooltip-title` obsoleto); `bim-label` corta a una línea (usar `<p>`); `bim-dropdown` necesita `.value` (no sigue a `checked` de las opciones tras el primer render) | Errores y avisos del primer arranque |
-| M22 | camera-controls aplica `fitToSphere(…, false)` en el siguiente `update()`: llamar `controls.update(0)` antes de medir la escala de la vista | El desplazamiento junto al panel salía de la pantalla |
-| M23 | CSS: un hijo con `display:none` en una rejilla hace que el siguiente ocupe su columna (de 0 px): fijar `grid-column`; y `[hidden]` pierde contra `display:grid/flex` (`[hidden]{display:none!important}`) | Visor de 0 px al plegar el panel; aviso de carga que no se iba |
-| M24 | El IFC de ifcopenshell lleva **fecha y hora en la cabecera**: el mismo modelo da otro hash tras reiniciar. Como huella del modelo (einchecken, cachés) usar la **clave de sus entradas**, no los bytes del IFC | *seitdem geändert* falso tras reiniciar la app |
-| M25 | Dentro de Streamlit el iframe mide **0 px** hasta que llega `setFrameHeight`: un encuadre en ese momento da aspecto 0/0 y `fitToSphere` deja la cámara en **NaN** sin vuelta atrás (visor negro, marcas ocultas). Encuadrar sólo con tamaño (ResizeObserver, encuadre pendiente) y reparar una cámara no finita | Arranque en frío de la app ([20](20_lage_pruefung_viewer.md)) |
-| M26 | BUI: `bim-toolbar-section` pone el `label-hidden` de sus botones según su `vertical` al montarse (y lit no lo vuelve a poner si el valor no cambia): para una barra sólo de iconos, grupos propios (`div`) dentro de `bim-toolbar` | Barra con etiquetas pese a `label-hidden` |
-| M27 | Una app lit con un componente ajeno persistente (el visor): dejarlo en un elemento fijo de la plantilla y **no moverlo** de padre (los componentes web se desmontan y vuelven a montar); mostrarlo u ocultarlo con CSS; con `display:none` el encuadre espera al tamaño (M25) | Visor que no se recarga entre *Lage* y *Modell* |
-| M28 | Calibrar con **escala (distancia medida o 1:n) + punto de referencia + giro** es tan exacto como dos puntos de pase y más fácil de comprobar; bloquear el plano antes de arrastrar evita mover sondeos sin querer | 1:500 · 10,0° desde la UI; D67 |
-| M29 | That Open, `RendererMode.MANUAL`: con `turnOffOnManualMode` cada `update()` dibuja **sin** posproducción y 50 ms después **con** ella. Si algo pide fotogramas sin parar (cada movimiento del ratón, un intervalo de 1 s) la imagen alterna siempre: parpadeo. Decidir la posproducción uno mismo (`turnOffOnManualMode = false`, `manualDefaultStyle` = estilo), justo antes de dibujar (`renderer.onBeforeUpdate`, tras mover la cámara), sólo por actividad real (cámara, carga, arrastre); en el modo Lage nunca; sin redibujar por mover el ratón | Plano que parpadeaba aun transparente; `check.mjs` B, `check_app.mjs` C2 |
-| M30 | three.js `GTAOPass` fija `PERSPECTIVE_CAMERA` **sólo al crearse**: tras pasar a ortográfica sigue decodificando la profundidad como perspectiva y con el `near` negativo de la cámara ortográfica (M18) da sombras falsas o un **visor negro** según la GPU. Actualizar el *define* (y `needsUpdate`) en cada cambio de proyección | Captura del usuario: Lage negro con HUD válido |
-| M31 | Coordenadas de 6–7 cifras en la escena: el **origen** debe estar cerca de lo que se ve. Sin sondeos con posición, el origen sale del punto de referencia del plano calibrado; si el origen cambia, la cámara (y la vista guardada) se desplaza lo mismo; si el plano salta lejos al escribir su coordenada, la cámara lo sigue; los vértices del plano van relativos a su esquina (Float32) | El primer sondeo soltado movía el origen y todo desaparecía; vista previa vacía |
-| M32 | Un "elige un punto" pendiente bloqueaba **todo** arrastre sin aviso. Al bloquear el plano, al empezar a arrastrar desde la lista o con el plano bloqueado, cancelar la elección pendiente | `check_app.mjs` C2 |
-| M33 | EPSG nunca como número libre: **lista** (DE/AT/CH, códigos y nombres verificados con pyproj) y **rango de plausibilidad** por sistema (cifras, prefijo de zona); un código desconocido del PDF se muestra marcado, no se esconde | "EPSG 52" en el HUD; R 74.848,90 → "no encaja en ningún sistema" |
-| M34 | Vista ortográfica con `near` negativo: `Raycaster.setFromCamera` empieza el rayo **en el plano de la cámara**; lo que está entre `near` y la cámara (p. ej. la GOK sobreelevada de un sondeo) nunca se corta. Adelantar el origen a `near` en todos los rayos propios; y dibujar el plano a la altura de los sondeos, no a una cota fija | BH con GOK no se arrastraban, GWM sin GOK sí |
-| M35 | That Open `setOrthoCamera` deriva el encuadre ortográfico de la cámara perspectiva (profundidad hasta el objetivo) y `setOrthoPerspCameraAspect` lo escala con el tamaño anterior del visor: sin cámara colocada o con el visor aún sin tamaño sale **negativo o enorme** (imagen girada 180°, zoom clavado en `minZoom`). Normalizar tras cada cambio de proyección y de tamaño | Calibración con «Drehung 180»; plano invisible al abrir directamente |
+| M1 | IFC 4.3: `IfcBorehole` ⊃ `IfcGeotechnicalStratum`; model in `IfcGeomodel`; georeferencing with `IfcMapConversion` + `IfcProjectedCRS` | Spike validated without schema errors |
+| M2 | That Open's `IfcImporter` **discards** the geotechnical classes by default: add `IFCBOREHOLE`, `IFCGEOMODEL`, `IFCGEOTECHNICALSTRATUM` to `importer.classes.elements` | 0 → 16 elements with geometry |
+| M3 | Encapsulate the IFC writer: IFC 4.4 replaces `IfcGeotechnicalStratum` with `IfcGeoScienceFeature` | 4.4 draft |
+| M4 | Without coordinates, the section model (station, NHN) already adds value; with local coordinates from the Lageplan a relative 3D can be built | [Architecture §7.1](ARCHITECTURE_BAUGRUNDMODELL.md#71-ladder-of-levels-each-one-is-deliverable) |
+| M5 | An **empty Pset** is invalid IFC: create the Pset only if there are values | Exporter: 5 schema errors → 0 |
+| M6 | PostGIS installed in `extensions`: **qualify** `extensions.geometry`, otherwise the migration only works inside Supabase | [Supabase spike](../spikes/supabase/README.md) |
+| M7 | The full chain already works with a real PDF: OCR → canonical JSON → PostGIS → georeferenced IFC 4.3 → That Open (80 strata) | Berlin ([15 §8](15_results_real_pdfs.md)) |
+| M8 | **Below the Endteufe is unknown, not absent**: treating it as absence pinches out the deep Einheiten at every short Bohrung | Case `zensiert`, Berlin ([18](18_layer_modeler.md)) |
+| M9 | The same Bodenart at another elevation is **another Einheit** (Sand 1 / Sand 2): correlate by class **and** elevation, not only by name | Berlin 422C-461: two levels of Kies |
+| M10 | A lens missing inside a continuous Abschnitt: the boundary is **free** inside the Abschnitt; place it at the interpolated middle of the lens, not at a Schicht boundary | Case `linse`, Berlin 422C-460 |
+| M11 | Bohrungen as mesh **nodes** + exact interpolator ⇒ the model reproduces every contact (always check it: maximum deviation in the report) | 0.0 m in all cases |
+| M12 | IDW only reaches 0 at the Bohrungen themselves: an Einheit seen in one Bohrung spreads thinly under the whole site. Limit the extent (presence indicator) | Lens volume ×6.3 → ×1.9 |
+| M13 | Thickness thresholds on the **surfaces**, not only on the mesh: otherwise the volume of the IFC and that of the model differ | The volume test caught it (5 m³) |
+| M14 | Reading geology needs **vertical exaggeration** (site 150 m × 20 m); scale `model.object` in y around the base: the Fragments raycast uses `matrixWorld` and keeps working. Transparency with `depthWrite: false` | Viewer screenshots |
+| M15 | With relief (Talheim: GOK 749–772 m) correlation by absolute elevation splits one shallow Schicht into several Einheiten: also compare the **depth below GOK** and keep the smaller distance | 15 → 6 Einheiten ([19](19_app_v2.md)) |
+| M16 | A model without coordinates is only honest as a **schematic**: say so in the app, in the IFC (`Lage`) and in the viewer (`Lagebezug`) | App v2 |
+| M17 | `ifcopenshell.api.unit.assign_unit()` **without arguments sets millimetres**: with coordinates in metres the model comes out 1000× too small in any viewer and the `IfcMapConversion` is wrong. Explicit units and a `calculate_unit_scale == 1` test | The 6 km Trasse measured 6 m ([20 §2](20_lage_pruefung_viewer.md#2-moving-the-geometry-and-models-over-5-km)) |
+| M18 | That Open camera: perspective near 1 / far 1000, orthographic 0.1 / 1000 at 200 m from the target: **everything > 1 km disappears**. Recompute near/far on every move from the scene size (orthographic: negative near) | Trasse: far 24.6 km, near 0.02 m up close |
+| M19 | An IFC that is already local to the project origin is loaded **without `COORDINATE_TO_ORIGIN`** (web-ifc shifts it by default): that way IFC and scene share coordinates. For IFCs with large global coordinates it must stay on | Pins = IFC to the cm |
+| M20 | Calibrating a plan with 2 points: Lageplan = **similarity** (complex numbers, `q = u − i·v` because the rows go down); Längsschnitt = **separate scales** for station and height (the drawing's exaggeration is undone). Show the resulting scale and rotation so that the user spots a bad point | 1:500 / 10.0°; 1:500 / 1:100 |
+| M21 | BUI 3.4: `Component.create` decides stateful/stateless by the **arity** of the template (`() =>` returns an element, not `[el, update]`); tooltips with `<bim-tooltip>` inside the button (`tooltip-title` is obsolete); `bim-label` cuts to one line (use `<p>`); `bim-dropdown` needs `.value` (it does not follow the `checked` of its options after the first render) | Errors and warnings at the first start |
+| M22 | camera-controls applies `fitToSphere(…, false)` on the next `update()`: call `controls.update(0)` before measuring the scale of the view | The offset next to the panel went off screen |
+| M23 | CSS: a child with `display:none` in a grid makes the next one take its column (0 px): set `grid-column`; and `[hidden]` loses against `display:grid/flex` (`[hidden]{display:none!important}`) | 0 px viewer when folding the panel; a loading notice that never went away |
+| M24 | The ifcopenshell IFC carries **date and time in the header**: the same model gives another hash after a restart. As the model fingerprint (einchecken, caches) use the **key of its inputs**, not the bytes of the IFC | False *seitdem geändert* after restarting the app |
+| M25 | Inside Streamlit the iframe measures **0 px** until `setFrameHeight` arrives: framing at that moment gives an aspect of 0/0 and `fitToSphere` leaves the camera at **NaN** with no way back (black viewer, hidden marks). Frame only with a size (ResizeObserver, pending framing) and repair a non-finite camera | Cold start of the app ([20](20_lage_pruefung_viewer.md)) |
+| M26 | BUI: `bim-toolbar-section` sets the `label-hidden` of its buttons from its `vertical` when it mounts (and lit does not set it again if the value does not change): for an icon-only bar, use our own groups (`div`) inside `bim-toolbar` | Bar with labels despite `label-hidden` |
+| M27 | A lit app with a persistent foreign component (the viewer): keep it in a fixed element of the template and **do not move it** to another parent (web components unmount and remount); show or hide it with CSS; with `display:none` the framing waits for a size (M25) | Viewer that does not reload between *Lage* and *Modell* |
+| M28 | Calibrating with **scale (measured distance or 1:n) + reference point + rotation** is as exact as two control points and easier to check; locking the plan before dragging avoids moving Bohrungen by accident | 1:500 · 10.0° from the UI; D67 |
+| M29 | That Open, `RendererMode.MANUAL`: with `turnOffOnManualMode` every `update()` draws **without** postproduction and 50 ms later **with** it. If something requests frames all the time (every mouse move, a 1 s interval) the image alternates forever: flicker. Decide the postproduction yourself (`turnOffOnManualMode = false`, `manualDefaultStyle` = style), right before drawing (`renderer.onBeforeUpdate`, after moving the camera), only on real activity (camera, loading, dragging); never in Lage mode; no redraw just for moving the mouse | Plan that flickered even when transparent; `check.mjs` B, `check_app.mjs` C2 |
+| M30 | three.js `GTAOPass` sets `PERSPECTIVE_CAMERA` **only when created**: after switching to orthographic it keeps decoding the depth as perspective and, with the negative `near` of the orthographic camera (M18), gives false shadows or a **black viewer** depending on the GPU. Update the *define* (and `needsUpdate`) on every projection change | User's screenshot: black Lage with a valid HUD |
+| M31 | 6–7 digit coordinates in the scene: the **origin** must be close to what is shown. Without Bohrungen with a position, the origin comes from the reference point of the calibrated plan; if the origin changes, the camera (and the saved view) moves by the same amount; if the plan jumps far away when its coordinate is typed, the camera follows it; the vertices of the plan are relative to its corner (Float32) | The first dropped Bohrung moved the origin and everything disappeared; empty preview |
+| M32 | A pending "pick a point" blocked **all** dragging without a warning. When locking the plan, when starting to drag from the list or with the plan locked, cancel the pending pick | `check_app.mjs` C2 |
+| M33 | EPSG never as a free number: a **list** (DE/AT/CH, codes and names verified with pyproj) and a **plausibility range** per system (digits, zone prefix); an unknown code from the PDF is shown marked, not hidden | "EPSG 52" in the HUD; R 74,848.90 → "fits no system" |
+| M34 | Orthographic view with a negative `near`: `Raycaster.setFromCamera` starts the ray **at the camera plane**; what lies between `near` and the camera (e.g. the raised GOK of a Bohrung) is never hit. Move the origin to `near` in all our own rays; and draw the plan at the height of the Bohrungen, not at a fixed elevation | Bohrungen with a GOK could not be dragged, GWM without a GOK could |
+| M35 | That Open `setOrthoCamera` derives the orthographic frame from the perspective camera (depth to the target) and `setOrthoPerspCameraAspect` scales it with the previous size of the viewer: without a placed camera or with the viewer still without a size it comes out **negative or huge** (image rotated by 180°, zoom stuck at `minZoom`). Normalise after every change of projection and of size | Calibration with «Drehung 180»; plan invisible when opened directly |
 
-## X. Entorno de trabajo
+## X. Working environment
 
-| # | Regla | Evidencia |
+| # | Rule | Evidence |
 |---|---|---|
-| X1 | En el entorno de Claude la descarga de Gutachten de webs municipales está **bloqueada** (403/000); pypi y GitHub sí. Los PDFs los sube el usuario | Rondas 1–3 |
-| X2 | Probar dependencias pesadas (swissgeol, OCR) en **entornos separados** del scratchpad; swissgeol fija PyMuPDF 1.26.3 | `sgvenv` |
-| X3 | `pkill -f patrón` en un comando que contiene ese texto en cualquier parte **se mata a sí mismo** (también con `[p]atrón` si el nombre aparece después en el mismo comando): ejecutar `pkill` en un comando aparte | Exit 144 tres veces |
-| X4 | `python -I` no añade la carpeta del script a `sys.path`: los scripts deben insertarla ellos mismos | `ablation.py` |
-| X5 | `show_pdf_page` ignora el `/Rotate` de la página origen; compensar al recomponer PDFs | Primera versión de `perturb.py` |
-| X6 | OCR caro → **caché por imagen de página** (hash) para que la regresión y la ablación sean rápidas | `GEO_OCR_CACHE` |
-| X7 | Cada proceso que carga el modelo OCR ocupa varios GB: 4 procesos de ablación en paralelo **agotaron la memoria y reiniciaron el contenedor**. Cargar el modelo sólo si falla la caché y usar ≤ 2 procesos | Reinicio durante la ablación final |
-| X8 | La ablación recarga el módulo en cada configuración: **no editar el módulo mientras corre** (se mezclarían versiones); probar cambios en una copia con otro nombre | Ablación final |
-| X9 | **web-ifc 0.0.78**: el `web-ifc.wasm` de navegador no casa con su JS (`StreamMeshes called with 4 arguments, expected 3`); en Node funciona. En el visor, 0.0.77 | `apps/web` |
-| X10 | That Open descarga por defecto WASM (`autoSetWasm`) y worker (`getWorker`) de unpkg: copiarlos a `public/vendor` (`npm run vendor`) para trabajar sin red y con versiones fijas | `apps/web` |
-| X11 | `vite preview` sirve `dist/`: un IFC copiado a `public/` después del build no se ve; el chequeo copia el IFC a `dist/` | Capturas con volúmenes viejos |
-| X12 | Streamlit recarga los módulos al cambiar archivos: recompilar el visor con la app en marcha la deja sin componente (falta `dist/index.html` un instante). Reiniciar la app tras el build | Visor sin cargar en la prueba |
-| X13 | Un elemento nuevo encima del componente (p. ej. `st.status` de la extracción) lo **vuelve a montar**: iframe nuevo, estado a cero. Las pruebas detectan el cambio de iframe | `check_app.mjs` |
-| X14 | Streamlit sirve los archivos del componente con `mimetypes`; en Windows el registro puede dar `text/plain` para `.js` y bloquear módulos/workers: registrar los tipos en la app | `ui/viewer.py` (precaución; no visto en Windows aún) |
-| X15 | Con SwiftShader (Chromium sin GPU) un fotograma con posproducción tarda ~1 s: lo que se actualiza "en cada fotograma" (marcas DOM, estado) va con retraso y los iframes del mismo origen bloquean la página. Las pruebas esperan fotogramas (`requestAnimationFrame` ×2) y leen el estado en el momento; el render bajo demanda lo alivia | `check.mjs`, `check_app.mjs` |
-| X16 | `vite build` **vacía `dist/`** (también los IFC de prueba copiados); y un archivo que falta lo contesta el servidor con `index.html`: comprobar el `content-type` antes de pasarlo a web-ifc | `OpenModel … reading 'arguments'` |
-| X17 | El guardado automático del proyecto hace que una prueba repetida empiece con el estado anterior: las pruebas de la app pulsan *Alle Korrekturen verwerfen* (menú ⋯) al abrir cada proyecto | `check_app.mjs` |
-| X18 | Playwright: `page.mouse` usa coordenadas de la ventana; un iframe bajo el pliegue hay que traerlo a la vista (p. ej. clic en un elemento suyo) antes de arrastrar | Arrastre sin efecto en la app |
-| X19 | X3 también vale para `pgrep -f patrón \| xargs kill`: el comando que lo contiene coincide consigo mismo | Exit 144 |
-| X20 | Atajos de teclado: ignorarlos sólo en campos de texto, **no** con el foco en un botón (tras pulsar *Nächste* el foco queda en él y ↓ dejaba de funcionar); cerrar los menús tras una acción | `check_app.mjs` A |
-| X21 | Playwright: el valor de un `<input>` no forma parte del texto de su fila (`hasText` no lo encuentra): buscar el índice por `value` con `evaluate` | Prueba de *Einheiten* |
-| X22 | Un error de render que sólo aparece en la GPU del usuario (negro, parpadeo) no se ve en SwiftShader: medir la **secuencia de fotogramas** (envolver `postproduction.update` y `three.render`) en vez de mirar capturas, y reproducir el caso exacto (aquí: ningún sondeo con coordenadas) | Reproducción de la captura del usuario |
-| X23 | Un `console.log` de Node se pierde si `timeout` mata el proceso con la salida en una tubería: escribir a un archivo (`> log 2>&1`) | Scripts de reproducción sin salida |
-| X24 | Datos de prueba **realistas**: cotas de cientos de m NHN, sondeos sin GOK y la app abierta también directamente por URL. Con 38 m NHN y siempre el mismo camino por los pasos, dos errores de cámara pasaron todas las pruebas | `testplan.py` (GOK + 300 m), `check_app.mjs` C2/C3 |
-| X25 | **Docker en la sesión en la nube:** el daemon no corre (arrancar `dockerd` en segundo plano) y deb.debian.org está bloqueado (apt falla): construir con `--build-arg OCR=0`, `--network host`, `HTTPS_PROXY` del proxy de la sesión y su CA como secreto (`--secret id=ca,src=…` y `PIP_CERT=/run/secrets/ca` en un Dockerfile de prueba). El OCR del contenedor lo prueba la CI. `check_app.mjs` se identifica con `GEO_AGENT_PASSWORT` | Imagen 1,15 GB, 28/28 `check_app.mjs` contra el contenedor ([22](22_despliegue.md)) |
+| X1 | In Claude's environment, downloading Gutachten from municipal websites is **blocked** (403/000); pypi and GitHub are not. The user uploads the PDFs | Rounds 1–3 |
+| X2 | Test heavy dependencies (swissgeol, OCR) in **separate environments** in the scratchpad; swissgeol pins PyMuPDF 1.26.3 | `sgvenv` |
+| X3 | `pkill -f pattern` in a command that contains that text anywhere **kills itself** (also with `[p]attern` if the name appears later in the same command): run `pkill` in a separate command | Exit 144 three times |
+| X4 | `python -I` does not add the script's folder to `sys.path`: scripts must insert it themselves | `ablation.py` |
+| X5 | `show_pdf_page` ignores the `/Rotate` of the source page; compensate when recomposing PDFs | First version of `perturb.py` |
+| X6 | Expensive OCR → **cache per page image** (hash) so that regression and ablation are fast | `GEO_OCR_CACHE` |
+| X7 | Every process that loads the OCR model takes several GB: 4 ablation processes in parallel **ran out of memory and restarted the container**. Load the model only on a cache miss and use ≤ 2 processes | Restart during the final ablation |
+| X8 | The ablation reloads the module for every configuration: **do not edit the module while it runs** (versions would mix); test changes in a copy with another name | Final ablation |
+| X9 | **web-ifc 0.0.78**: the browser `web-ifc.wasm` does not match its JS (`StreamMeshes called with 4 arguments, expected 3`); in Node it works. In the viewer, 0.0.77 | `apps/web` |
+| X10 | That Open downloads WASM (`autoSetWasm`) and worker (`getWorker`) from unpkg by default: copy them to `public/vendor` (`npm run vendor`) to work offline and with pinned versions | `apps/web` |
+| X11 | `vite preview` serves `dist/`: an IFC copied to `public/` after the build is not visible; the check copies the IFC to `dist/` | Screenshots with old volumes |
+| X12 | Streamlit reloads modules when files change: rebuilding the viewer with the app running leaves it without its component (`dist/index.html` is missing for a moment). Restart the app after the build | Viewer not loading in the test |
+| X13 | A new element above the component (e.g. the extraction's `st.status`) **re-mounts** it: new iframe, state reset. The tests detect the iframe change | `check_app.mjs` |
+| X14 | Streamlit serves the component's files with `mimetypes`; on Windows the registry can give `text/plain` for `.js` and block modules/workers: register the types in the app | `ui/viewer.py` (precaution; not seen on Windows yet) |
+| X15 | With SwiftShader (Chromium without a GPU) a frame with postproduction takes ~1 s: whatever is updated "every frame" (DOM marks, state) lags behind and same-origin iframes block the page. The tests wait for frames (`requestAnimationFrame` ×2) and read the state at that moment; on-demand rendering eases it | `check.mjs`, `check_app.mjs` |
+| X16 | `vite build` **empties `dist/`** (including copied test IFCs); and the server answers a missing file with `index.html`: check the `content-type` before passing it to web-ifc | `OpenModel … reading 'arguments'` |
+| X17 | The project autosave makes a repeated test start with the previous state: the app tests press *Alle Korrekturen verwerfen* (⋯ menu) when opening each project | `check_app.mjs` |
+| X18 | Playwright: `page.mouse` uses window coordinates; an iframe below the fold has to be brought into view (e.g. a click on one of its elements) before dragging | Dragging without effect in the app |
+| X19 | X3 also applies to `pgrep -f pattern \| xargs kill`: the command that contains it matches itself | Exit 144 |
+| X20 | Keyboard shortcuts: ignore them only in text fields, **not** with the focus on a button (after pressing *Nächste* the focus stays on it and ↓ stopped working); close menus after an action | `check_app.mjs` A |
+| X21 | Playwright: the value of an `<input>` is not part of the text of its row (`hasText` does not find it): find the index by `value` with `evaluate` | *Einheiten* test |
+| X22 | A render error that only appears on the user's GPU (black, flicker) is not visible in SwiftShader: measure the **sequence of frames** (wrap `postproduction.update` and `three.render`) instead of looking at screenshots, and reproduce the exact case (here: no Bohrung with coordinates) | Reproduction of the user's screenshot |
+| X23 | A Node `console.log` is lost if `timeout` kills the process with its output in a pipe: write to a file (`> log 2>&1`) | Reproduction scripts without output |
+| X24 | **Realistic** test data: elevations of hundreds of m NHN, Bohrungen without a GOK, and the app also opened directly by URL. With 38 m NHN and always the same path through the steps, two camera errors passed all tests | `testplan.py` (GOK + 300 m), `check_app.mjs` C2/C3 |
+| X25 | **Docker in the cloud session:** the daemon is not running (start `dockerd` in the background) and deb.debian.org is blocked (apt fails): build with `--build-arg OCR=0`, `--network host`, the session proxy's `HTTPS_PROXY` and its CA as a secret (`--secret id=ca,src=…` and `PIP_CERT=/run/secrets/ca` in a test Dockerfile). The CI tests the container's OCR. `check_app.mjs` logs in with `GEO_AGENT_PASSWORT` | Image 1.15 GB, 28/28 `check_app.mjs` against the container ([22](22_deployment.md)) |
+| X26 | A `dockerd` started as a background shell stops when that shell's time limit runs out (30 min by default): start it with the longest limit and check `docker info` before building | Build failed with "no such file … docker.sock" halfway through |
+| X27 | Generic environment variable names collide with the system: tcsh sets `HOST` to the machine name, which would have put the server on the network. Use app-specific names (`GEO_AGENT_HOST`); `PORT` stays because the platforms set it | Review of `server/__main__.py` |
+| X28 | Local health checks with `urllib` must bypass the proxy (`ProxyHandler({})`): a company proxy from `HTTP_PROXY` does not know this machine's 127.0.0.1 | `scripts/online.py` |
+| X29 | The repository was renamed twice (CAD_Extract → GeoIM → GroundTwin). `git push` keeps working through GitHub's redirect and prints "This repository moved"; the session's GitHub tools only accept the name in the session scope. When a push mentions a move, check `list_repos` and update links | Push output; Actions run read via the old name |
 
-Up: [Índice](README.md)
+Up: [Index](README.md)
 
-Related: [15 Resultados reales](15_resultados_pdfs_reales.md) · [11 Decisiones](11_decisiones.md) · [09 Validación](09_validacion_benchmark.md) · [Arquitectura](ARQUITECTURA_BAUGRUNDMODELL.md) · [18 Modelador de capas](18_modelador_capas.md) · [21 App por pasos y normas](21_app_schritte_normen.md) · [22 En línea](22_despliegue.md)
+Related: [15 Real results](15_results_real_pdfs.md) · [11 Decisions](11_decisions.md) · [09 Validation](09_validation_benchmark.md) · [Architecture](ARCHITECTURE_BAUGRUNDMODELL.md) · [18 Layer modeler](18_layer_modeler.md) · [21 Step app and norms](21_app_schritte_normen.md) · [22 Online](22_deployment.md)

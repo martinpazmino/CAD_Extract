@@ -1,322 +1,328 @@
 ---
-title: "Resultados con PDFs reales (ronda 1, tres rondas ciegas y banco de pruebas)"
+title: "Results with real PDFs (round 1, three blind rounds and test bench)"
 date: 2026-10-25
-tags: [corpus, validacion, resultados, extraccion]
-aliases: [Resultados reales, Primera ronda corpus]
+tags: [corpus, validation, results, extraction]
+aliases: [Real results, First corpus round]
 ---
 
-# Resultados con PDFs reales (ronda 1, tres rondas ciegas y banco de pruebas)
+# Results with real PDFs (round 1, three blind rounds and test bench)
 
-**Conclusión:**
-- **v1 (actual):** 0 de 58 sondeos en nueve Gutachten públicos.
-- **Ronda 1** (3 PDFs): v3 funciona después de siete cambios que los sintéticos no revelaban.
-- **Prueba ciega 2** (2 PDFs nuevos, código congelado): **v3 sacó 0 de 13**. swissgeol sacó
-  13/13 sondeos, pero ninguna cota y 18 sondeos inventados.
-- **Prueba ciega 4** (4 ejemplos suizos de swissgeol, otro dominio): v3 y v4 **0 de 3**, sin falsos (§8.2).
-- **v4 + banco de pruebas** (entrenamiento, §8): 87/92 sondeos, 541/541 límites (538 exactos al cm),
-  0 datos falsos; robusto al giro, conservador en raster; cadena completa PDF → PostGIS → IFC → That Open.
-- **Prueba ciega 3** (4 PDFs nuevos, predicciones congeladas en el repo): **v3 sacó 11 de 29**,
-  con cota 12/23 y 1 sondeo falso. swissgeol sacó 12 de 29 (uno sin capas), sin cotas y con 25 sondeos falsos
-  (§7). Los 18 sondeos que faltan están en un raster sin texto (11) o en un título con sufijo (5)
-  o un dibujo AutoCAD con texto convertido en líneas (1), más una instancia equivocada.
+**Conclusion:**
+- **v1 (current):** 0 of 58 Bohrungen in nine public Gutachten.
+- **Round 1** (3 PDFs): v3 works after seven changes that the synthetic PDFs did not reveal.
+- **Blind test 2** (2 new PDFs, code frozen): **v3 got 0 of 13**. swissgeol got 13/13 Bohrungen,
+  but no elevation and 18 invented Bohrungen.
+- **Blind test 4** (4 Swiss examples from swissgeol, another domain): v3 and v4 **0 of 3**, no false
+  ones (§8.2).
+- **v4 + test bench** (training, §8): 87/92 Bohrungen, 541/541 boundaries (538 exact to the cm),
+  0 false data; robust to rotation, conservative on raster; full chain PDF → PostGIS → IFC → That
+  Open.
+- **Blind test 3** (4 new PDFs, predictions frozen in the repo): **v3 got 11 of 29**, with elevation
+  12/23 and 1 false Bohrung. swissgeol got 12 of 29 (one without Schichten), no elevations and 25
+  false Bohrungen (§7). The 18 missing Bohrungen are in a raster without text (11) or in a title
+  with a suffix (5) or an AutoCAD drawing with text converted into lines (1), plus one wrong
+  instance.
 
-La lección es que la geometría da precisión y control de falsos positivos, mientras que la
-tolerancia a formatos de texto desconocidos es el punto fuerte de swissgeol. **La solución es
-combinar ambas** (§6). Tras corregir las causas generales, v3 llega a **29/29 sondeos y 143/143
-límites**, incluido un PDF escaneado.
+The lesson is that the geometry gives precision and control of false positives, while tolerance to
+unknown text formats is swissgeol's strong point. **The solution is to combine both** (§6). After
+fixing the general causes, v3 reaches **29/29 Bohrungen and 143/143 boundaries**, including a
+scanned PDF.
 
 > [!WARNING]
-> Las cifras **después** de cada corrección son de *entrenamiento*. Las únicas cifras honestas de
-> generalidad son las de las pruebas ciegas: **0/13** (§6.1), **11/29** (§7.1) y **0/3** (§8.2, Suiza).
-> La próxima ronda con Gutachten alemanes nuevos debe medirse con v4 congelado ([12](12_corpus_publico.md)).
+> The figures **after** each fix are *training* figures. The only honest figures of generality are
+> those of the blind tests: **0/13** (§6.1), **11/29** (§7.1) and **0/3** (§8.2, Switzerland). The
+> next round with new German Gutachten must be measured with v4 frozen ([12](12_public_corpus.md)).
 
-## 1. Los documentos
+## 1. The documents
 
-| PDF | Oficina / software | Qué contiene | Particularidades |
+| PDF | Office / software | What it contains | Particularities |
 |---|---|---|---|
-| Wachenroth (B-Plan Angerleite, BY) | Geotechnik Prof. Dr. Gründer · PDF24/Ghostscript | 6 Bohrprofile (1 por página, M 1:25) + corte en altura (M 1:75) + leyenda DIN 4023 | Texto del informe **escaneado** (págs. 1–34 sin texto); dibujo en **965 segmentos sueltos sin rellenos**; etiquetas = **base** de capa |
-| Talheim (Sickerwassertrasse, BW) | GeoTech Kaiser · Word + CAD | 8 BK + 2 GWM en **páginas giradas 90°**, eje mNN, Höhenmaßstab 1:75 | Etiquetas = **techo** con 0,00, **desplazadas** con líneas de referencia; bordes de columna por tramos; máscaras blancas detrás del texto; GW con línea hasta su columna |
-| Halle (B-Plan 152, ST) | Word | Sólo texto del informe, **sin anexos** de Bohrprofile | Tabla de niveles freáticos (26 KRB), tablas de parámetros y Homogenbereiche |
+| Wachenroth (B-Plan Angerleite, BY) | Geotechnik Prof. Dr. Gründer · PDF24/Ghostscript | 6 Bohrprofile (1 per page, M 1:25) + height section (M 1:75) + DIN 4023 legend | Report text **scanned** (pp. 1–34 without text); drawing made of **965 loose segments without fills**; labels = **base** of the Schicht |
+| Talheim (Sickerwassertrasse, BW) | GeoTech Kaiser · Word + CAD | 8 BK + 2 GWM on **pages rotated 90°**, mNN axis, Höhenmaßstab 1:75 | Labels = **top** with 0.00, **offset** with leader lines; column edges drawn in pieces; white masks behind the text; GW with a line to its column |
+| Halle (B-Plan 152, ST) | Word | Only the report text, **without the Bohrprofil annexes** | Table of Grundwasser levels (26 KRB), parameter tables and Homogenbereiche |
 
-Verdad de referencia transcrita a mano y revisada contra las imágenes:
-[`spikes/korpus/groundtruth/`](../spikes/korpus/groundtruth/wachenroth.json) (sólo datos
-factuales: códigos, cotas, profundidades, clase de suelo, agua; con URL y `sha256` del PDF).
+Reference ground truth transcribed by hand and checked against the images:
+[`spikes/korpus/groundtruth/`](../spikes/korpus/groundtruth/wachenroth.json) (factual data only:
+codes, elevations, depths, soil class, water; with the URL and `sha256` of the PDF).
 
-## 2. Resultados de la ronda 1
+## 2. Results of round 1
 
-Tolerancia de límites 5 cm (a M 1:75, 1 pt = 2,6 cm); emparejamiento 1:1.
-Reproducir: `python spikes/korpus/eval_real.py <pdfs> [<salida swissgeol>]`.
+Boundary tolerance 5 cm (at M 1:75, 1 pt = 2.6 cm); 1:1 matching.
+Reproduce: `python spikes/korpus/eval_real.py <pdfs> [<swissgeol output>]`.
 
-| | v1 actual | **v3 prototipo** | swissgeol (sin cambios) |
+| | current v1 | **v3 prototype** | swissgeol (unchanged) |
 |---|---|---|---|
-| **Wachenroth** sondeos / límites | 0/6 · 0/18 | **6/6 · 18/18** | 6/6 · 18/18 |
-| Bodenart | — | **18/18** (incl. *Sandstein* = roca) | (no clasifica) |
+| **Wachenroth** Bohrungen / boundaries | 0/6 · 0/18 | **6/6 · 18/18** | 6/6 · 18/18 |
+| Bodenart | — | **18/18** (incl. *Sandstein* = rock) | (does not classify) |
 | GOK | 0/6 | **6/6** | 6/6 |
-| Falsos (sondeos / GW) | 0 / 0 | **0 / 0**; duplicados del corte fusionados | **5 / 1** (corte duplicado, informe de laboratorio) |
-| **Talheim** sondeos / límites | 0/10 · 0/65 | **10/10 · 65/65** (+1 límite falso, marcado) | 0/10 · 0/65 |
+| False (Bohrungen / GW) | 0 / 0 | **0 / 0**; duplicates from the section merged | **5 / 1** (duplicated section, lab report) |
+| **Talheim** Bohrungen / boundaries | 0/10 · 0/65 | **10/10 · 65/65** (+1 false boundary, marked) | 0/10 · 0/65 |
 | GOK / GW | 0/8 · 0/4 | **8/8 · 3/4** | 0/8 · 0/4 |
-| Falsos sondeos | 0 | **0** | 3 (desde el texto del informe) |
-| **Halle** (no tiene perfiles) | 0 falsos | **0 falsos** | **4 falsos** (desde tablas) |
-| Tabla de GW de Halle | — | **26/26** (lectura por celda) | — |
+| False Bohrungen | 0 | **0** | 3 (from the report text) |
+| **Halle** (has no logs) | 0 false | **0 false** | **4 false** (from tables) |
+| Halle GW table | — | **26/26** (reading per cell) | — |
 
-## 3. Siete lecciones de los planos reales
+## 3. Seven lessons from the real drawings
 
-| # | Qué pasó | Cambio en v3 | Nota afectada |
+| # | What happened | Change in v3 | Note affected |
 |---|---|---|---|
-| L1 | El PDF regenerado con Ghostscript/PDF24 no tiene rectángulos ni rellenos: sólo segmentos | **Todo a segmentos**; columna = par de verticales con trazo; límites = horizontales que tocan ambos bordes | [02](02_bohrprofil_generalizacion.md) |
-| L2 | Página con `/Rotate 90`: PyMuPDF da coordenadas sin rotar | Normalizar palabras y paths con `page.rotation_matrix` | [02 §8](02_bohrprofil_generalizacion.md#8-casos-aún-no-cubiertos) |
-| L3 | Etiquetas desplazadas con líneas de referencia; unas oficinas rotulan el **techo** (con 0,00), otras la **base** | Escala por candidatos (directa, por orden, texto `1 : 75`) y se elige la que **más etiquetas confirma**; la convención decide cómo asignar las descripciones | [02 §3](02_bohrprofil_generalizacion.md#3-escala-vertical-por-regresión) |
-| L4 | En la representación en altura la cabecera está muy por encima de la columna | Asociar la cabecera con la columna de debajo sin límite vertical | [03](03_laengsschnitt_generalizacion.md) |
-| L5 | Tablas con "B 6" y números crecientes parecían un sondeo (M 1:12) | Escalas normalizadas (±4 %), columna con números dentro = tabla, duplicados → versión con GOK y más etiquetas confirmadas | [09](09_validacion_benchmark.md) |
-| L6 | La Schraffur de *Ton* (rayas) y de *Schwarzdecke* (dos líneas) cruzan la columna como si fueran límites | Excluir líneas discontinuas y exigir que el límite toque los bordes; confirmación etiqueta↔límite **1:1**, para que un límite extra quede marcado | [04](04_schraffur_din4023.md) |
-| L7 | v1 clasifica `Sandstein` → *Sand*, `Tonstein` → *Steine*, `Beton` → *Ton*, todos "seguros" | Sustantivo principal + lista de roca (`-stein`) y antrópicos (Beton, Schwarzdecke, Anschüttung → Auffüllung), Oberboden = Mutterboden | [01](01_diagnostico_layout_fijo.md), [02 §5](02_bohrprofil_generalizacion.md#5-clasificación-del-texto-sustantivo-no-adjetivo) |
+| L1 | The PDF regenerated with Ghostscript/PDF24 has no rectangles or fills: only segments | **Everything to segments**; column = pair of stroked verticals; boundaries = horizontals touching both edges | [02](02_bohrprofil_generalization.md) |
+| L2 | Page with `/Rotate 90`: PyMuPDF gives unrotated coordinates | Normalise words and paths with `page.rotation_matrix` | [02 §8](02_bohrprofil_generalization.md#8-cases-not-yet-covered) |
+| L3 | Labels offset with leader lines; some offices label the **top** (with 0.00), others the **base** | Scale from candidates (direct, by order, text `1 : 75`) and the one that **confirms the most labels** wins; the convention decides how the descriptions are assigned | [02 §3](02_bohrprofil_generalization.md#3-vertical-scale-by-regression) |
+| L4 | In the height representation the header is far above the column | Associate the header with the column below without a vertical limit | [03](03_laengsschnitt_generalization.md) |
+| L5 | Tables with "B 6" and increasing numbers looked like a Bohrung (M 1:12) | Normalised scales (±4 %), column with numbers inside = table, duplicates → the version with GOK and more confirmed labels | [09](09_validation_benchmark.md) |
+| L6 | The Schraffur of *Ton* (stripes) and of *Schwarzdecke* (two lines) crosses the column as if it were boundaries | Exclude dashed lines and require the boundary to touch the edges; label↔boundary confirmation **1:1**, so that an extra boundary stays marked | [04](04_schraffur_din4023.md) |
+| L7 | v1 classifies `Sandstein` → *Sand*, `Tonstein` → *Steine*, `Beton` → *Ton*, all "certain" | Main noun + list of rocks (`-stein`) and man-made materials (Beton, Schwarzdecke, Anschüttung → Auffüllung), Oberboden = Mutterboden | [01](01_diagnosis_fixed_layout.md), [02 §5](02_bohrprofil_generalization.md#5-classifying-the-text-noun-not-adjective) |
 
-Además, el nivel freático real confirma dos detalles: el triángulo puede estar junto a la
-columna **vecina** y lo que asigna el sondeo es el extremo de la **línea de agua**; y
-"kein Grundwasser" es un dato que hay que guardar (6/6 en Wachenroth), no una ausencia.
+In addition, the real Grundwasser confirms two details: the triangle can sit next to the
+**neighbouring** column and what assigns the Bohrung is the end of the **water line**; and
+"kein Grundwasser" is data to be stored (6/6 in Wachenroth), not an absence.
 
-## 4. Lo que todavía falla o no se probó
+## 4. What still fails or was not tested
 
-- **GW "angebohrt" de BK2 (Talheim)**: es otro símbolo (dos trazos + línea). Falta leer los
-  símbolos de agua desde la leyenda del documento ([06](06_grundwasser.md)).
-- **1 límite falso** (doble línea de *Schwarzdecke* en BK5): queda marcado como no confirmado.
-  Mejor solución: reconocer esa Schraffur por la leyenda.
-- **Clasificación por Schraffur no evaluada con planos reales**: las muestras de leyenda de
-  Wachenroth son cuadrados de líneas sueltas y las de Talheim combinan color y letra; el detector
-  de muestras del prototipo sólo acepta rectángulos rellenos ([04](04_schraffur_din4023.md)).
-- **Coordenadas**: ninguno de los tres trae una tabla de coordenadas. Los Lagepläne mezclan
-  raster y vector ([07](07_coordenadas.md)).
-- **Texto escaneado** (Wachenroth, págs. 1–34): requiere OCR para los Homogenbereiche y
-  parámetros del informe.
-- **Descripciones completas** (Nebenanteile, consistencia): sólo se evaluó la clase principal.
-- **Sondierungen**: ninguno de los tres trae curvas DPH vectoriales.
+- **GW "angebohrt" of BK2 (Talheim)**: it is another symbol (two strokes + line). Reading the water
+  symbols from the legend of the document is still missing ([06](06_grundwasser.md)).
+- **1 false boundary** (double line of *Schwarzdecke* in BK5): it stays marked as unconfirmed. Better
+  solution: recognise that Schraffur through the legend.
+- **Classification by Schraffur not evaluated on real drawings**: the legend samples in Wachenroth
+  are squares of loose lines and those in Talheim combine colour and letters; the prototype's sample
+  detector only accepts filled rectangles ([04](04_schraffur_din4023.md)).
+- **Coordinates**: none of the three has a coordinate table. The Lagepläne mix raster and vector
+  ([07](07_coordinates.md)).
+- **Scanned text** (Wachenroth, pp. 1–34): needs OCR for the Homogenbereiche and the parameters of the
+  report.
+- **Full descriptions** (Nebenanteile, consistency): only the main class was evaluated.
+- **Sondierungen**: none of the three has vector DPH curves.
 
-## 6. Prueba ciega: Hausham y Rednitzhembach
+## 6. Blind test: Hausham and Rednitzhembach
 
-### 6.1 Resultado ciego
+### 6.1 Blind result
 
-Protocolo: predicciones congeladas con el código del commit `d35e3d4` **antes** de mirar los PDFs;
-después, transcripción de la verdad y puntuación ([`blind_test.py`](../spikes/korpus/blind_test.py)).
+Protocol: predictions frozen with the code of commit `d35e3d4` **before** looking at the PDFs; then,
+transcription of the ground truth and scoring ([`blind_test.py`](../spikes/korpus/blind_test.py)).
 
-| PDF | Qué es | v1 | **v3 (ciego)** | swissgeol (ciego) |
+| PDF | What it is | v1 | **v3 (blind)** | swissgeol (blind) |
 |---|---|---|---|---|
-| Hausham (Frank + Bumiller + Kraft, **DC-Software**) | Vectorial, 3 B + 6 RKS, etiquetas `0.20m`, escala de RKS ajustada a la página | 0/9 | **0/9** | **9/9 · 45/45 límites · 4/4 GW**; GOK 0/9; **15 sondeos falsos** |
-| Rednitzhembach (Prof. Dr. Gründer) | **Escaneado** con capa OCR, 4 B, M 1:50 | 0/4 | **0/4** | 4/4 · 6/15 límites; GOK 0/4; 3 falsos |
+| Hausham (Frank + Bumiller + Kraft, **DC-Software**) | Vector, 3 B + 6 RKS, labels `0.20m`, RKS scale fitted to the page | 0/9 | **0/9** | **9/9 · 45/45 boundaries · 4/4 GW**; GOK 0/9; **15 false Bohrungen** |
+| Rednitzhembach (Prof. Dr. Gründer) | **Scanned** with an OCR layer, 4 B, M 1:50 | 0/4 | **0/4** | 4/4 · 6/15 boundaries; GOK 0/4; 3 false |
 
-### 6.2 Por qué falló v3 y qué se cambió después
+### 6.2 Why v3 failed and what was changed afterwards
 
-| # | Causa | Cambio (general, no específico del PDF) |
+| # | Cause | Change (general, not specific to the PDF) |
 |---|---|---|
-| L8 | Etiquetas con unidad pegada (`0.20m`); "Kein Wasser" | Patrón de etiqueta con unidad opcional; frases de "sin agua" ampliadas |
-| L9 | DC-Software ajusta la escala del perfil a la hoja (M ≈ 1:35) | Se acepta una escala no normalizada si ≥ 80 % de ≥ 3 etiquetas la confirman (corrige L5) |
-| L10 | Nivel freático como texto `GW 2.53m`; los ▽ de la regla de cotas y el ▼ de la cota de inicio parecían agua | GW también por texto; se descartan series de triángulos alineados, triángulos con una cota al lado y triángulos a profundidad 0 |
-| L11 | **Escaneo** sin vectores | **Adaptador raster:** OpenCV detecta líneas horizontales y verticales en la imagen y las convierte en los mismos segmentos que usa la lógica vectorial; la profundidad sale de la escala del cajetín (`M 1:50`) cuando el OCR pierde etiquetas; las líneas duplicadas del escaneo se fusionan |
-| L12 | El mismo sondeo en la hoja individual y en un corte | Preferir la hoja titulada `Bohrung B 4` y la hoja con un solo sondeo; una confirmación de etiquetas < 50 % no cuenta |
+| L8 | Labels with the unit attached (`0.20m`); "Kein Wasser" | Label pattern with an optional unit; more "no water" phrases |
+| L9 | DC-Software fits the scale of the log to the sheet (M ≈ 1:35) | A non-normalised scale is accepted if ≥ 80 % of ≥ 3 labels confirm it (corrects L5) |
+| L10 | Grundwasser as text `GW 2.53m`; the ▽ of the elevation ruler and the ▼ of the starting elevation looked like water | GW also from text; series of aligned triangles, triangles with an elevation next to them and triangles at depth 0 are discarded |
+| L11 | **Scan** without vectors | **Raster adapter:** OpenCV detects horizontal and vertical lines in the image and turns them into the same segments the vector logic uses; the depth comes from the scale in the title block (`M 1:50`) when OCR loses labels; the scan's duplicate lines are merged |
+| L12 | The same Bohrung on its own sheet and in a section | Prefer the sheet titled `Bohrung B 4` and the sheet with a single Bohrung; a label confirmation < 50 % does not count |
 
-### 6.3 Acumulado de los cinco PDFs (después de las correcciones = entrenamiento)
+### 6.3 Total over the five PDFs (after the fixes = training)
 
 | | v1 | v3 | swissgeol |
 |---|---|---|---|
-| Sondeos | 0/29 | **29/29** | 19/29 |
-| Límites | 0/143 | **143/143** (+1 falso, marcado) | 69/143 |
+| Bohrungen | 0/29 | **29/29** | 19/29 |
+| Boundaries | 0/143 | **143/143** (+1 false, marked) | 69/143 |
 | GOK | 0/27 | **27/27** | 6/27 |
-| Nivel freático | 0/8 | **7/8** | 4/8 |
-| Bodenart (capas con verdad) | — | **59/61** | (no clasifica) |
-| Sondeos / GW falsos | 0 / 0 | **0 / 0** | **30 / 1** |
+| Grundwasser | 0/8 | **7/8** | 4/8 |
+| Bodenart (Schichten with ground truth) | — | **59/61** | (does not classify) |
+| False Bohrungen / GW | 0 / 0 | **0 / 0** | **30 / 1** |
 
-Los 5 límites de B4 (Rednitzhembach) salen sólo de la geometría y la escala, sin etiquetas
-legibles, y quedan **marcados para revisión**. Ése es el comportamiento buscado.
+The 5 boundaries of B4 (Rednitzhembach) come from geometry and scale only, without readable labels,
+and stay **marked for review**. That is the intended behaviour.
 
-### 6.4 Consecuencia para la arquitectura
+### 6.4 Consequence for the architecture
 
-1. **Combinar los dos enfoques:** la búsqueda de columnas de profundidad de swissgeol es
-   tolerante a formatos (unidades, OCR, posiciones). La parte geométrica nuestra hace la
-   validación: columna, escala, límites, cabecera y filtros de tablas y duplicados. Hay que
-   portar y ampliar su catálogo de formatos de etiqueta ([08](08_swissgeol_reutilizacion.md)).
-2. **Un solo núcleo, dos fuentes de segmentos:** vectorial (`get_drawings`) o raster (OpenCV).
-   Los escaneos ya no son un caso aparte ([02](02_bohrprofil_generalizacion.md)).
-3. **La prueba ciega forma parte del proceso:** cada ronda nueva se congela antes de mirar.
+1. **Combine the two approaches:** swissgeol's search for depth columns is tolerant to formats
+   (units, OCR, positions). Our geometric part does the validation: column, scale, boundaries,
+   header and the filters for tables and duplicates. Their catalogue of label formats has to be
+   ported and extended ([08](08_swissgeol_reuse.md)).
+2. **One core, two sources of segments:** vector (`get_drawings`) or raster (OpenCV). Scans are no
+   longer a special case ([02](02_bohrprofil_generalization.md)).
+3. **The blind test is part of the process:** every new round is frozen before looking.
 
-## 7. Prueba ciega 3: Triefenstein, Marl, Wesel y Berlín
+## 7. Blind test 3: Triefenstein, Marl, Wesel and Berlin
 
-### 7.1 Resultado ciego
+### 7.1 Blind result
 
-Protocolo reforzado: las predicciones de v3 (commit `36e3554`) y de swissgeol se congelaron y
-**se subieron al repo antes de abrir los PDFs** (commits `5325ead` y `2d4d5e7`,
-[`spikes/korpus/frozen/runde3/`](../spikes/korpus/frozen/runde3/marl_251.json), con `sha256` del
-PDF); la verdad vino después (`acc5cd5`). Así el orden queda demostrado por el historial de git.
+Strengthened protocol: the predictions of v3 (commit `36e3554`) and of swissgeol were frozen and
+**pushed to the repo before the PDFs were opened** (commits `5325ead` and `2d4d5e7`,
+[`spikes/korpus/frozen/runde3/`](../spikes/korpus/frozen/runde3/marl_251.json), with the `sha256` of
+the PDF); the ground truth came afterwards (`acc5cd5`). That way the order is proven by the git
+history.
 
-| PDF | Oficina / software | Qué es | **v3 (ciego)** | swissgeol (ciego) |
+| PDF | Office / software | What it is | **v3 (blind)** | swissgeol (blind) |
 |---|---|---|---|---|
-| Triefenstein B-Plan 41 (BY) | Geotechnik Badel | Vectorial, 5 RKS en hojas sueltas a M 1:30 y 1:25, títulos `RKS 1 - Betonweg 0+050`, descripciones sólo en abreviaturas DIN 4023; DPH como **tabla de valores** | **0/5** | 0/5 · **15 sondeos falsos** |
-| Marl B-Plan 251 (NRW) | Dr. Spang · **IDAT/GeoDin** | Vectorial, 12 BS a M 1:50 con columna de muestras Von/Bis junto a las etiquetas, Längsschnitt con DPH, ejecución de GWM en la hoja de BS 10 | **12/12** (BS 10 tomado del corte) · 91/97 límites · **GOK 12/12** · 1 sondeo falso | 11/12 · 87/97 · GOK 0/12 · 6 falsos |
-| Wesel Anlage 12 (NRW) | Asmus + Prabucki · **AutoCAD** | 1 sondeo de 38 m, perfil a M 1:200 con **texto SHX convertido en líneas** (sin capa de texto); Schichtenverzeichnis DIN 4022 como texto; fotos de testigos | **0/1** | 1/1 · 0/24 límites · 3 falsos |
-| Berlín V-67b-VE | GuD Consult | Voruntersuchung sin sondeos propios: 11 sondeos de terceros (Geoportal Berlin y archivo) como **imágenes raster sin texto**, con CPT y coordenadas UTM 33N en la imagen | **0/11** | 0/11 · 1 falso |
-| **Total** | | | **11/29 correctos** (+1 instancia equivocada) · 91/200 límites · GOK 12/23 · GW 0/4 · 1 falso | 12/29 (1 sin capas) · 87/200 · GOK 0/23 · GW 0/4 · **25 falsos** |
+| Triefenstein B-Plan 41 (BY) | Geotechnik Badel | Vector, 5 RKS on single sheets at M 1:30 and 1:25, titles `RKS 1 - Betonweg 0+050`, descriptions only as DIN 4023 abbreviations; DPH as a **table of values** | **0/5** | 0/5 · **15 false Bohrungen** |
+| Marl B-Plan 251 (NRW) | Dr. Spang · **IDAT/GeoDin** | Vector, 12 BS at M 1:50 with a column of samples Von/Bis next to the labels, Längsschnitt with DPH, GWM construction on the sheet of BS 10 | **12/12** (BS 10 taken from the section) · 91/97 boundaries · **GOK 12/12** · 1 false Bohrung | 11/12 · 87/97 · GOK 0/12 · 6 false |
+| Wesel Anlage 12 (NRW) | Asmus + Prabucki · **AutoCAD** | 1 Bohrung of 38 m, log at M 1:200 with **SHX text converted into lines** (no text layer); DIN 4022 Schichtenverzeichnis as text; core photos | **0/1** | 1/1 · 0/24 boundaries · 3 false |
+| Berlin V-67b-VE | GuD Consult | Voruntersuchung without its own Bohrungen: 11 third-party Bohrungen (Geoportal Berlin and archive) as **raster images without text**, with CPT and UTM 33N coordinates in the image | **0/11** | 0/11 · 1 false |
+| **Total** | | | **11/29 correct** (+1 wrong instance) · 91/200 boundaries · GOK 12/23 · GW 0/4 · 1 false | 12/29 (1 without Schichten) · 87/200 · GOK 0/23 · GW 0/4 · **25 false** |
 
-v3 fue preciso donde leyó (Marl: 87/87 límites en los 11 sondeos correctos y todas las cotas),
-pero se cayó entero por detalles de formato que un humano ni ve. swissgeol volvió a encontrar
-profundidades donde v3 no, a cambio de muchos falsos y ninguna cota.
+v3 was precise where it read (Marl: 87/87 boundaries in the 11 correct Bohrungen and all elevations),
+but it fell over completely on format details a human does not even notice. swissgeol again found
+depths where v3 did not, at the price of many false ones and no elevation.
 
-### 7.2 Por qué falló y qué se cambió después
+### 7.2 Why it failed and what was changed afterwards
 
-| # | Causa | Cambio (general) | Efecto (entrenamiento) |
+| # | Cause | Change (general) | Effect (training) |
 |---|---|---|---|
-| L13 | Título con sufijo: `RKS 1 - Betonweg 0+050` (nombre y estación) | La cabecera acepta `<código> - <texto>` | Triefenstein 0/5 → **5/5 · 24/24 · GW 2/2** |
-| L14 | La escala de profundidad del diagrama DPH del corte (1,00 … 10,00) pasó por etiquetas de BS 10 | Grupos de etiquetas en **progresión aritmética** (≥ 5 valores, mismo paso) = eje o regla, no límites. swissgeol ya lo hacía y no lo habíamos portado ([08](08_swissgeol_reutilizacion.md)) | Marl BS 10 correcto, 97/97 |
-| L15 | IDAT pone una columna de muestras con pares Von/Bis (`0,20 / 0,60`) junto a las etiquetas; el plano de ejecución de la GWM parecía un segundo sondeo | Grupo con valores duplicados = columna de muestras. Una columna sin etiquetas confirmadas, cuando las vecinas sí tienen, no es un perfil. Sin ninguna etiqueta en la página (OCR perdido) se mantiene la escala del cajetín | 0 sondeos falsos. La primera versión de esta regla rompió B 4 de Rednitzhembach y el conjunto de entrenamiento lo detectó |
-| L16 | Descripción sólo con abreviaturas (`U, t, s´`, `fS, ms´`, `A (S, u´)`) | Fracción principal desde la abreviatura DIN 4023 / EN ISO 14688 | Bodenart Triefenstein 18/24, Marl 18/23 |
-| L17 | AutoCAD con fuentes SHX: las etiquetas son líneas y el perfil no se puede leer sin OCR | **Schichtenverzeichnis** (formulario DIN 4022, igual en todas las oficinas) como segunda fuente: profundidad en la columna 1, denominación bajo `a)` y agua en la columna 3. Contraste 1:1 con el perfil | Wesel **1/1 · 24/24**; contraste "SV ok" en 14/14 sondeos de Hausham y Triefenstein |
-| L18 | Sondeos de terceros como **raster sin capa de texto** (capturas del Geoportal, escaneos de archivo); códigos `422C-460`; CPT | Sin cambio: hace falta un paso de **OCR** (ocrmypdf/Tesseract) antes del pipeline; el adaptador raster (L11) ya cubre las líneas | Berlín sigue en 0/11 |
+| L13 | Title with a suffix: `RKS 1 - Betonweg 0+050` (name and station) | The header accepts `<code> - <text>` | Triefenstein 0/5 → **5/5 · 24/24 · GW 2/2** |
+| L14 | The depth scale of the DPH diagram in the section (1.00 … 10.00) passed for labels of BS 10 | Groups of labels in **arithmetic progression** (≥ 5 values, same step) = axis or ruler, not boundaries. swissgeol already did this and we had not ported it ([08](08_swissgeol_reuse.md)) | Marl BS 10 correct, 97/97 |
+| L15 | IDAT puts a column of samples with Von/Bis pairs (`0,20 / 0,60`) next to the labels; the GWM construction drawing looked like a second Bohrung | Group with duplicate values = column of samples. A column without confirmed labels, when the neighbouring ones do have them, is not a log. Without any label on the page (OCR lost) the scale of the title block is kept | 0 false Bohrungen. The first version of this rule broke B 4 of Rednitzhembach and the training set caught it |
+| L16 | Description only in abbreviations (`U, t, s´`, `fS, ms´`, `A (S, u´)`) | Main fraction from the DIN 4023 / EN ISO 14688 abbreviation | Bodenart Triefenstein 18/24, Marl 18/23 |
+| L17 | AutoCAD with SHX fonts: the labels are lines and the log cannot be read without OCR | **Schichtenverzeichnis** (DIN 4022 form, the same in all offices) as a second source: depth in column 1, name under `a)` and water in column 3. Compared 1:1 with the log | Wesel **1/1 · 24/24**; check "SV ok" on 14/14 Bohrungen of Hausham and Triefenstein |
+| L18 | Third-party Bohrungen as **raster without a text layer** (Geoportal screenshots, archive scans); codes `422C-460`; CPT | No change: an **OCR** step (ocrmypdf/Tesseract) is needed before the pipeline; the raster adapter (L11) already covers the lines | Berlin stays at 0/11 |
 
-### 7.3 Acumulado de los nueve PDFs (después de las correcciones = entrenamiento)
+### 7.3 Total over the nine PDFs (after the fixes = training)
 
-| | v1 | v3 | swissgeol (sin cambios) |
+| | v1 | v3 | swissgeol (unchanged) |
 |---|---|---|---|
-| Sondeos | 0/58 | **47/58** (los 11 restantes son el raster de Berlín) | 31/58 |
-| Límites | 0/343 | **288/343** (+1 falso, marcado) | 156/343 |
+| Bohrungen | 0/58 | **47/58** (the remaining 11 are the Berlin raster) | 31/58 |
+| Boundaries | 0/343 | **288/343** (+1 false, marked) | 156/343 |
 | GOK | 0/50 | **39/50** | 6/50 |
-| Nivel freático | 0/12 | **9/12** | 4/12 |
-| Bodenart (capas con verdad) | — | **119/132** | (no clasifica) |
-| Sondeos falsos | 0 | **0** | **55** |
+| Grundwasser | 0/12 | **9/12** | 4/12 |
+| Bodenart (Schichten with ground truth) | — | **119/132** | (does not classify) |
+| False Bohrungen | 0 | **0** | **55** |
 
-Los sintéticos no cambian (102/102). Reproducir: `python spikes/korpus/eval_real.py <pdfs>`.
+The synthetic ones do not change (102/102). Reproduce: `python spikes/korpus/eval_real.py <pdfs>`.
 
-### 7.4 Qué aprendimos
+### 7.4 What we learned
 
-1. **El cuello de botella ya no es la geometría sino la entrada:** de los 18 sondeos perdidos,
-   12 no tenían texto legible (raster o SHX). El OCR pasa a ser un componente, no un extra.
-2. **El Schichtenverzeichnis es la fuente más estable:** es un formulario normado, viene en texto
-   incluso cuando el dibujo es una imagen, y sirve para verificar cada perfil ([02](02_bohrprofil_generalizacion.md)).
-3. **Reglas pequeñas, efectos grandes:** un sufijo en el título tumbó un Gutachten entero (0/5). La
-   detección de cabeceras debe ser tolerante y la validación geométrica estricta (D26).
-4. **El conjunto de entrenamiento como prueba de regresión** atrapó una regla que rompía
-   Rednitzhembach. Cada cambio se mide contra los nueve PDFs y los sintéticos.
+1. **The bottleneck is no longer the geometry but the input:** of the 18 lost Bohrungen, 12 had no
+   readable text (raster or SHX). OCR becomes a component, not an extra.
+2. **The Schichtenverzeichnis is the most stable source:** it is a standardised form, it comes as
+   text even when the drawing is an image, and it serves to verify every log
+   ([02](02_bohrprofil_generalization.md)).
+3. **Small rules, big effects:** a suffix in the title knocked out a whole Gutachten (0/5). Header
+   detection must be tolerant and the geometric validation strict (D26).
+4. **The training set as a regression test** caught a rule that broke Rednitzhembach. Every change is
+   measured against the nine PDFs and the synthetic ones.
 
-## 8. Banco de pruebas, algoritmo v4 y cadena completa (2026-10-26)
+## 8. Test bench, algorithm v4 and full chain (2026-10-26)
 
-Todo lo de esta sección es **entrenamiento** salvo §8.2 (ronda 4, ciega). Algoritmo:
-[17](17_algoritmo_extraccion.md); reglas: [16](16_lecciones_aprendidas.md).
+Everything in this section is **training** except §8.2 (round 4, blind). Algorithm:
+[17](17_extraction_algorithm.md); rules: [16](16_lessons_learned.md).
 
-### 8.1 El banco de pruebas
+### 8.1 The test bench
 
-| Capa | Qué es | Herramienta |
+| Layer | What it is | Tool |
 |---|---|---|
-| Real | 13 PDFs con verdad: 9 Gutachten alemanes + 4 ejemplos suizos de swissgeol | [`regression.py`](../spikes/korpus/regression.py) |
-| Estrés | 17 PDFs mínimos, **uno por lección** (título con sufijo, página girada, eje DPH, columna de muestras, abreviaturas, SHX + SV, raster, código de terceros, escala contradictoria, cabecera lejana…) | [`stress_cases.py`](../spikes/extraktion_v2/stress_cases.py) |
-| Sintético | 6 layouts con Schraffur, agua, DPH y coordenadas | `synth_bohrprofil.py` |
-| Perturbación | los 13 reales girados 90°, reducidos al 70 % y rasterizados a 150 dpi sin texto, con la misma verdad | [`perturb.py`](../spikes/korpus/perturb.py) |
-| Ablación | cada regla apagada por separado | [`ablation.py`](../spikes/korpus/ablation.py) |
+| Real | 13 PDFs with ground truth: 9 German Gutachten + 4 Swiss examples from swissgeol | [`regression.py`](../spikes/korpus/regression.py) |
+| Stress | 17 minimal PDFs, **one per lesson** (title with suffix, rotated page, DPH axis, column of samples, abbreviations, SHX + SV, raster, third-party code, contradictory scale, distant header…) | [`stress_cases.py`](../spikes/extraktion_v2/stress_cases.py) |
+| Synthetic | 6 layouts with Schraffur, water, DPH and coordinates | `synth_bohrprofil.py` |
+| Perturbation | the 13 real ones rotated 90°, reduced to 70 % and rasterised at 150 dpi without text, with the same ground truth | [`perturb.py`](../spikes/korpus/perturb.py) |
+| Ablation | each rule switched off separately | [`ablation.py`](../spikes/korpus/ablation.py) |
 
-Nueva métrica: **límites exactos** (al centímetro, como están impresos) además de la tolerancia de 5 cm.
+New metric: **exact boundaries** (to the centimetre, as printed) in addition to the 5 cm tolerance.
 
-### 8.2 Ronda 4 ciega: ejemplos suizos de swissgeol
+### 8.2 Blind round 4: Swiss examples from swissgeol
 
-Predicciones congeladas y subidas antes de abrir los PDFs (v3 `6162150`, v4 `68f0b54`). Dominio
-distinto (Suiza, escaneos con capa OCR, francés), verdad con códigos `RB 2/I`, `SST KB5`, `MGR01`.
+Predictions frozen and pushed before the PDFs were opened (v3 `6162150`, v4 `68f0b54`). Different
+domain (Switzerland, scans with an OCR layer, French), ground truth with codes `RB 2/I`, `SST KB5`,
+`MGR01`.
 
-| | v3 (ciego) | v4 (ciego) | v4 después (entrenamiento) |
+| | v3 (blind) | v4 (blind) | v4 afterwards (training) |
 |---|---|---|---|
-| Sondeos | 0/3 | 0/3 | 2/3 (el francés sigue en 0) |
-| Límites | 0/26 | 0/26 | 26/26 exactos |
-| Falsos | 0 | 0 | 0 |
+| Bohrungen | 0/3 | 0/3 | 2/3 (the French one stays at 0) |
+| Boundaries | 0/26 | 0/26 | 26/26 exact |
+| False | 0 | 0 | 0 |
 
-Causas y cambios: cabecera `Sondierbohrung : SST KB 5` (T1), código partido por el OCR (`RB` + `2 / I`),
-capa OCR que pierde texto (L18b), escaneo con ruido vectorial (E2), columna de profundidades del
-formulario (T5), etiquetas apiladas con escala en puntos que no es la del papel (E5, T4) y perfil sólo
-como **tabla de texto** (S6). El documento francés (profundidades negativas al inicio de cada
-descripción) queda fuera.
+Causes and changes: header `Sondierbohrung : SST KB 5` (T1), code split by the OCR (`RB` + `2 / I`),
+OCR layer that loses text (L18b), scan with vector noise (E2), depth column of the form (T5), stacked
+labels with a scale in points that is not the paper's (E5, T4) and a log only as a **text table**
+(S6). The French document (negative depths at the start of each description) stays out.
 
-### 8.3 v3 frente a v4 en el mismo conjunto (13 reales + 13 estrés + 6 sintéticos)
+### 8.3 v3 versus v4 on the same set (13 real + 13 stress + 6 synthetic)
 
 | | v3 | **v4** |
 |---|---|---|
-| Sondeos | 76/92 | **87/92** |
-| Límites (±5 cm) | 451/541 | **541/541** |
-| Límites exactos (al cm) | 414/541 | **538/541** |
+| Bohrungen | 76/92 | **87/92** |
+| Boundaries (±5 cm) | 451/541 | **541/541** |
+| Exact boundaries (to the cm) | 414/541 | **538/541** |
 | Bodenart | 282/295 | 300/315 |
 | GOK | 65/81 | **74/81** |
-| Nivel freático | 30/35 | **33/35** |
-| Coordenadas | 17/25 | **25/25** |
-| Sondeos / límites / agua falsos | 0 / 3 / 0 | **0 / 0 / 0** |
+| Grundwasser | 30/35 | **33/35** |
+| Coordinates | 17/25 | **25/25** |
+| False Bohrungen / boundaries / water | 0 / 3 / 0 | **0 / 0 / 0** |
 
-Con los 17 casos de estrés actuales (§8.5), v4 queda en 91/96 sondeos y 554/562 límites (551
-exactos); los 8 que faltan son los de s14, que **a propósito** no se emiten porque escala y etiquetas
-se contradicen. Sigue sin ningún dato falso.
+With the current 17 stress cases (§8.5), v4 is at 91/96 Bohrungen and 554/562 boundaries (551 exact);
+the 8 missing are those of s14, which are **deliberately** not emitted because scale and labels
+contradict each other. Still not a single false value.
 
-Lo que falta: 4 sondeos de archivo de Berlín (escaneos de baja calidad) y el francés; Bodenart con
-líneas de referencia oblicuas (Marl); "trocken" sólo en el texto del informe (Triefenstein).
+What is missing: 4 archive Bohrungen from Berlin (low-quality scans) and the French one; Bodenart
+with oblique leader lines (Marl); "trocken" only in the text of the report (Triefenstein).
 
-### 8.4 Perturbaciones (misma verdad, 13 PDFs reales)
+### 8.4 Perturbations (same ground truth, 13 real PDFs)
 
-| Variante | Sondeos | Límites | Exactos | Falsos (sondeos / límites / agua) | Coordenadas |
+| Variant | Bohrungen | Boundaries | Exact | False (Bohrungen / boundaries / water) | Coordinates |
 |---|---|---|---|---|---|
 | Original | 56/61 | 369/369 | 366/369 | 0 / 0 / 0 | 7/7 |
-| Girado 90° | 56/61 | 369/369 | 366/369 | 0 / 0 / 0 | 7/7 |
-| Reducido al 70 % | 54/61 | 300/369 | 293/369 | 1 / 2 / 0 | 6/7 |
-| Raster 150 dpi sin texto | 46/61 | 203/369 | 196/369 | **0 / 0 / 0** | 4/7 |
+| Rotated 90° | 56/61 | 369/369 | 366/369 | 0 / 0 / 0 | 7/7 |
+| Reduced to 70 % | 54/61 | 300/369 | 293/369 | 1 / 2 / 0 | 6/7 |
+| Raster 150 dpi without text | 46/61 | 203/369 | 196/369 | **0 / 0 / 0** | 4/7 |
 
-- **Giro:** robusto. La primera versión destapó un fallo real (el lector del SV ignoraba la rotación)
-  y otro de la propia herramienta (`show_pdf_page` ignora `/Rotate`, X5).
-- **Escala:** era la mayor debilidad (57 límites falsos). El texto `1:75` del cajetín ya no vale si
-  el PDF está reducido: ahora, si contradice las etiquetas, el sondeo sale sin capas y con aviso (E5).
-  Talheim reducido sigue sin capas: sus etiquetas están desplazadas con líneas de referencia.
-- **Raster:** conservador, sin ningún dato falso. El Schichtenverzeichnis ahora también se lee por
-  OCR (S8): Triefenstein 0/5 → 5/5 y Wesel 0/24 → 24/24 en la versión rasterizada. Sigue perdiendo
-  texto pequeño (Marl a 150 dpi), el símbolo ▽ en imagen (W4, intento descartado) y columnas de sólo
-  relleno de color (E7).
+- **Rotation:** robust. The first version uncovered a real failure (the SV reader ignored the
+  rotation) and one in the tool itself (`show_pdf_page` ignores `/Rotate`, X5).
+- **Scale:** it was the biggest weakness (57 false boundaries). The text `1:75` in the title block no
+  longer counts if the PDF is reduced: now, if it contradicts the labels, the Bohrung comes out
+  without Schichten and with a warning (E5). Talheim reduced still has no Schichten: its labels are
+  offset with leader lines.
+- **Raster:** conservative, without a single false value. The Schichtenverzeichnis is now also read
+  by OCR (S8): Triefenstein 0/5 → 5/5 and Wesel 0/24 → 24/24 in the rasterised version. It still
+  loses small text (Marl at 150 dpi), the ▽ symbol in the image (W4, attempt discarded) and columns
+  made only of colour fills (E7).
 
-### 8.5 Ablación: qué regla protege qué caso
+### 8.5 Ablation: which rule protects which case
 
-Cada una de las 28 reglas de `RULES` se apagó por separado sobre el conjunto completo
-([tabla](../spikes/korpus/ablation_v4.md)). **22 reglas están protegidas por al menos un caso**:
-apagarlas empeora algo medible. Las de más efecto:
+Each of the 28 rules in `RULES` was switched off separately on the full set
+([table](../spikes/korpus/ablation_v4.md)). **22 rules are protected by at least one case**: switching
+them off makes something measurable worse. The ones with the most effect:
 
-| Regla apagada | Qué se rompe |
+| Rule switched off | What breaks |
 |---|---|
-| `rotation` (L2) | Talheim 10/10 → 0/10, Wesel 24/24 → 0, caso girado |
-| `generic_heads` (T1) | Berlín 7/11 → 1/11, los dos suizos, caso de código de terceros |
-| `ocr` (L18) | Berlín 7/11 → 0/11, caso raster |
-| `label_snap` (T2) | límites exactos: Berlín 55 → 37, Talheim 65 → 45, Rednitzhembach 13 → 6 |
+| `rotation` (L2) | Talheim 10/10 → 0/10, Wesel 24/24 → 0, rotated case |
+| `generic_heads` (T1) | Berlin 7/11 → 1/11, both Swiss ones, third-party code case |
+| `ocr` (L18) | Berlin 7/11 → 0/11, raster case |
+| `label_snap` (T2) | exact boundaries: Berlin 55 → 37, Talheim 65 → 45, Rednitzhembach 13 → 6 |
 | `abbreviations` (L16) | Bodenart Marl 18 → 0, Triefenstein 18 → 1 |
-| `gw_symbol_filter` (L10) | 54 niveles de agua falsos en Hausham |
-| `axis_filter` (L14) | 7 límites falsos en Marl |
-| `sv_source` (S1) | Wesel 1/1 → 0/1, caso SHX |
+| `gw_symbol_filter` (L10) | 54 false water levels in Hausham |
+| `axis_filter` (L14) | 7 false boundaries in Marl |
+| `sv_source` (S1) | Wesel 1/1 → 0/1, SHX case |
 
-Sin caso que las proteja quedaban seis. Para cuatro se escribieron casos nuevos que ahora fallan
-si se apaga la regla: s14 (`scale_contradiction`), s15 (`top_convention`), s16
-(`single_sheet_anchor`) y s17 (`dashed_exclusion`). El caso s15 destapó además un fallo real: la
-regla de ejes (L14) borraba las etiquetas de capas de igual espesor; se afinó. Quedan sin caso
-`table_filter` (sus fallos los cubren otras reglas) y `raster_gw_symbol` (apagada).
+Six were left without a case protecting them. For four, new cases were written that now fail if the
+rule is switched off: s14 (`scale_contradiction`), s15 (`top_convention`), s16
+(`single_sheet_anchor`) and s17 (`dashed_exclusion`). Case s15 also uncovered a real failure: the axis
+rule (L14) deleted the labels of Schichten of equal thickness; it was refined. Still without a case:
+`table_filter` (its failures are covered by other rules) and `raster_gw_symbol` (switched off).
 
-### 8.6 La regresión como red de seguridad
+### 8.6 Regression as a safety net
 
-Durante la noche la batería atrapó **cinco** errores propios antes de subirlos: la regla de
-Schraffur que borraba capas finas reales (Wachenroth, Rednitzhembach), `Bohrung` sin sufijo que dejó
-de reconocerse (Berlín 7 → 2), el modo "etiqueta primero" que coló una cota como profundidad (Marl),
-los triángulos raster que inventaron 146 niveles de agua, y la regla de escala que borraba un
-sondeo de Berlín. Ninguno llegó al resultado final (P5).
+During the night the battery caught **five** of our own errors before they were pushed: the
+Schraffur rule that deleted real thin Schichten (Wachenroth, Rednitzhembach), `Bohrung` without a
+suffix no longer being recognised (Berlin 7 → 2), the "label first" mode that slipped an elevation
+in as a depth (Marl), the raster triangles that invented 146 water levels, and the scale rule that
+deleted a Bohrung in Berlin. None reached the final result (P5).
 
-### 8.7 Cadena completa con datos reales (el objetivo)
+### 8.7 Full chain with real data (the goal)
 
-PDF → `prototyp_v4` → JSON canónico (procedencia y confianza por capa) →
-[PostGIS con el esquema Supabase](../spikes/supabase/README.md) (56 sondeos, 383 capas de 10
-Gutachten; Berlín en EPSG:25833 con distancias correctas; LV03 suizo transformado a LV95) →
-[IFC 4.3](../spikes/ifc_thatopen/README.md) (0 errores de esquema) → That Open (69 estratos con
-geometría, 7 sondeos de Berlín). Las capas con confianza < 0,6 (9 de 383) quedan marcadas para revisión.
+PDF → `prototyp_v4` → canonical JSON (provenance and confidence per Schicht) →
+[PostGIS with the Supabase schema](../spikes/supabase/README.md) (56 Bohrungen, 383 Schichten from 10
+Gutachten; Berlin in EPSG:25833 with correct distances; Swiss LV03 transformed to LV95) →
+[IFC 4.3](../spikes/ifc_thatopen/README.md) (0 schema errors) → That Open (69 strata with geometry,
+7 Bohrungen from Berlin). The Schichten with confidence < 0.6 (9 of 383) stay marked for review.
 
-## 9. Próximos pasos
+## 9. Next steps
 
-1. **Quinta ronda ciega con Gutachten alemanes nuevos** (los 4 bloqueados de la ronda 3:
-   Wolfsburg/GGU, NLWKN, Böblingen, Königslutter), con v4 congelado y subido antes de mirar. Es la
-   única cifra que dirá si v4 generaliza.
-2. Raster: Schichtenverzeichnis por OCR, bordes de rellenos de color (E7), símbolo de agua por
-   plantilla de la leyenda (W4).
-3. DPH desde **tablas** (Triefenstein: N10 cada 10 cm como texto) y CPT (Berlín) en el modelo de
-   datos ([05](05_sondierungen.md)).
-4. Muestras de leyenda desde segmentos → Schraffur y símbolos de agua con datos reales.
-5. Llevar las lecciones L1–L18 al plan de implementación ([10](10_plan_implementacion.md)).
+1. **Fifth blind round with new German Gutachten** (the 4 blocked in round 3: Wolfsburg/GGU, NLWKN,
+   Böblingen, Königslutter), with v4 frozen and pushed before looking. It is the only figure that
+   will tell whether v4 generalises.
+2. Raster: Schichtenverzeichnis by OCR, edges of colour fills (E7), water symbol by template from
+   the legend (W4).
+3. DPH from **tables** (Triefenstein: N10 every 10 cm as text) and CPT (Berlin) in the data model
+   ([05](05_sondierungen.md)).
+4. Legend samples from segments → Schraffur and water symbols with real data.
+5. Bring lessons L1–L18 into the implementation plan ([10](10_implementation_plan.md)).
 
-Up: [Índice](README.md)
+Up: [Index](README.md)
 
-Related: [12 Corpus](12_corpus_publico.md) · [09 Validación](09_validacion_benchmark.md) · [02 Bohrprofil](02_bohrprofil_generalizacion.md) · [08 swissgeol](08_swissgeol_reutilizacion.md) · [11 Decisiones](11_decisiones.md)
+Related: [12 Corpus](12_public_corpus.md) · [09 Validation](09_validation_benchmark.md) · [02 Bohrprofil](02_bohrprofil_generalization.md) · [08 swissgeol](08_swissgeol_reuse.md) · [11 Decisions](11_decisions.md)
