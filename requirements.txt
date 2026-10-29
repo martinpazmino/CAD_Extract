@@ -1,4 +1,4 @@
-# Geo_Agent / GeoIM lokal: Baugrundmodell-App (FastAPI + Schritt-App), Excel v1 (Streamlit), Extraktion v4,
+# Geo_Agent / GroundTwin lokal: Baugrundmodell-App (FastAPI + Schritt-App), Excel v1 (Streamlit), Extraktion v4,
 # Modellierer, Pruefungen. Nur die App im Netz: requirements-server.txt
 -r requirements-server.txt
 streamlit>=1.52

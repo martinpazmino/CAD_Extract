@@ -1,9 +1,9 @@
-# GeoIM – Baugrundmodell-App als Container: ein Prozess (FastAPI) liefert API und Oberflaeche (apps/web/dist, im
+# GroundTwin – Baugrundmodell-App als Container: ein Prozess (FastAPI) liefert API und Oberflaeche (apps/web/dist, im
 # Repo gebaut, kein Node noetig). Laeuft auf Render, Railway, Fly.io, Google Cloud Run, Hugging Face Spaces oder
 # einem eigenen Server (docs/22_despliegue.md).
 #
-#   docker build -t geoim .                          (ohne OCR: --build-arg OCR=0, kleiner und ohne Systempakete)
-#   docker run -p 8500:8500 -e GEO_AGENT_PASSWORT=… -v geoim-daten:/data geoim
+#   docker build -t groundtwin .                          (ohne OCR: --build-arg OCR=0, kleiner und ohne Systempakete)
+#   docker run -p 8500:8500 -e GEO_AGENT_PASSWORT=… -v groundtwin-daten:/data groundtwin
 #
 # Umgebung: PORT (Plattform), GEO_AGENT_PASSWORT (Anmeldung; ohne = offen!), GEO_AGENT_BENUTZER (optional),
 # GEO_AGENT_MAX_MB (Upload-Grenze, 200), GEO_AGENT_ARBEIT (Datenordner, /data - als Volume einhaengen, sonst sind
@@ -33,7 +33,7 @@ RUN pip install -r requirements-server.txt -c constraints.txt \
  && if [ "$OCR" = "1" ]; then pip install -r requirements-ocr.txt -c constraints.txt; fi
 
 COPY . .
-RUN useradd --create-home --uid 1000 geoim && mkdir -p /data && chown geoim:geoim /data \
+RUN useradd --create-home --uid 1000 groundtwin && mkdir -p /data && chown groundtwin:groundtwin /data \
  && chmod +x docker/entrypoint.sh
 
 EXPOSE 8500

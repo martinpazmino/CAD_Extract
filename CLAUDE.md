@@ -1,10 +1,10 @@
-# GeoIM (Geo_Agent) — memoria del proyecto
+# GroundTwin (Geo_Agent) — memoria del proyecto
 
 ## Objetivo
 Desde un Bodengutachten en PDF construir el **Baugrundmodell**: sondeos validados y trazables →
 Supabase → geometrías IFC 4.3 en That Open Engine. Arquitectura: `docs/ARQUITECTURA_BAUGRUNDMODELL.md`.
 La app actual (`app.py`, `geo_agent/`, Streamlit) es v1: posiciones fijas, 0/58 sondeos en PDFs ajenos.
-Repositorio `github.com/martinpazmino/GeoIM` (antes CAD_Extract, redirige), licencia **AGPL-3.0-or-later** (D79).
+Repositorio `github.com/martinpazmino/GroundTwin` (antes CAD_Extract y GeoIM; GitHub redirige los nombres viejos), licencia **AGPL-3.0-or-later** (D79).
 
 ## Leer antes de tocar la extracción
 - `docs/16_lecciones_aprendidas.md`: reglas explícitas (proceso P1–P12, entrada E, geometría G, etiquetas L/T, texto B, agua W, segundas fuentes S, swissgeol R, modelo M, entorno X). Respetarlas.

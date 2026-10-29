@@ -1,4 +1,4 @@
-# GeoIM im Netz (python -m server, Dockerfile): nur die Baugrundmodell-App, ohne Streamlit / Excel v1.
+# GroundTwin im Netz (python -m server, Dockerfile): nur die Baugrundmodell-App, ohne Streamlit / Excel v1.
 # Getestete Versionen fuer das Container-Image: constraints.txt
 fastapi>=0.110
 uvicorn>=0.29

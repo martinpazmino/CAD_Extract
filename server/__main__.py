@@ -17,7 +17,7 @@ if str(REPO) not in sys.path:
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="GeoIM – Baugrundmodell aus dem Bodengutachten")
+    ap = argparse.ArgumentParser(description="GroundTwin – Baugrundmodell aus dem Bodengutachten")
     ap.add_argument("--port", type=int, default=int(os.environ.get("PORT") or 8500))
     ap.add_argument("--host", default=os.environ.get("GEO_AGENT_HOST") or "127.0.0.1")
     ap.add_argument("--kein-browser", action="store_true", help="Browser nicht oeffnen")
@@ -30,7 +30,7 @@ def main() -> None:
 
     app = app_erstellen(args.arbeit)
     url = f"http://{'localhost' if args.host in ('127.0.0.1', '0.0.0.0') else args.host}:{args.port}"
-    print(f"GeoIM laeuft auf {url}  (Beenden: Strg+C)")
+    print(f"GroundTwin laeuft auf {url}  (Beenden: Strg+C)")
     if args.host not in ("127.0.0.1", "localhost") and not os.environ.get("GEO_AGENT_PASSWORT"):
         print("Achtung: im Netz erreichbar, aber ohne GEO_AGENT_PASSWORT - jeder kann Gutachten sehen und aendern.")
     if not args.kein_browser:

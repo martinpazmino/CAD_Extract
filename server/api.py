@@ -26,7 +26,7 @@ from .arbeitsplatz import BEISPIELE, Arbeitsplatz
 DIST = Path(__file__).resolve().parents[1] / "apps" / "web" / "dist"
 VERSION = "3.0"
 LIZENZ = "AGPL-3.0-or-later"
-QUELLCODE = "https://github.com/martinpazmino/GeoIM"          # AGPL § 13: Quelltext fuer Nutzer im Netz
+QUELLCODE = "https://github.com/martinpazmino/GroundTwin"          # AGPL § 13: Quelltext fuer Nutzer im Netz
 
 
 def anmeldung_ok(kopf: str | None, passwort: str, benutzer: str = "") -> bool:
@@ -63,7 +63,7 @@ def app_erstellen(arbeit: Path | None = None, passwort: str | None = None, max_m
     """passwort / max_mb: sonst aus GEO_AGENT_PASSWORT (leer = ohne Anmeldung, nur fuer localhost gedacht) und
     GEO_AGENT_MAX_MB (Standard 200 MB je Anfrage)."""
     ap = Arbeitsplatz(arbeit)
-    app = FastAPI(title="GeoIM – Baugrundmodell", version=VERSION)
+    app = FastAPI(title="GroundTwin – Baugrundmodell", version=VERSION)
     app.state.arbeitsplatz = ap
     passwort = os.environ.get("GEO_AGENT_PASSWORT", "") if passwort is None else passwort
     benutzer = os.environ.get("GEO_AGENT_BENUTZER", "")
@@ -76,7 +76,7 @@ def app_erstellen(arbeit: Path | None = None, passwort: str | None = None, max_m
         if request.url.path != "/gesund":
             if passwort and not anmeldung_ok(request.headers.get("authorization"), passwort, benutzer):
                 return Response("Anmeldung erforderlich", status_code=401,
-                                headers={"WWW-Authenticate": 'Basic realm="GeoIM", charset="UTF-8"'})
+                                headers={"WWW-Authenticate": 'Basic realm="GroundTwin", charset="UTF-8"'})
             laenge = request.headers.get("content-length", "")
             if laenge.isdigit() and int(laenge) > max_mb * 1024 * 1024:
                 return JSONResponse({"detail": f"Anfrage zu groß (höchstens {max_mb:g} MB)"}, status_code=413)

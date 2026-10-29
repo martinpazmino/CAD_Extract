@@ -3,7 +3,7 @@
 # Anmeldung mit GEO_AGENT_PASSWORT (wird beim Anlegen abgefragt). Jeder Push auf main baut neu.
 services:
   - type: web
-    name: geoim
+    name: groundtwin
     runtime: docker
     dockerfilePath: ./Dockerfile
     dockerContext: .
@@ -17,6 +17,6 @@ services:
       - key: GEO_AGENT_MAX_MB
         value: "200"
     disk:
-      name: geoim-daten
+      name: groundtwin-daten
       mountPath: /data
       sizeGB: 5

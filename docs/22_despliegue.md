@@ -33,14 +33,14 @@ la página estática (§2).
 
 Vercel aloja sitios estáticos y **funciones** (serverless). Sus límites, consultados el 2026-10-29:
 
-| Límite de Vercel | Valor | Consecuencia para GeoIM |
+| Límite de Vercel | Valor | Consecuencia para GroundTwin |
 |---|---|---|
 | Cuerpo de la petición o la respuesta de una función | **4,5 MB**, en todos los planes. Fuentes: [límites de las funciones](https://vercel.com/docs/functions/limitations); [foro: 413 Payload Too Large](https://community.vercel.com/t/413-payload-too-large/218) | Un Gutachten no se puede subir. Habría que subirlo directamente a Vercel Blob ([client upload](https://vercel.com/docs/vercel-blob)) y reescribir la subida |
 | Disco | Ninguno persistente: lo escrito desaparece con la instancia | Los proyectos se perderían. Haría falta Blob + base de datos |
 | Duración | 300 s por defecto; hasta 800 s en Pro/Enterprise con Fluid compute ([duración](https://vercel.com/docs/functions/configuring-functions/duration)) | El hilo de extracción no sobrevive a la respuesta. Haría falta una cola de trabajos |
 | Tamaño del paquete Python | 500 MB sin comprimir ([runtime Python](https://vercel.com/docs/functions/runtimes/python)); hasta 5 GB en beta ([changelog](https://vercel.com/changelog/bun-runtime-now-supports-large-functions-and-extended-max-duration)) | Las dependencias ocupan unos 690 MB (§6) |
 
-Para llevar GeoIM a Vercel habría que rehacer la subida, el almacenamiento, los trabajos y el empaquetado,
+Para llevar GroundTwin a Vercel habría que rehacer la subida, el almacenamiento, los trabajos y el empaquetado,
 y la app seguiría siendo la misma. No compensa.
 
 Lo único que funciona allí sin cambios es la **página estática** `apps/web/dist`. Sin la API sólo sirve
@@ -51,15 +51,15 @@ el visor (`viewer.html?ifc=<url de un IFC>`), por ejemplo como demo pública de 
 1. **Llevar los archivos a `main`.** `render.yaml` y `Dockerfile` tienen que estar en `main` (merge del
    pull request): el blueprint despliega `main`.
 2. **Crear el blueprint.** En [render.com](https://render.com), entrar con GitHub → *New → Blueprint* →
-   repositorio `martinpazmino/GeoIM`. Si Render no lo ve, darle acceso en GitHub (*Configure GitHub
+   repositorio `martinpazmino/GroundTwin`. Si Render no lo ve, darle acceso en GitHub (*Configure GitHub
    App*). El botón *Deploy to Render* del README hace lo mismo.
 3. **Revisar lo que crea.** Render lee `render.yaml`:
-   - servicio web `geoim` (Docker), región `frankfurt`, plan `starter`;
-   - disco `geoim-daten` de 5 GB en `/data`;
+   - servicio web `groundtwin` (Docker), región `frankfurt`, plan `starter`;
+   - disco `groundtwin-daten` de 5 GB en `/data`;
    - comprobación de salud en `/gesund`.
 4. **Poner la contraseña.** Render pide `GEO_AGENT_PASSWORT`, que no se guarda en el repositorio.
    Elegir una contraseña larga y compartirla sólo con el equipo.
-5. **Aplicar y esperar.** *Apply* lanza el primer build. La URL queda como `https://geoim-….onrender.com`
+5. **Aplicar y esperar.** *Apply* lanza el primer build. La URL queda como `https://groundtwin-….onrender.com`
    (se puede añadir un dominio propio).
 6. **Entrar.** Al abrir la URL, el navegador pide usuario y contraseña. El usuario puede ser
    cualquiera, salvo que se fije `GEO_AGENT_BENUTZER`.
@@ -83,7 +83,7 @@ Si la plataforma dice que falta memoria (el servicio se reinicia durante una ext
 |---|---|---|
 | **Railway** | *New Project → Deploy from GitHub repo*. Detecta el `Dockerfile`. Añadir un *Volume* en `/data` y la variable `GEO_AGENT_PASSWORT` | Pone `PORT` sola |
 | **Fly.io** | `fly launch` crea `fly.toml`; región `fra`. `fly volumes create` y montarlo en `/data`. `fly secrets set GEO_AGENT_PASSWORT=…` | El despliegue desde GitHub va por una GitHub Action |
-| **Servidor propio** (VPS, servidor de la empresa) | `docker run -d -p 8500:8500 -e GEO_AGENT_PASSWORT=… -v geoim-daten:/data geoim`, con Caddy o nginx delante para HTTPS | Control total; los datos se quedan en casa (RGPD) |
+| **Servidor propio** (VPS, servidor de la empresa) | `docker run -d -p 8500:8500 -e GEO_AGENT_PASSWORT=… -v groundtwin-daten:/data groundtwin`, con Caddy o nginx delante para HTTPS | Control total; los datos se quedan en casa (RGPD) |
 | Google Cloud Run | Build desde GitHub | Sin disco persistente por defecto y CPU sólo durante las peticiones **[a verificar]**: no encaja con el hilo de extracción |
 | Hugging Face Spaces (Docker) | Space aparte con `app_port: 8500` | Repositorio propio en HF; no apto para Gutachten confidenciales en un Space público |
 
@@ -97,7 +97,7 @@ Si la plataforma dice que falta memoria (el servicio se reinicia durante una ext
 | `GEO_AGENT_BENUTZER` | — (cualquier usuario) | Usuario obligatorio |
 | `GEO_AGENT_MAX_MB` | 200 | Tamaño máximo de una petición. Por encima responde 413 |
 | `GEO_AGENT_ARBEIT` | Carpeta temporal `geo_agent` (en el contenedor `/data`) | Proyectos. En línea **siempre** en un disco persistente |
-| `GEO_AGENT_QUELLCODE` | `https://github.com/martinpazmino/GeoIM` | Enlace *Quellcode* (AGPL § 13). Un fork con cambios pone aquí su repositorio |
+| `GEO_AGENT_QUELLCODE` | `https://github.com/martinpazmino/GroundTwin` | Enlace *Quellcode* (AGPL § 13). Un fork con cambios pone aquí su repositorio |
 
 ## 6. Memoria y tamaño (medidos)
 
@@ -148,7 +148,7 @@ Para actualizar las versiones:
 python3.13 -m venv /tmp/neu && /tmp/neu/bin/pip install -r requirements-server.txt -r requirements-ocr.txt
 /tmp/neu/bin/pip freeze          # → constraints.txt (la parte de OCR en su sección)
 pytest tests && (cd services/modeler && pytest tests)
-docker build -t geoim .          # y check_app.mjs contra el contenedor (§10)
+docker build -t groundtwin .          # y check_app.mjs contra el contenedor (§10)
 ```
 
 ## 9. Pruebas automáticas (CI)
@@ -180,9 +180,9 @@ Probado en la sesión, con la imagen sin OCR:
 Construir en local:
 
 ```bash
-docker build -t geoim .                          # con OCR
-docker build -t geoim --build-arg OCR=0 .        # sin OCR (más pequeña, sin paquetes del sistema)
-docker run --rm -p 8500:8500 -e GEO_AGENT_PASSWORT=prueba -v "$(mktemp -d)":/data geoim
+docker build -t groundtwin .                          # con OCR
+docker build -t groundtwin --build-arg OCR=0 .        # sin OCR (más pequeña, sin paquetes del sistema)
+docker run --rm -p 8500:8500 -e GEO_AGENT_PASSWORT=prueba -v "$(mktemp -d)":/data groundtwin
 python scripts/testplan.py planes
 GEO_AGENT_PASSWORT=prueba node scripts/check_app.mjs http://localhost:8500 planes capturas
 ```

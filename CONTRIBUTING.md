@@ -1,6 +1,6 @@
-# Colaborar en GeoIM
+# Colaborar en GroundTwin
 
-Gracias por ayudar. GeoIM convierte Bodengutachten en PDF en un Baugrundmodell IFC 4.3. Un sondeo falso
+Gracias por ayudar. GroundTwin convierte Bodengutachten en PDF en un Baugrundmodell IFC 4.3. Un sondeo falso
 es peor que uno perdido, y por eso el proyecto tiene reglas estrictas sobre cómo se mide y se prueba.
 Las reglas completas están en [docs/16 Lecciones aprendidas](docs/16_lecciones_aprendidas.md).
 
@@ -60,7 +60,7 @@ GitHub ejecuta los puntos 1, 2 (compilación) y la imagen del contenedor en cada
 
 ## Licencia de las contribuciones
 
-GeoIM se publica bajo la [AGPL-3.0-or-later](LICENSE). Al enviar una contribución, aceptas que se
+GroundTwin se publica bajo la [AGPL-3.0-or-later](LICENSE). Al enviar una contribución, aceptas que se
 publique bajo la misma licencia. Código o datos de terceros sólo con una licencia compatible, anotada
 en [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md). En concreto, nada de copiar código de
 swissgeol: sólo se reimplementan sus ideas ([docs/14](docs/14_licencias_terceros.md)).

@@ -1,6 +1,6 @@
 # Licencias de terceros
 
-GeoIM (Geo_Agent) se publica bajo la **GNU Affero General Public License v3.0 o posterior**
+GroundTwin (Geo_Agent) se publica bajo la **GNU Affero General Public License v3.0 o posterior**
 ([`LICENSE`](LICENSE)). Usa los componentes siguientes, cada uno con su propia licencia. En el repositorio
 sólo va código de terceros dentro de la interfaz compilada (`apps/web/dist`: bibliotecas web y el WASM de
 web-ifc); el resto se instala con `pip` / `npm`.
@@ -24,7 +24,7 @@ web-ifc); el resto se instala con `pip` / `npm`.
 
 ## Por qué AGPL
 
-PyMuPDF sólo se puede usar gratis bajo la AGPL-3.0. Quien ofrezca GeoIM a otros por la red debe
+PyMuPDF sólo se puede usar gratis bajo la AGPL-3.0. Quien ofrezca GroundTwin a otros por la red debe
 ofrecerles el código fuente de la versión que ejecuta (AGPL § 13). La app lo hace con un enlace
 *Quellcode* en la página de inicio y en el menú; apunta a este repositorio (`GEO_AGENT_QUELLCODE` lo
 cambia para un fork). Detalles y alternativas (licencia comercial de PyMuPDF, cambiar a pypdfium2):

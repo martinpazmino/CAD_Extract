@@ -1,11 +1,11 @@
-# GeoIM — del Bodengutachten al Baugrundmodell
+# GroundTwin — del Bodengutachten al Baugrundmodell
 
-[![Prüfungen](https://github.com/martinpazmino/GeoIM/actions/workflows/pruefungen.yml/badge.svg)](https://github.com/martinpazmino/GeoIM/actions/workflows/pruefungen.yml)
+[![Prüfungen](https://github.com/martinpazmino/GroundTwin/actions/workflows/pruefungen.yml/badge.svg)](https://github.com/martinpazmino/GroundTwin/actions/workflows/pruefungen.yml)
 [![Licencia: AGPL-3.0-or-later](https://img.shields.io/badge/licencia-AGPL--3.0--or--later-blue.svg)](LICENSE)
 
 Lee informes geotécnicos alemanes en PDF (Bodengutachten) y construye con ellos un **Baugrundmodell
 IFC 4.3**: sondeos validados y trazables hasta la página del PDF, capas interpretadas según norma y
-sólidos cerrados en el visor **That Open**. Antes se llamaba Geo_Agent / CAD_Extract.
+sólidos cerrados en el visor **That Open**. Antes se llamaba Geo_Agent / CAD_Extract y después GeoIM.
 
 * **Baugrundmodell (app por pasos, pantalla completa):**
   1. **Gutachten**: subir el PDF (vectorial o escaneado con OCR).
@@ -48,8 +48,8 @@ probadas, las mismas del contenedor y de la CI.
 **Con Docker:**
 
 ```bash
-docker build -t geoim .                   # sin OCR: --build-arg OCR=0
-docker run -p 8500:8500 -v geoim-daten:/data geoim
+docker build -t groundtwin .                   # sin OCR: --build-arg OCR=0
+docker run -p 8500:8500 -v groundtwin-daten:/data groundtwin
 ```
 
 No hace falta Node: la página compilada está en `apps/web/dist`.
@@ -75,7 +75,7 @@ repositorio ([`Dockerfile`](Dockerfile)). Para [Render](https://render.com) ya e
 Desde ahí, cada push a `main` vuelve a desplegar. Los datos van a un disco en `/data` y el servidor
 está en Fráncfort.
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/martinpazmino/GeoIM)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/martinpazmino/GroundTwin)
 
 **¿Vercel?** Sólo sirve para páginas estáticas, no para esta app:
 - Sus funciones aceptan como máximo 4,5 MB por petición, y un Gutachten pesa más.
@@ -166,7 +166,7 @@ La prueba de punta a punta se lanza a mano (*Run workflow*).
 
 **[GNU Affero General Public License v3.0 o posterior](LICENSE)** (AGPL-3.0-or-later).
 
-Quien ofrezca GeoIM a otros por la red debe darles el código fuente de la versión que ejecuta. La
+Quien ofrezca GroundTwin a otros por la red debe darles el código fuente de la versión que ejecuta. La
 app lo hace con el enlace *Quellcode*. El motivo de la AGPL es PyMuPDF, que sólo es gratis bajo esa
 licencia ([docs/14](docs/14_licencias_terceros.md)). Componentes de terceros y sus licencias:
 [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).

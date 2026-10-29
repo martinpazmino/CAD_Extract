@@ -36,7 +36,7 @@ function kopf() {
     <header class="kopf">
       <div class="marke" @click=${() => gehe("gutachten")} title="Start">
         <span class="logo">⛰</span>
-        <span><b>GeoIM</b> · Baugrundmodell</span>
+        <span><b>GroundTwin</b> · Baugrundmodell</span>
       </div>
       <nav class="schritte" aria-label="Schritte">
         ${SCHRITTE.map((s) => {

@@ -4,7 +4,7 @@
   "type": "module",
   "description": "Baugrundmodell-Viewer auf That Open Engine: IFC4X3 mit IfcGeomodel und IfcBorehole",
   "license": "AGPL-3.0-or-later",
-  "repository": { "type": "git", "url": "https://github.com/martinpazmino/GeoIM", "directory": "apps/web" },
+  "repository": { "type": "git", "url": "https://github.com/martinpazmino/GroundTwin", "directory": "apps/web" },
   "scripts": {
     "vendor": "node scripts/vendor.mjs",
     "dev": "npm run vendor && vite",
