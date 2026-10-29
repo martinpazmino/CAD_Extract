@@ -209,6 +209,7 @@ class Arbeitsplatz:
             bericht = gecacht[1] if gecacht else None
             epsgs = Counter(b.get("crs_epsg") for d in vorb.docs for b in d["boreholes"] if b.get("crs_epsg"))
             u = dict(p.unterlage) if p.unterlage else None
+            kal_epsg = ((u or {}).get("kalibrierung") or {}).get("epsg")      # Plan kalibriert, noch keine Bohrung gesetzt
             if u:
                 u["url"] = f"/dateien/unterlagen/{Path(u['datei']).name}"
                 u.pop("datei", None)
@@ -232,8 +233,10 @@ class Arbeitsplatz:
                 "modell": {"schluessel": schluessel, "aktuell": gecacht is not None,
                            "ifc": f"/dateien/modelle/{self._ifc_name(schluessel, docs, p)}"
                            if gecacht and (self.web / "modelle" / self._ifc_name(schluessel, docs, p)).exists() else None},
+                "punkte": p.punkte,
                 "viewer": {"bohrungen": pj.viewer_bohrungen(docs, p, vorb, bericht), "ursprung": list(ursprung),
-                           "epsg": epsgs.most_common(1)[0][0] if epsgs else None, "modus": p.lage_modus},
+                           "epsg": epsgs.most_common(1)[0][0] if epsgs else kal_epsg, "modus": p.lage_modus,
+                           "punkte": p.punkte},
             }
 
     def bohrung(self, sig: str, bid: str) -> dict:

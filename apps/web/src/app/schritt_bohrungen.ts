@@ -5,6 +5,7 @@ import { html, nothing } from "lit";
 import { live } from "lit/directives/live.js";
 import { api, type Bohrung, type Schicht } from "./api";
 import { hilfe } from "./hilfe";
+import { epsgAuswahl, lagePruefen } from "./epsg";
 import { saeule } from "./profil";
 import { S, aendern, bohrungWaehlen, naechsteOffene, neu, sichtbareBohrungen, versuchen } from "./store";
 
@@ -144,6 +145,12 @@ function feld(titel: string, inhalt: unknown, h?: Parameters<typeof hilfe>[0]) {
   return html`<label class="feld"><span>${titel}${h ? hilfe(h) : nothing}</span>${inhalt}</label>`;
 }
 
+/** Passen Rechts-/Hochwert zum Koordinatensystem? Nur der Widerspruch wird gezeigt (Hinweis, keine Sperre). */
+function lagePruefung(b: Bohrung) {
+  const p = lagePruefen(b.epsg, b.x, b.y);
+  return p && !p.ok ? html`<p class="hinweise warn">⚠ ${p.text}</p>` : nothing;
+}
+
 function kopf(b: Bohrung) {
   const liste_ = sichtbareBohrungen();
   const i = liste_.findIndex((x) => x.id === b.id);
@@ -165,11 +172,12 @@ function kopf(b: Bohrung) {
         ${feld("Endteufe [m]", html`<output>${zahl(b.endteufe)}</output>`)}
         ${feld("Rechtswert", html`<input type="number" step="0.01" .value=${live(b.x === null ? "" : String(b.x))} @change=${op("x")}>`, "koordinaten")}
         ${feld("Hochwert", html`<input type="number" step="0.01" .value=${live(b.y === null ? "" : String(b.y))} @change=${op("y")}>`)}
-        ${feld("EPSG", html`<input type="number" step="1" class="kurz" .value=${live(b.epsg === null ? "" : String(b.epsg))} @change=${op("epsg")}>`, "epsg")}
+        ${feld("Koordinatensystem (EPSG)", epsgAuswahl(b.epsg, (c) => aendern([{ op: "bohrung", id: b.id, feld: "epsg", wert: c }])), "epsg")}
         ${feld("Ø Säule [m]", html`<input type="number" step="0.1" min="0" class="kurz" placeholder=${`auto ${zahl(S.z!.durchmesser ?? S.z!.durchmesser_auto, 1)}`}
             .value=${live(b.durchmesser === null ? "" : String(b.durchmesser))} @change=${op("durchmesser")}>`, "durchmesser")}
         ${feld("Grundwasser", html`<output>${b.grundwasser || "–"}</output>`)}
       </div>
+      ${lagePruefung(b)}
       ${b.hinweise.length ? html`<p class="hinweise">ℹ ${b.hinweise.join(" · ")}</p>` : nothing}
     </div>`;
 }

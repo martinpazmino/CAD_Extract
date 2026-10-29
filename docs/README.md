@@ -50,6 +50,7 @@ alimente un **Baugrundmodell** (Supabase → IFC 4.3 → That Open).
 - [19 App v2: del PDF al Baugrundmodell](19_app_v2.md): Streamlit con subida de PDF, revisión, modelo automático y visor That Open integrado; arranque en Windows, supuestos marcados.
 - [20 Visor con controles de TwinBimM, Lage sobre plano y Prüfstand](20_lage_pruefung_viewer.md): controles del TwinBimM, cámara para modelos > 5 km, sondeos colocados sobre el PDF del Lageplan/Längsschnitt, distancias propias en la fila, tablas antes del modelo, nachführen automático y einchecken del estado de revisión.
 - [21 App por pasos, normas y nueva calibración](21_app_schritte_normen.md): la app a pantalla completa (Gutachten → Bohrungen → Lage → Einheiten → Modell, FastAPI + visor integrado), avisos por capas sin clasificar, mini base de datos DIN 4023 / EN ISO 14688-1 / DIN 18196 con colores, calibración por distancia + punto de referencia + candado, diámetro de las columnas, descripción y norma en cada capa del IFC.
+- [22 En línea: despliegue desde GitHub](22_despliegue.md): la app como contenedor (`Dockerfile`, blueprint de Render con disco y contraseña), por qué no Vercel (4,5 MB por petición, sin disco ni procesos en segundo plano), otras plataformas, variables de entorno, memoria medida, seguridad, licencia AGPL y CI.
 - [Glosario alemán–español](glosario.md): términos geotécnicos y de swissgeol.
 
 ## Código de apoyo
@@ -81,6 +82,10 @@ Arquitectura ─► 11 Decisiones
                                                      18 Modelador de capas + visor That Open
                                                                       ▼
                                                             19 App v2 (Streamlit)
+                                                                      ▼
+                                                  20 Lage y Prüfstand ─► 21 App por pasos
+                                                                      ▼
+                                                          22 En línea (contenedor)
 ```
 
 Up: [README del repositorio](../README.md)

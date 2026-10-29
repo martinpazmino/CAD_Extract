@@ -3,7 +3,8 @@
 //      Schicht klassifizieren, Bohrung entfernen und wiederherstellen, alle Bohrungen geprueft
 //   B  Berlin: Vorschlag nach Norm fuer eine unklassifizierte Schicht uebernehmen
 //   C  Lageplan (scripts/testplan.py): Strecke messen -> Massstab, Bezugspunkt, Drehung, sperren, Bohrungen ohne Lage
-//      aus der Liste auf ihren Kreis ziehen
+//      aus der Liste auf ihren Kreis ziehen; C2 dasselbe ohne eine einzige Koordinate und mit echten Hoehen (Vorschau im
+//      Bild, EPSG-Liste, offene Punktwahl, Nullpunkt, kein Flackern); C3 Punkte setzen, zuordnen, loeschen, Direktaufruf
 //   D  Laengsschnitt: 1:500/1:100, Bezugspunkt (Station/Hoehe), sperren, Bohrungen auf ihre Saeule ziehen (GOK aus dem
 //      PDF bleibt), Einheit umbenennen, Modell im Viewer, einchecken, IFC mit Bodenansprache
 //   E  PDF-Beispiel: Extraktion mit Fortschritt, Quelle der Schicht im PDF
@@ -11,6 +12,7 @@
 //   python -m server --port 8511 --kein-browser --arbeit <leerer-ordner>     (in einem zweiten Terminal)
 //   python scripts/testplan.py <plaene>
 //   node scripts/check_app.mjs http://localhost:8511 <plaene> <ausgabe>
+// Server mit Anmeldung (Container, docs/22): GEO_AGENT_PASSWORT (und GEO_AGENT_BENUTZER) wie beim Server setzen.
 import { createRequire } from "node:module";
 import { mkdirSync, readFileSync } from "node:fs";
 
@@ -22,7 +24,10 @@ const wPlan = JSON.parse(readFileSync(`${plaene}/wahrheit_plan.json`, "utf8")).b
 const wSchnitt = JSON.parse(readFileSync(`${plaene}/wahrheit_schnitt.json`, "utf8")).bohrungen;
 
 const browser = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
-const page = await browser.newPage({ viewport: { width: 1600, height: 950 } });
+const anmeldung = process.env.GEO_AGENT_PASSWORT
+  ? { httpCredentials: { username: process.env.GEO_AGENT_BENUTZER || "pruefung", password: process.env.GEO_AGENT_PASSWORT } }
+  : {};
+const page = await browser.newPage({ viewport: { width: 1600, height: 950 }, ...anmeldung });
 const fehler = [];
 const pruefungen = [];
 page.on("pageerror", (e) => fehler.push(String(e.stack || e)));
@@ -197,6 +202,150 @@ try {
   pruefe("Bohrungen ohne Lage auf den Plan gezogen (Fehler ≤ 0,5 m)", Math.max(...fehlerLage) <= 0.5,
     fehlerLage.map((f) => f.toFixed(2)).join(" / ") + " m");
   await page.screenshot({ path: `${aus}/C1_plan.png` });
+
+  // ---------------------------------------------------------------- C2: Lageplan, keine Bohrung mit Koordinaten
+  // Fall aus der Praxis (RKS ohne Lage): der Plan springt beim Kalibrieren Millionen Meter - die Vorschau bleibt im
+  // Bild; EPSG aus der Liste mit Hinweis; eine offene Punktwahl blockiert das Ziehen nicht; Nullpunkt vom
+  // Bezugspunkt; im Lage-Modus kein Wechsel zwischen Bild mit und ohne Postproduktion (Flackern).
+  await hochladen(`${plaene}/plan_ohne_lage_extraktion.json`);
+  await zuLage();
+  await unterlageHochladen(`${plaene}/plan.pdf`, "plan");
+  await punktKlick("Punkt 1", wPlan["B 1"].px);
+  await punktKlick("Punkt 2", wPlan["B 4"].px);
+  await page.locator("label.inline", { hasText: "wahre Länge" }).locator("input").fill(meter.toFixed(3));
+  await punktKlick("Punkt im Plan wählen", wPlan["B 1"].px);
+  const rechtswert = page.locator("label", { hasText: "Rechtswert" }).locator("input");
+  const epsgHinweis = page.locator("fieldset", { hasText: "Bezugspunkt" }).locator("p.klein");
+  await rechtswert.fill("74848.9");
+  await page.locator("label", { hasText: "Hochwert" }).locator("input").fill(String(wPlan["B 1"].y));
+  await page.locator("select.epsg").selectOption("25832");
+  await ruhe(300);
+  const falsch = await epsgHinweis.textContent();
+  await rechtswert.fill(String(wPlan["B 1"].x));
+  await page.locator("fieldset", { hasText: "Drehung" }).locator('input[type="number"]').first().fill("10");
+  await ruhe(800);
+  const richtig = await epsgHinweis.textContent();
+  pruefe("EPSG aus der Liste, Hinweis wenn Rechts-/Hochwert nicht passen", /keinem System/.test(falsch) && /passt zu EPSG 25832/.test(richtig),
+    `${falsch.trim()} | ${richtig.trim()}`);
+  const imBild = () => page.evaluate(() => {
+    const r = window.viewer.world.renderer.three.domElement.getBoundingClientRect();
+    const p = window.viewer.editor.bildZuSchirm(2000, 1500);                 // Planmitte
+    return !!p && p.x > r.left && p.x < r.right && p.y > r.top && p.y < r.bottom;
+  });
+  pruefe("Vorschau: Plan bleibt nach dem Eintragen der Koordinate im Bild", await imBild());
+  await page.locator("button.punkt", { hasText: /Punkt im Plan wählen/ }).click();     // Punktwahl offen lassen
+  await page.getByRole("button", { name: /Übernehmen und sperren/ }).click();
+  await warte(() => window.baugrund?.lage?.unterlage?.gesperrt, null, 30000);
+  await ruhe(1500);
+  const gesperrt = await page.evaluate(() => ({ waehlt: document.body.classList.contains("waehlt"),
+                                                ursprung: [window.viewer.rahmen.e0, window.viewer.rahmen.n0] }));
+  pruefe("Sperren: Punktwahl beendet, Nullpunkt vom Bezugspunkt",
+    !gesperrt.waehlt && Math.hypot(gesperrt.ursprung[0] - wPlan["B 1"].x, gesperrt.ursprung[1] - wPlan["B 1"].y) < 100,
+    JSON.stringify(gesperrt));
+  await page.evaluate(() => {
+    const r = window.viewer.world.renderer;
+    window.__bilder = { einfach: 0, post: 0 };
+    const upd = r.postproduction.update.bind(r.postproduction);
+    r.postproduction.update = (...a) => { window.__bilder.post += 1; return upd(...a); };
+    r.onAfterUpdate.add(() => { window.__bilder.einfach += 1; });
+  });
+  // Plan verschieben (Kamera) und Maus darueber bewegen: alle Bilder ohne Postproduktion
+  const flaeche = await page.evaluate(() => { const r = window.viewer.world.renderer.three.domElement.getBoundingClientRect(); return { x: r.left + r.width * 0.75, y: r.top + r.height * 0.85 }; });
+  await page.mouse.move(flaeche.x, flaeche.y);
+  await page.mouse.down();
+  for (let i = 1; i <= 10; i++) {
+    await page.mouse.move(flaeche.x - i * 6, flaeche.y - i * 2);
+    await ruhe(40);
+  }
+  await page.mouse.up();
+  for (let i = 0; i < 10; i++) {
+    await page.mouse.move(flaeche.x - 80 + i * 9, flaeche.y - 40);
+    await ruhe(40);
+  }
+  await ruhe(800);
+  const bilder = await page.evaluate(() => window.__bilder);
+  pruefe("Lage-Modus: Bilder ohne Postproduktion (kein Flackern)", bilder.einfach > 0 && bilder.post === 0, JSON.stringify(bilder));
+  const fehlerOhne = [];
+  let sichtbar = true;
+  for (const code of ["B 1", "B 7", "BS 10"]) {
+    const park = page.locator(".park", { hasText: new RegExp(`^${code}$`) });
+    const kiste = await park.boundingBox();
+    const ziel = await schirm(wPlan[code].px);
+    await ziehen({ x: kiste.x + kiste.width / 2, y: kiste.y + kiste.height / 2 }, ziel);
+    await warte((c) => window.app.z.bohrungen.find((b) => b.code === c)?.x !== null, code, 30000);
+    await ruhe(1500);
+    const x = await bohrung(code);
+    fehlerOhne.push(Math.hypot(x.x - wPlan[code].x, x.y - wPlan[code].y));
+    sichtbar &&= (await imBild()) && !!(await markenPunkt(code));
+  }
+  pruefe("ohne Koordinaten: aus der Liste auf den Plan gezogen, Plan bleibt im Bild (Fehler ≤ 0,5 m)",
+    sichtbar && Math.max(...fehlerOhne) <= 0.5, fehlerOhne.map((f) => f.toFixed(2)).join(" / ") + " m");
+  await page.screenshot({ path: `${aus}/C2_ohne_lage.png` });
+
+  // ---------------------------------------------------------------- C3: Punkte setzen, zuordnen, loeschen
+  const klickAuf = async (code) => {
+    const p = await schirm(wPlan[code].px);
+    await page.mouse.click(p.x, p.y);
+    await ruhe(1500);
+  };
+  const abwPlan = async (code) => { const b = await bohrung(code); return b.x === null ? Infinity : Math.hypot(b.x - wPlan[code].x, b.y - wPlan[code].y); };
+  const freie = async () => (await stand()).z.punkte.length;
+  await page.getByRole("button", { name: /Punkte im Plan setzen/ }).click();
+  await ruhe(400);
+  const p1Code = await page.locator("select.naechste option:checked").textContent();
+  await klickAuf(p1Code.trim());
+  const p2Code = await page.locator("select.naechste option:checked").textContent();
+  await klickAuf(p2Code.trim());
+  const abwKlick = [await abwPlan(p1Code.trim()), await abwPlan(p2Code.trim())];
+  pruefe("Punkte setzen: je Klick eine Bohrung, danach die nächste ohne Lage (≤ 0,5 m)",
+    Math.max(...abwKlick) <= 0.5 && p1Code.trim() !== p2Code.trim(), `${p1Code.trim()} ${abwKlick[0].toFixed(2)} m, ${p2Code.trim()} ${abwKlick[1].toFixed(2)} m`);
+  await page.locator("select.naechste").selectOption("");                    // freier Punkt
+  await klickAuf("B 4");
+  const vorZuordnen = await freie();
+  const sichtbarFrei = await page.locator(".punktmarke:not([hidden])").count();
+  await page.locator("table.punkte tr.frei select").first().selectOption((await bohrung("B 4")).id);
+  await warte((c) => window.app.z.bohrungen.find((b) => b.code === c)?.x !== null, "B 4", 30000);
+  await ruhe(800);
+  pruefe("Freier Punkt ◆ gesetzt und einer Bohrung zugeordnet", vorZuordnen === 1 && sichtbarFrei === 1 && (await freie()) === 0 &&
+    (await abwPlan("B 4")) <= 0.5, `B 4 ${(await abwPlan("B 4")).toFixed(2)} m`);
+  await page.locator(".park", { hasText: /^B 5$/ }).click();                // Chip = naechste Bohrung
+  await ruhe(300);
+  await klickAuf("B 5");
+  await page.locator("table.punkte tr").filter({ has: page.locator("button.link", { hasText: new RegExp(`^● ${p1Code.trim()}$`) }) })
+    .locator("button.symbol").click();
+  await warte((c) => window.app.z.bohrungen.find((b) => b.code === c)?.x === null, p1Code.trim(), 30000);
+  await page.locator("select.naechste").selectOption("");
+  await klickAuf("B 8");
+  const mb = await page.locator(".punktmarke").first().boundingBox();
+  await page.mouse.click(mb.x + 6, mb.y + mb.height / 2);
+  await ruhe(300);
+  await page.keyboard.press("Delete");
+  await ruhe(1500);
+  const vorSchieben = await freie();
+  const fl = await page.evaluate(() => { const r = window.viewer.world.renderer.three.domElement.getBoundingClientRect(); return { x: r.left + r.width * 0.7, y: r.top + r.height * 0.8 }; });
+  await page.mouse.move(fl.x, fl.y);
+  await page.mouse.down();
+  await page.mouse.move(fl.x - 80, fl.y - 30, { steps: 8 });
+  await page.mouse.up();
+  await ruhe(1200);
+  pruefe("Chip als nächste, ✕ in der Liste und Entf im Viewer löschen; Verschieben setzt keinen Punkt",
+    (await abwPlan("B 5")) <= 0.5 && (await bohrung(p1Code.trim())).x === null && vorSchieben === 0 && (await freie()) === 0);
+  await page.screenshot({ path: `${aus}/C3_punkte.png` });
+  await page.keyboard.press("Escape");
+  // direkt geoeffnet (#/<projekt>/lage): der orthografische Rahmen stand verkehrt (Bild um 180 Grad gedreht)
+  const sigOhne = (await stand()).z.signatur;
+  await page.goto("about:blank");                                            // neu laden, nicht nur die Adresse aendern
+  await page.goto(`${url}/#/${sigOhne}/lage`);
+  await warte(() => window.baugrund?.lage?.unterlage?.sichtbar && window.viewer?.editor?.aktiv);
+  await ruhe(2500);
+  const direkt = await page.evaluate(() => {
+    const o = window.viewer.world.camera.threeOrtho;
+    const r = window.viewer.world.renderer.three.domElement.getBoundingClientRect();
+    const p = window.viewer.editor.bildZuSchirm(2000, 1500);
+    return { rechts: o.right > o.left, oben: o.top > o.bottom, imBild: !!p && p.x > r.left && p.x < r.right && p.y > r.top && p.y < r.bottom };
+  });
+  pruefe("Direkt geöffnet: orthografischer Rahmen richtig herum, Plan im Bild", direkt.rechts && direkt.oben && direkt.imBild,
+    JSON.stringify(direkt));
 
   // ---------------------------------------------------------------- D: Laengsschnitt
   await hochladen(`${plaene}/schnitt_extraktion.json`);

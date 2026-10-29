@@ -292,6 +292,70 @@ def test_viewer_bohrungen_und_fester_ursprung():
     assert p.ursprung == alt                               # Ansicht springt nicht
 
 
+def test_punkte_setzen_zuordnen_und_loeschen():
+    """Punkte auf dem gesperrten Plan: direkt einer Bohrung, frei und spaeter zugeordnet, umhaengen, loesen, loeschen."""
+    docs = lade("talheim.json")
+    p = projekt(docs)
+    p.lage_modus = pj.LAGE_KOORDINATEN
+    p.unterlage = {"art": "plan", "kalibrierung": None}
+    with pytest.raises(ValueError, match="gesperrten"):
+        pj.aendern(docs, p, {"op": "punkt", "x": 1.0, "y": 2.0})
+    kal = {"massstab": {"n": 500}, "drehung": 0, "epsg": 25832, "bezug": {"u": 0, "v": 0, "x": 500000, "y": 5400000}}
+    pj.aendern(docs, p, {"op": "kalibrierung", "wert": kal})
+    with pytest.raises(ValueError, match="gesperrten"):                    # kalibriert, aber nicht gesperrt
+        pj.aendern(docs, p, {"op": "punkt", "x": 1.0, "y": 2.0})
+    pj.aendern(docs, p, {"op": "kalibrierung", "wert": {**kal, "gesperrt": True}})
+    a, b, c = (bid(docs, p, code) for code in ("BK1", "BK2", "GWM1"))
+    m = pj.aendern(docs, p, {"op": "punkt", "x": 500010.1234, "y": 5400020.5, "bohrung": a})
+    assert m == "BK1: Lage R 500.010,12 · H 5.400.020,50"
+    assert zeile(docs, p, "BK1")["x"] == 500010.123 and zeile(docs, p, "BK1")["epsg"] == 25832
+    assert zeile(docs, p, "BK1")["lage_aus"] == "Plan (kalibriert)"
+    pj.aendern(docs, p, {"op": "punkt", "x": 500030.0, "y": 5400040.0})                     # frei
+    assert p.punkte == [{"id": "P1", "x": 500030.0, "y": 5400040.0}]
+    pj.aendern(docs, p, {"op": "punkt_zuordnen", "punkt": "P1", "bohrung": b})
+    assert not p.punkte and (zeile(docs, p, "BK2")["x"], zeile(docs, p, "BK2")["y"]) == (500030.0, 5400040.0)
+    assert "ersetzt" in pj.aendern(docs, p, {"op": "punkt", "x": 500031.0, "y": 5400041.0, "bohrung": b})
+    pj.aendern(docs, p, {"op": "lage_umhaengen", "id": b, "nach": c})                       # BK2 -> GWM1
+    assert zeile(docs, p, "BK2")["x"] is None and zeile(docs, p, "GWM1")["x"] == 500031.0
+    assert "Punkt P2" in pj.aendern(docs, p, {"op": "lage_loesen", "id": c})              # Lage bleibt als Punkt
+    assert zeile(docs, p, "GWM1")["x"] is None and p.punkte[0]["id"] == "P2"
+    pj.aendern(docs, p, {"op": "punkt_loeschen", "punkt": "P2"})
+    assert "wieder ohne Lage" in pj.aendern(docs, p, {"op": "lage_entfernen", "id": a})
+    assert not p.punkte and zeile(docs, p, "BK1")["x"] is None and a not in p.bohrung
+    for falsch in ({"op": "lage_entfernen", "id": a}, {"op": "punkt_loeschen", "punkt": "P9"},
+                   {"op": "punkt", "x": 1.0, "y": 2.0, "bohrung": "gibtsnicht"}, {"op": "punkt", "x": None, "y": 2.0},
+                   {"op": "lage_umhaengen", "id": a, "nach": b}):
+        with pytest.raises(ValueError):
+            pj.aendern(docs, p, falsch)
+    pj.aendern(docs, p, {"op": "punkt", "x": 500050.0, "y": 5400060.0})
+    q = pj.laden(pj.speichern(p))                                                           # bleibt gespeichert
+    assert q.punkte == [{"id": "P3", "x": 500050.0, "y": 5400060.0}] and q.punkt_zaehler == 3
+
+
+def test_ursprung_vom_bezugspunkt_wenn_keine_bohrung_lage_hat():
+    """RKS ohne Koordinaten: der kalibrierte Lageplan liegt sonst Millionen Meter vom Nullpunkt der Szene, und die
+    erste gesetzte Bohrung verschob den Nullpunkt dorthin (Plan und Bohrungen sprangen aus dem Bild)."""
+    docs = lade("talheim.json")
+    p = projekt(docs)
+    assert p.lage_modus == pj.LAGE_REIHE
+    v = pj.modell_eingabe(docs, p)
+    reihe = pj.ursprung(p, v)                              # Stationen: kleiner Nullpunkt
+    assert abs(reihe[0]) < 1000 and reihe[1] == 0
+    p.lage_modus = pj.LAGE_KOORDINATEN
+    p.unterlage = {"art": "plan", "kalibrierung": None}
+    v = pj.modell_eingabe(docs, p)
+    assert not v.lage and pj.ursprung(p, v) == reihe       # unkalibriert: nichts zu verschieben
+    pj.aendern(docs, p, {"op": "kalibrierung", "wert": {"massstab": {"n": 500}, "drehung": 180, "epsg": 25832,
+                                                        "bezug": {"u": 10, "v": 10, "x": 497848.9, "y": 5603772.65},
+                                                        "gesperrt": True}})
+    assert pj.ursprung(p, pj.modell_eingabe(docs, p)) == (497800.0, 5603800.0)
+    erste = pj.bohrungen_liste(docs, p)[0]["id"]
+    pj.aendern(docs, p, {"op": "lage", "id": erste, "x": 497900.0, "y": 5603700.0})
+    v = pj.modell_eingabe(docs, p)
+    assert erste in v.lage and pj.ursprung(p, v) == (497800.0, 5603800.0)      # erste Bohrung: kein Sprung
+    assert p.bohrung[erste]["epsg"] == 25832 and p.bohrung[erste]["quelle"] == "Plan (kalibriert)"
+
+
 def test_farben_nach_din_4023():
     assert pj.bodenart_farbe("Kies") == "#f2cf2c" and pj.bodenart_farbe("Sand") == "#ef8f2f"
     assert pj.bodenart_farbe("unklassifiziert") == pj.bodenart_farbe("Quatsch") == "#e6e6e6"

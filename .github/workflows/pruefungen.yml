@@ -1,0 +1,86 @@
+# Pruefungen bei jedem Push und Pull Request: Projektlogik/API und Modellierer (pytest), Oberflaeche (tsc + Vite),
+# Container-Image (bauen, starten, Anmeldung). Von Hand ("Run workflow") zusaetzlich die App von Ende zu Ende
+# (Playwright, scripts/check_app.mjs, ca. 15 min).
+name: Prüfungen
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: pruefungen-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    name: Python (Projekt, API, Modellierer)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - run: pip install -r requirements.txt -c constraints.txt
+      - run: python -m pytest tests -q
+      - run: python -m pytest tests -q
+        working-directory: services/modeler
+
+  web:
+    name: Oberfläche (TypeScript, Vite)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci
+      - run: npm run build
+
+  container:
+    name: Container (Dockerfile)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t groundtwin .
+      - name: Starten und pruefen
+        run: |
+          docker run -d -p 8500:8500 -e GEO_AGENT_PASSWORT=pruefung --name groundtwin groundtwin
+          for i in $(seq 1 60); do curl -sf http://localhost:8500/gesund && break; sleep 2; done
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8500/api/info)" = 401
+          curl -sf -u x:pruefung http://localhost:8500/api/info
+          docker exec groundtwin python -c "import cv2, rapidocr_onnxruntime; print('OCR ok')"
+          docker logs groundtwin
+
+  ende-zu-ende:
+    name: App von Ende zu Ende (Playwright)
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: pip install -r requirements.txt -c constraints.txt
+      - run: npm install -g playwright && npx playwright install --with-deps chromium
+      - run: python scripts/testplan.py planes
+      - name: Server und Pruefung
+        run: |
+          python -m server --port 8511 --kein-browser --arbeit "$RUNNER_TEMP/arbeit" &
+          for i in $(seq 1 60); do curl -sf http://localhost:8511/gesund && break; sleep 1; done
+          NODE_PATH="$(npm root -g)" node scripts/check_app.mjs http://localhost:8511 planes capturas
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: capturas
+          path: capturas

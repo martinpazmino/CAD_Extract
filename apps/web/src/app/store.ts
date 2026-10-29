@@ -31,6 +31,8 @@ export const S = {
   auftrag: null as Awaited<ReturnType<typeof api.auftrag>> | null,
   meldungen: [] as Meldung[],
   entwurf: null as Kalibrierung | null,               // Kalibrierung in Arbeit (Schritt Lage)
+  punktModus: false,                                  // Schritt Lage: Klick in den gesperrten Plan setzt einen Punkt
+  naechste: "",                                       // Bohrung, die der naechste Punkt bekommt ("" = freier Punkt)
   filter: "",
   viewer: null as ViewerApi | null,
 };
@@ -95,6 +97,7 @@ export async function gehe(schritt: SchrittId) {
   if (schritt !== "gutachten" && !S.sig) schritt = "gutachten";
   const vorher = S.schritt;
   S.schritt = schritt;
+  if (schritt !== "lage") S.punktModus = false;
   if (schritt === "gutachten") void projekteLaden();
   if (schritt === "bohrungen" && S.z && !S.bid) S.bid = naechsteOffene(-1) ?? S.z.bohrungen[0]?.id ?? "";
   if (S.sig && vorher !== schritt) void api.aendern(S.sig, [{ op: "schritt", wert: schritt }]).catch(() => {});
@@ -235,8 +238,30 @@ async function viewerHolen(): Promise<ViewerApi> {
 
 async function viewerEreignis(e: Record<string, unknown>) {
   const { typ, nr: _nr, projekt: _p, ...rest } = e;
+  if (typ === "punkt") {
+    await punktGesetzt(Number(rest.x), Number(rest.y));
+    return;
+  }
   const op = typ === "geprueft" ? { op: "geprueft", id: rest.id, wert: rest.wert } : { op: String(typ), ...rest };
   await aendern([op as Op]);
+}
+
+/** Klick in den gesperrten Plan: die gewaehlte Bohrung bekommt die Lage (danach ist die naechste ohne Lage dran),
+ *  ohne Wahl entsteht ein freier Punkt. */
+export async function punktGesetzt(x: number, y: number) {
+  const ziel = S.naechste;
+  if (await aendern([{ op: "punkt", x, y, bohrung: ziel || null }]) && ziel) {
+    S.naechste = naechsteOhneLage(ziel);
+    neu();
+  }
+}
+
+/** Naechste Bohrung ohne Lage in der Reihenfolge der Liste nach 'nach' ("" = keine mehr). */
+export function naechsteOhneLage(nach = ""): string {
+  const ohne = (S.z?.viewer.bohrungen ?? []).filter((b) => b.x === null).map((b) => b.id).filter((id) => id !== nach);
+  const alle = (S.z?.viewer.bohrungen ?? []).map((b) => b.id);
+  const ab = alle.indexOf(nach);
+  return ohne.find((id) => alle.indexOf(id) > ab) ?? ohne[0] ?? "";
 }
 
 /** Viewer an den Schritt anpassen: Lage-Modus im Schritt Lage, Modell im Schritt Modell. */
@@ -260,6 +285,7 @@ export async function viewerAktualisieren() {
   await v.setzen({
     projekt: z.signatur, titel: z.name, ueberhoehung: z.ueberhoehung, ursprung: z.viewer.ursprung, epsg: z.viewer.epsg,
     modus: z.viewer.modus, bohrungen: z.viewer.bohrungen, unterlage: z.unterlage, ifc: ifc ?? null,
+    punkte: z.viewer.punkte ?? [],
   });
   if (S.schritt === "lage") v.editor.vorschau(S.entwurf ?? undefined);
 }

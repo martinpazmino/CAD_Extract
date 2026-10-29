@@ -2,3 +2,4 @@
 *.bat text eol=crlf
 *.wasm binary
 apps/web/dist/** linguist-generated=true -diff
+*.sh text eol=lf

@@ -58,6 +58,8 @@ class Projekt:
     schicht: dict[str, dict] = field(default_factory=dict)   # "id/k" -> {oben, unten, bodenart, geprueft}
     reihe: dict = field(default_factory=lambda: {"standard": 20.0, "reihenfolge": [], "abstand": {}, "station": {}})
     unterlage: dict | None = None
+    punkte: list[dict] = field(default_factory=list)          # freie Punkte auf dem Plan: {id, x, y} (noch ohne Bohrung)
+    punkt_zaehler: int = 0
     ursprung: tuple[float, float] | None = None
     erzeugt: bool = False
     auto: bool = True
@@ -77,6 +79,11 @@ class Projekt:
 # ---------------------------------------------------------------- Grundlagen
 def natuerlich(code: str):
     return [int(t) if t.isdigit() else t.lower() for t in re.split(r"(\d+)", code)]
+
+
+def de(v: float, stellen: int = 2) -> str:
+    """Zahl wie in der Oberflaeche: 5.933.000,25."""
+    return f"{float(v):,.{stellen}f}".replace(",", "§").replace(".", ",").replace("§", ".")
 
 
 def zahl(v) -> float | None:
@@ -386,6 +393,56 @@ def _gok_aus_pdf(docs: list[dict] | None, bid: str) -> bool:
         return False
 
 
+# ---------------------------------------------------------------- Punkte auf dem Plan (setzen, zuordnen, loeschen)
+LAGE_VOM_PLAN = ("Plan (kalibriert)", "manuell (Viewer)")
+
+
+def _plan_gesperrt(p: Projekt) -> dict:
+    """Punkte nur auf einem kalibrierten und gesperrten Lageplan (sonst sind ihre Koordinaten bedeutungslos)."""
+    u = p.unterlage or {}
+    kal = u.get("kalibrierung") or {}
+    if u.get("art", "plan") != "plan" or not kal.get("bezug") or not kal.get("gesperrt"):
+        raise ValueError("Punkte nur auf einem kalibrierten und gesperrten Lageplan (🔒)")
+    return kal
+
+
+def _punkt(p: Projekt, pid) -> dict:
+    for pt in p.punkte:
+        if pt["id"] == pid:
+            return pt
+    raise ValueError(f"Punkt {pid} gibt es nicht")
+
+
+def _lage_vom_plan(p: Projekt, bid: str, x: float, y: float, kal: dict) -> bool:
+    """Lage einer Bohrung aus dem Plan; True = eine gesetzte Lage wurde ersetzt."""
+    o = p.bohrung.setdefault(bid, {})
+    ersetzt = o.get("quelle") in LAGE_VOM_PLAN
+    o.update(x=round(float(x), 3), y=round(float(y), 3), quelle="Plan (kalibriert)")
+    if kal.get("epsg"):
+        o["epsg"] = int(kal["epsg"])
+    return ersetzt
+
+
+def _lage_weg(p: Projekt, bid: str) -> tuple[float, float]:
+    """Gesetzte Lage (Plan, Viewer, Tabelle) einer Bohrung entfernen; zurueck kommt sie als (x, y)."""
+    o = p.bohrung.get(bid, {})
+    if o.get("x") is None or o.get("y") is None:
+        raise ValueError("keine gesetzte Lage")
+    xy = (float(o["x"]), float(o["y"]))
+    for s in ("x", "y", "epsg", "quelle"):
+        o.pop(s, None)
+    if not o:
+        p.bohrung.pop(bid, None)
+    return xy
+
+
+def _neuer_punkt(p: Projekt, x: float, y: float) -> str:
+    p.punkt_zaehler += 1
+    pid = f"P{p.punkt_zaehler}"
+    p.punkte.append({"id": pid, "x": round(float(x), 3), "y": round(float(y), 3)})
+    return pid
+
+
 def aendern(docs: list[dict], p: Projekt, op: dict) -> str:
     """Eine Aenderung aus der App anwenden. Rueckgabe: kurze Meldung; ValueError bei ungueltiger Eingabe."""
     art = op.get("op")
@@ -433,16 +490,67 @@ def aendern(docs: list[dict], p: Projekt, op: dict) -> str:
         o.update(x=float(op["x"]), y=float(op["y"]), quelle="Plan (kalibriert)" if kal else "manuell (Viewer)")
         if kal.get("epsg"):                               # sonst bleibt das System der Bohrung (PDF/Tabelle)
             o["epsg"] = int(kal["epsg"])
-        meldung = f"{code}: Lage R {float(op['x']):,.2f} · H {float(op['y']):,.2f}"
+        meldung = f"{code}: Lage R {de(op['x'])} · H {de(op['y'])}"
+    elif art == "punkt":                                 # Klick in den gesperrten Plan: Bohrung setzen oder freier Punkt
+        kal = _plan_gesperrt(p)
+        x, y = zahl(op.get("x")), zahl(op.get("y"))
+        if x is None or y is None:
+            raise ValueError("Punkt ohne Koordinate")
+        ziel = op.get("bohrung")
+        if ziel:
+            if ziel not in codes:
+                raise ValueError(f"Bohrung {ziel} gibt es nicht")
+            ersetzt = _lage_vom_plan(p, ziel, x, y, kal)
+            meldung = f"{codes[ziel]}: Lage R {de(x)} · H {de(y)}{' (ersetzt)' if ersetzt else ''}"
+        else:
+            pid = _neuer_punkt(p, x, y)
+            meldung = f"Punkt {pid}: R {de(x)} · H {de(y)} – einer Bohrung zuordnen"
+    elif art == "punkt_zuordnen":                        # freier Punkt -> Lage der Bohrung
+        kal = _plan_gesperrt(p)
+        pt = _punkt(p, op.get("punkt"))
+        ziel = op.get("bohrung")
+        if ziel not in codes:
+            raise ValueError(f"Bohrung {ziel} gibt es nicht")
+        p.punkte.remove(pt)
+        ersetzt = _lage_vom_plan(p, ziel, pt["x"], pt["y"], kal)
+        meldung = f"{pt['id']} → {codes[ziel]}{' (Lage ersetzt)' if ersetzt else ''}"
+    elif art == "punkt_loeschen":
+        pt = _punkt(p, op.get("punkt"))
+        p.punkte.remove(pt)
+        meldung = f"Punkt {pt['id']} gelöscht"
+    elif art == "lage_entfernen":                        # gesetzte Lage weg: Koordinaten aus dem PDF oder ohne Lage
+        try:
+            _lage_weg(p, bid)
+        except ValueError:
+            raise ValueError(f"{code}: keine gesetzte Lage") from None
+        b = _bohrung(docs, bid)
+        meldung = f"{code}: Lage entfernt – {'wieder Koordinaten aus dem PDF' if b.get('x') is not None else 'wieder ohne Lage'}"
+    elif art == "lage_loesen":                           # Zuordnung loesen: die Lage bleibt als freier Punkt
+        try:
+            x, y = _lage_weg(p, bid)
+        except ValueError:
+            raise ValueError(f"{code}: keine gesetzte Lage") from None
+        meldung = f"{code}: Zuordnung gelöst – Punkt {_neuer_punkt(p, x, y)}"
+    elif art == "lage_umhaengen":                        # Lage einer Bohrung an eine andere geben
+        kal = _plan_gesperrt(p)
+        ziel = op.get("nach")
+        if ziel not in codes or ziel == bid:
+            raise ValueError("Ziel-Bohrung ungültig")
+        try:
+            x, y = _lage_weg(p, bid)
+        except ValueError:
+            raise ValueError(f"{code}: keine gesetzte Lage") from None
+        ersetzt = _lage_vom_plan(p, ziel, x, y, kal)
+        meldung = f"Lage von {code} → {codes[ziel]}{' (ersetzt)' if ersetzt else ''}"
     elif art == "station":
         p.reihe["station"][bid] = float(op["station"])
         p.reihe["abstand"].pop(bid, None)
-        meldung = f"{code}: Station {float(op['station']):,.2f} m"
+        meldung = f"{code}: Station {de(op['station'])} m"
     elif art == "gok":                                   # Ansatzhoehe im Schnitt gezogen: nur ohne GOK aus dem PDF
         if _gok_aus_pdf(docs, bid):
             raise ValueError(f"{code}: GOK steht im PDF – Höhe nur in der Tabelle änderbar")
         p.bohrung.setdefault(bid, {})["gok"] = float(op["gok"])
-        meldung = f"{code}: GOK {float(op['gok']):,.2f} m NHN"
+        meldung = f"{code}: GOK {de(op['gok'])} m NHN"
     elif art == "geprueft":
         _bohrung_setzen(docs, p, bid, "geprueft", bool(op["wert"]))
         meldung = f"{code}: {'als geprüft markiert' if op['wert'] else 'Prüfung zurückgenommen'}"
@@ -691,8 +799,16 @@ def modell_eingabe(docs: list[dict], p: Projekt, e: Einstellungen | None = None)
 
 
 def ursprung(p: Projekt, vorb: Vorbereitung) -> tuple[float, float]:
-    """Fester lokaler Nullpunkt des Projekts: verschiebt sich nur, wenn die Bohrungen weit davon entfernt liegen."""
+    """Fester lokaler Nullpunkt des Projekts: verschiebt sich nur, wenn die Bohrungen weit davon entfernt liegen.
+    Hat noch keine Bohrung eine Lage, gilt der Bezugspunkt eines kalibrierten Lageplans: sonst laege der Plan
+    Millionen Meter vom Nullpunkt der Szene (Gleitkomma der Grafikkarte, docs/16 M31)."""
     if not vorb.lage:
+        kal = (p.unterlage or {}).get("kalibrierung") or {}
+        bezug = kal.get("bezug") if (p.unterlage or {}).get("art", "plan") == "plan" else None
+        if p.lage_modus == LAGE_KOORDINATEN and bezug:
+            mitte = (float(bezug["x"]), float(bezug["y"]))
+            if p.ursprung is None or math.hypot(mitte[0] - p.ursprung[0], mitte[1] - p.ursprung[1]) > 20000:
+                p.ursprung = (round(mitte[0], -2), round(mitte[1], -2))
         return p.ursprung or (0.0, 0.0)
     xs = [v[0] for v in vorb.lage.values()]
     ys = [v[1] for v in vorb.lage.values()]

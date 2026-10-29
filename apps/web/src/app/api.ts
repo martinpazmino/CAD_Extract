@@ -1,6 +1,6 @@
 // Schnittstelle zum Server (server/api.py). Alle Aenderungen gehen als Liste von Operationen an
 // /api/projekt/<signatur>/aendern (ui/projekt.aendern); die Antwort ist der neue Stand des Projekts.
-import type { Kalibrierung, Nadel, Unterlage } from "../viewer/kanal";
+import type { Kalibrierung, Nadel, Punkt, Unterlage } from "../viewer/kanal";
 
 export interface Bohrung {
   id: string; code: string; dokument: string; seite: number;
@@ -57,7 +57,9 @@ export interface Zustand {
   bohrungen: Bohrung[]; klassen: Klasse[];
   hinweise: string[]; nicht_im_modell: { id?: string; code: string; dokument: string; grund: string }[];
   modell: { schluessel: string; aktuell: boolean; ifc: string | null };
-  viewer: { bohrungen: Nadel[]; ursprung: [number, number]; epsg: number | null; modus: "koordinaten" | "reihe" };
+  punkte: Punkt[];                                    // freie Punkte auf dem Plan (noch keiner Bohrung zugeordnet)
+  viewer: { bohrungen: Nadel[]; ursprung: [number, number]; epsg: number | null; modus: "koordinaten" | "reihe";
+            punkte: Punkt[] };
 }
 
 export interface EinheitBericht {
@@ -112,7 +114,8 @@ async function anfrage<T>(pfad: string, init?: RequestInit): Promise<T> {
 const json = (daten: unknown): RequestInit => ({ method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(daten) });
 
 export const api = {
-  info: () => anfrage<{ version: string; ocr: boolean; beispiele: { name: string; titel: string }[] }>("/api/info"),
+  info: () => anfrage<{ version: string; ocr: boolean; lizenz: string; quellcode: string;
+                        beispiele: { name: string; titel: string }[] }>("/api/info"),
   projekte: () => anfrage<ProjektKurz[]>("/api/projekte"),
   beispiel: (name: string) => anfrage<{ projekt?: string; auftrag?: string }>("/api/beispiel", json({ name })),
   gutachten(dateien: File[], ocr: boolean) {

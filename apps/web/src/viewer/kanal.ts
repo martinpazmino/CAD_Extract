@@ -1,6 +1,7 @@
 // Datentypen des Viewers und Rueckkanal zur Schritt-App. Der Viewer meldet Aenderungen (Bohrung verschoben,
-// Station, GOK, geprueft) als Ereignis; die App (src/app) schickt sie als Aenderung an den Server
-// (ui/projekt.aendern) und gibt den neuen Stand zurueck. Allein (viewer.html) werden sie nur protokolliert.
+// Station, GOK, geprueft, Punkt gesetzt oder geloescht) als Ereignis; die App (src/app) schickt sie als Aenderung
+// an den Server (ui/projekt.aendern) und gibt den neuen Stand zurueck. Allein (viewer.html) werden sie nur
+// protokolliert.
 import type { Modus } from "./rahmen";
 
 export interface Nadel {
@@ -50,6 +51,9 @@ export interface Unterlage {
   kalibrierung: Kalibrierung | null;
 }
 
+/** Freier Punkt auf dem gesperrten Lageplan (noch keiner Bohrung zugeordnet). */
+export interface Punkt { id: string; x: number; y: number }
+
 export interface Args {
   ifc?: string | null;
   titel?: string;
@@ -60,6 +64,7 @@ export interface Args {
   modus?: Modus;
   bohrungen?: Nadel[] | null;
   unterlage?: Unterlage | null;
+  punkte?: Punkt[] | null;
 }
 
 let nr = 0;

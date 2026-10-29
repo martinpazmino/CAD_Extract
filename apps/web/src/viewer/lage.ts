@@ -3,12 +3,14 @@
 // Kalibrierung (docs/21 §4): Massstab aus einer gemessenen Strecke (zwei Bildpunkte + wahre Laenge) oder 1:n,
 // ein Bezugspunkt im Bild mit seiner Koordinate, beim Lageplan die Drehung, beim Schnitt der Hoehenmassstab.
 // Ist der Plan gesperrt, werden die Bohrungen gezogen: auf dem Plan nur in x/y, im Schnitt entlang der
-// Station und in der Hoehe nur, wenn das PDF keine GOK hat. Jede Aenderung geht als Ereignis an die App.
+// Station und in der Hoehe nur, wenn das PDF keine GOK hat. Oder Punkte setzen: im Punktmodus legt ein Klick in den
+// gesperrten Lageplan einen Punkt (die App ordnet ihn einer Bohrung zu); Entf loescht den gewaehlten Punkt bzw. die
+// gesetzte Lage. Jede Aenderung geht als Ereignis an die App.
 import * as THREE from "three";
 import * as OBC from "@thatopen/components";
 import { ausSzene, hoeheZuSzene, rahmen, zuSzene } from "./rahmen";
-import { ereignis, mitApp, type Kalibrierung, type Massstab, type Nadel, type Unterlage } from "./kanal";
-import { huelleMelden, szeneAktualisieren } from "./kamera";
+import { ereignis, mitApp, type Kalibrierung, type Massstab, type Nadel, type Punkt, type Unterlage } from "./kanal";
+import { huelleMelden, strahl, szeneAktualisieren, verschieben } from "./kamera";
 
 type Welt = OBC.SimpleWorld<OBC.SimpleScene, OBC.OrthoPerspectiveCamera, OBC.BaseRenderer>;
 type Abbildung = (u: number, v: number) => [number, number];
@@ -93,6 +95,9 @@ export class LageEditor {
   deckkraft = 0.85;
   readonly nadeln = new Map<string, Stecknadel>();
   ausgewaehlt: string | null = null;
+  punktModus = false;                                   // Klick in den gesperrten Plan setzt einen Punkt
+  readonly freiePunkte = new Map<string, { daten: Punkt; marke: HTMLDivElement }>();
+  punktGewaehlt: string | null = null;
 
   private readonly ebene = document.createElement("div");
   private readonly linien = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -103,6 +108,7 @@ export class LageEditor {
   private bild: THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial> | null = null;
   private texturUrl = "";
   private abb: Abbildung | null = null;
+  private planMitte: [number, number] | null = null;     // Weltlage der Planmitte (Kamera folgt grossen Spruengen)
   private hilfe: Hilfsmarken = {};
   private hilfeMarken: HTMLDivElement[] = [];
   private waehlen: ((p: Bildpunkt | null) => void) | null = null;
@@ -110,6 +116,7 @@ export class LageEditor {
   private ziehen: { id: string; versatz: THREE.Vector3; ebene: THREE.Plane; start: [number, number]; bewegt: boolean;
                     neu: boolean; hoehe: boolean } | null = null;
   private readonly caster = new THREE.Raycaster();
+  private druck: [number, number] | null = null;        // Zeiger beim Druecken: Klick oder Plan verschoben?
 
   constructor(private readonly welt: Welt, huelle: HTMLElement, private readonly r: LageRueckrufe) {
     this.gruppe.name = "Bohrungen (Lage)";
@@ -121,13 +128,14 @@ export class LageEditor {
     huelleMelden(() => this.kiste());
     welt.renderer!.onAfterUpdate.add(() => this.markenSetzen());
     const flaeche = welt.renderer!.three.domElement;
+    flaeche.addEventListener("pointerdown", (ev) => { this.druck = [ev.clientX, ev.clientY]; });
     flaeche.addEventListener("click", (ev) => this.bildKlick(ev));
     window.addEventListener("pointermove", (ev) => this.ziehenBewegen(ev));
     window.addEventListener("pointerup", (ev) => this.ziehenEnde(ev));
   }
 
   // ---------------------------------------------------------------- Daten
-  setzen(nadeln: Nadel[], unterlage: Unterlage | null) {
+  setzen(nadeln: Nadel[], unterlage: Unterlage | null, punkte: Punkt[] = []) {
     const alt = new Set(this.nadeln.keys());
     this.radiusAuto = THREE.MathUtils.clamp(this.ausdehnung(nadeln) / 600, 0.4, 6);
     for (const n of nadeln) {
@@ -144,9 +152,11 @@ export class LageEditor {
       this.markeBeschriften(s);
     }
     for (const id of alt) this.entfernen(id);
+    this.punkteSetzen(punkte);
     if (unterlage?.url !== this.unterlage?.url || JSON.stringify(unterlage?.kalibrierung) !== JSON.stringify(this.unterlage?.kalibrierung)) {
       this.entwurf = undefined;                         // gespeicherter Stand gilt
     }
+    if (unterlage?.kalibrierung?.gesperrt) this.waehlenAbbrechen();   // gesperrt: nichts mehr zu waehlen
     this.unterlageSetzen(unterlage);
     szeneAktualisieren();
     this.r.neuZeichnen();
@@ -227,7 +237,7 @@ export class LageEditor {
     }
     if (this.bild?.visible) {
       this.bild.geometry.computeBoundingBox();
-      b.union(this.bild.geometry.boundingBox!);
+      b.union(this.bild.geometry.boundingBox!.clone().translate(this.bild.position));
     }
     if (!b.isEmpty()) b.expandByScalar(rmax * 2);
     return b.isEmpty() ? null : b;
@@ -242,6 +252,43 @@ export class LageEditor {
     el.addEventListener("pointerdown", (ev) => this.ziehenStart(ev, id, false));
     this.ebene.append(el);
     return el;
+  }
+
+  private punkteSetzen(punkte: Punkt[]) {
+    const alt = new Set(this.freiePunkte.keys());
+    for (const pt of punkte) {
+      alt.delete(pt.id);
+      let e = this.freiePunkte.get(pt.id);
+      if (!e) {
+        const el = document.createElement("div");
+        el.className = "punktmarke";
+        el.dataset.id = pt.id;
+        el.innerHTML = `<i></i><span></span>`;
+        el.addEventListener("pointerdown", (ev) => {
+          ev.stopPropagation();
+          this.punktWaehlen(pt.id);
+        });
+        this.ebene.append(el);
+        e = { daten: pt, marke: el };
+        this.freiePunkte.set(pt.id, e);
+      }
+      e.daten = pt;
+      e.marke.querySelector("span")!.textContent = pt.id;
+      e.marke.title = `${pt.id} · R ${zahlText(pt.x)} · H ${zahlText(pt.y)}\nnoch keiner Bohrung zugeordnet (Liste links)` +
+        "\nEntf: Punkt löschen";
+    }
+    for (const id of alt) {
+      this.freiePunkte.get(id)!.marke.remove();
+      this.freiePunkte.delete(id);
+      if (this.punktGewaehlt === id) this.punktGewaehlt = null;
+    }
+  }
+
+  /** Freien Punkt waehlen (Entf loescht ihn); null hebt die Wahl auf. */
+  punktWaehlen(id: string | null) {
+    this.punktGewaehlt = id;
+    if (id) this.waehlenNadel(null);
+    for (const e of this.freiePunkte.values()) e.marke.classList.toggle("gewaehlt", e.daten.id === id);
   }
 
   private markeBeschriften(s: Stecknadel) {
@@ -264,11 +311,12 @@ export class LageEditor {
   private ziehHinweis(n: Nadel) {
     if (!this.ziehenErlaubt()) return "Erst die Unterlage kalibrieren und sperren, dann ziehen";
     if (rahmen.modus === "reihe") return n.gok_pdf ? "Ziehen: Station (GOK aus dem PDF bleibt)" : "Ziehen: Station und GOK";
-    return "Ziehen: Lage (Rechts-/Hochwert)";
+    return /Plan|Viewer/.test(n.quelle) ? "Ziehen: Lage (Rechts-/Hochwert) · Entf: Lage entfernen" : "Ziehen: Lage (Rechts-/Hochwert)";
   }
 
   waehlenNadel(id: string | null) {
     this.ausgewaehlt = id;
+    if (id && this.punktGewaehlt) this.punktWaehlen(null);
     for (const s of this.nadeln.values()) s.marke.classList.toggle("gewaehlt", s.daten.id === id);
   }
 
@@ -297,6 +345,14 @@ export class LageEditor {
       belegt.add(k);
       s.marke.classList.toggle("ohne-text", !frei);
     }
+    const yPlan = this.bild?.position.y ?? 0;
+    const planSichtbar = this.aktiv && !!this.bild?.visible && rahmen.modus !== "reihe" && this.markenZeigen;
+    for (const e of this.freiePunkte.values()) {
+      zuSzene(e.daten.x, e.daten.y, 0, this.punkt).setY(yPlan).project(kam);
+      const drin = planSichtbar && Math.abs(this.punkt.x) <= 1.05 && Math.abs(this.punkt.y) <= 1.05;
+      e.marke.hidden = !drin;
+      if (drin) e.marke.style.transform = `translate(${(((this.punkt.x + 1) / 2) * w).toFixed(1)}px, ${(((1 - this.punkt.y) / 2) * h).toFixed(1)}px)`;
+    }
     this.hilfeSetzen(w, h);
   }
 
@@ -312,7 +368,7 @@ export class LageEditor {
   }
 
   private schnittpunkt(ev: { clientX: number; clientY: number }, ebene: THREE.Plane) {
-    this.caster.setFromCamera(this.ndc(ev), this.welt.camera.three);
+    strahl(this.caster, this.ndc(ev));
     return this.caster.ray.intersectPlane(ebene, new THREE.Vector3());
   }
 
@@ -325,9 +381,15 @@ export class LageEditor {
 
   /** Start: Marke in der Szene (neu = false) oder Bohrung ohne Lage aus der Liste der App (neu = true). */
   ziehenStart(ev: PointerEvent, id: string, neu: boolean) {
-    if (ev.button !== 0 || this.waehlen) return;
+    if (ev.button !== 0) return;
     const s = this.nadeln.get(id);
     if (!s) return;
+    // Ein offenes "Punkt im Plan waehlen" blockierte jedes Ziehen, auch nach dem Sperren: aus der Liste oder auf
+    // dem gesperrten Plan gilt das Ziehen, die Wahl wird verworfen.
+    if (this.waehlen) {
+      if (!neu && !this.ziehenErlaubt()) return;
+      this.waehlenAbbrechen();
+    }
     ev.preventDefault();
     ev.stopPropagation();
     if (!this.aktiv || (!s.oben && !neu) || !this.ziehenErlaubt()) {
@@ -374,6 +436,7 @@ export class LageEditor {
     s.saeule.visible = this.sichtbar;
     if (!s.saeule.children.length) this.saeuleBauen(s);
     s.saeule.position.copy(p);
+    this.r.neuZeichnen();
     this.r.meldung(`${s.daten.code}: ${this.lageText(p)}`, 1500);
   }
 
@@ -426,6 +489,7 @@ export class LageEditor {
   async umschalten(aktiv: boolean) {
     this.aktiv = aktiv;
     document.body.classList.toggle("lage-aktiv", aktiv);
+    document.body.classList.toggle("punkte", aktiv && this.punktModus);
     if (!aktiv) this.waehlenAbbrechen();
     for (const s of this.nadeln.values()) this.markeBeschriften(s);
     this.bildSichtbarkeit();
@@ -464,6 +528,7 @@ export class LageEditor {
     }
     if (this.texturUrl !== u.url) {
       this.texturUrl = u.url;
+      this.planMitte = null;                            // neue Unterlage: die App stellt die Ansicht ein
       new THREE.TextureLoader().load(u.url, (t) => {
         t.colorSpace = THREE.SRGBColorSpace;
         t.anisotropy = this.welt.renderer!.three.capabilities.getMaxAnisotropy();
@@ -498,25 +563,46 @@ export class LageEditor {
     const mitte: [number, number] = mit.length
       ? [mit.reduce((a, s) => a + s.daten.x!, 0) / mit.length, mit.reduce((a, s) => a + s.daten.y!, 0) / mit.length]
       : [rahmen.e0, rahmen.n0];
-    const oben = mit.length ? Math.max(...mit.map((s) => s.daten.gok)) + 5 : 10;
+    // Hoehe des Plans: knapp ueber der hoechsten bekannten GOK - auch wenn noch keine Bohrung eine Lage hat (sonst
+    // lag er bei 10 m NHN, ueberhoeht weit unter Bohrungen mit echter GOK, und die Kamera schaute von unten)
+    const goks = [...this.nadeln.values()].filter((s) => s.daten.gok_bekannt).map((s) => s.daten.gok);
+    const hoechste = goks.length ? Math.max(...goks) : mit.length ? Math.max(...mit.map((s) => s.daten.gok)) : 5;
+    const oben = hoechste + 5;
     this.abb = abbildung(u, mitte, oben, this.kalibrierung());
     const ecken: [number, number][] = [[0, 0], [u.breite, 0], [u.breite, u.hoehe], [0, u.hoehe]];
     const pos: number[] = [];
-    let yPlan = -Infinity;
-    for (const s of this.nadeln.values()) if (s.oben) yPlan = Math.max(yPlan, s.oben.y);
-    if (!Number.isFinite(yPlan)) yPlan = hoeheZuSzene(oben);
-    yPlan += Math.max(0.2, this.radiusAuto * 0.5);
-    for (const [uu, vv] of ecken) {
-      const [x, y] = this.abb(uu, vv);
-      const p = u.art === "plan" ? zuSzene(x, y, 0).setY(yPlan) : zuSzene(x, 0, y).setZ(-this.schnittTiefe);
-      pos.push(p.x, p.y, p.z);
-    }
+    const yPlan = hoeheZuSzene(hoechste) + Math.max(0.2, this.radiusAuto * 0.5);
+    const punkte = ecken.map(([uu, vv]) => {
+      const [x, y] = this.abb!(uu, vv);
+      return u.art === "plan" ? zuSzene(x, y, 0).setY(yPlan) : zuSzene(x, 0, y).setZ(-this.schnittTiefe);
+    });
+    // Ecken relativ zur ersten: beim Kalibrieren kann der Plan Millionen Meter vom Nullpunkt liegen, Float32 der
+    // Grafikkarte truege dann auf 0,5 m (die Lage des Netzes rechnet three.js in doppelter Genauigkeit)
+    this.bild.position.copy(punkte[0]);
+    for (const p of punkte) pos.push(p.x - punkte[0].x, p.y - punkte[0].y, p.z - punkte[0].z);
+    this.bild.updateMatrixWorld();
     const g = this.bild.geometry;
     g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
     g.setAttribute("uv", new THREE.Float32BufferAttribute([0, 1, 1, 1, 1, 0, 0, 0], 2));
     g.setIndex([0, 3, 1, 1, 3, 2]);
     g.computeBoundingBox();
     g.computeBoundingSphere();
+    this.mitfuehren(u);
+  }
+
+  /** Springt die Unterlage beim Kalibrieren weit (Rechts-/Hochwert eingetragen), geht die Kamera mit - sonst ist
+   *  der Plan aus dem Bild und der Viewer leer. Kleine Aenderungen (Drehung, Massstab, Feinlage) bewegen sie nicht. */
+  private mitfuehren(u: Unterlage) {
+    const abb = this.abb!;
+    const m = abb(u.breite / 2, u.hoehe / 2);
+    const [a, b] = [abb(0, 0), abb(u.breite, u.hoehe)];
+    const alt = this.planMitte;
+    this.planMitte = m;
+    if (!alt || !this.aktiv || !this.bild?.visible) return;
+    const [de, dn] = [m[0] - alt[0], m[1] - alt[1]];
+    if (Math.hypot(de, dn) <= Math.hypot(b[0] - a[0], b[1] - a[1]) / 2) return;
+    if (u.art === "plan") void verschieben(de, -dn);
+    else void verschieben(de, 0, dn * rahmen.faktor);
   }
 
   /** Laengsschnitt hinter das Modell legen (Modellbreite quer zur Reihe). */
@@ -551,8 +637,15 @@ export class LageEditor {
   }
 
   private bildKlick(ev: MouseEvent) {
-    if (!this.waehlen || !this.bild || !this.unterlage) return;
-    this.caster.setFromCamera(this.ndc(ev), this.welt.camera.three);
+    const weg = this.druck ? Math.hypot(ev.clientX - this.druck[0], ev.clientY - this.druck[1]) : 0;
+    if (weg > 5) return;                                 // der Plan wurde verschoben, nicht geklickt
+    if (!this.waehlen) {
+      if (this.punktModus) this.punktSetzen(ev);
+      else this.punktWaehlen(null);
+      return;
+    }
+    if (!this.bild || !this.unterlage) return;
+    strahl(this.caster, this.ndc(ev));
     const [t] = this.caster.intersectObject(this.bild, false);
     if (!t?.uv) {
       this.r.meldung("Bitte auf die Unterlage klicken.", 3000);
@@ -562,6 +655,45 @@ export class LageEditor {
     this.waehlen = null;
     document.body.classList.remove("waehlt");
     f({ u: t.uv.x * this.unterlage.breite, v: (1 - t.uv.y) * this.unterlage.hoehe });
+  }
+
+  /** Punktmodus (App): Klick in den gesperrten Lageplan -> Ereignis "punkt" mit Rechts-/Hochwert. */
+  punktModusSetzen(an: boolean) {
+    this.punktModus = an;
+    document.body.classList.toggle("punkte", an && this.aktiv);
+  }
+
+  private punktSetzen(ev: MouseEvent) {
+    const u = this.unterlage;
+    if (!this.aktiv || !u || !this.bild || u.art !== "plan" || !u.kalibrierung?.gesperrt || !this.abb) {
+      this.r.meldung("Punkte nur auf dem kalibrierten, gesperrten Lageplan (🔒).", 4000);
+      return;
+    }
+    strahl(this.caster, this.ndc(ev));
+    const [t] = this.caster.intersectObject(this.bild, false);
+    if (!t?.uv) {
+      this.r.meldung("Bitte auf den Plan klicken.", 3000);
+      return;
+    }
+    const [x, y] = this.abb(t.uv.x * u.breite, (1 - t.uv.y) * u.hoehe);
+    ereignis({ typ: "punkt", x: Math.round(x * 1000) / 1000, y: Math.round(y * 1000) / 1000 });
+  }
+
+  /** Entf: gewaehlten freien Punkt loeschen bzw. die auf dem Plan gesetzte Lage der gewaehlten Bohrung entfernen. */
+  loeschen() {
+    if (!this.aktiv) return false;
+    if (this.punktGewaehlt) {
+      ereignis({ typ: "punkt_loeschen", punkt: this.punktGewaehlt });
+      this.punktWaehlen(null);
+      return true;
+    }
+    const s = this.ausgewaehlt ? this.nadeln.get(this.ausgewaehlt) : null;
+    if (s?.oben && /Plan|Viewer/.test(s.daten.quelle)) {
+      ereignis({ typ: "lage_entfernen", id: s.daten.id });
+      return true;
+    }
+    if (s) this.r.meldung(`${s.daten.code}: Lage kommt nicht vom Plan – im Schritt Bohrungen ändern.`, 4000);
+    return false;
   }
 
   /** Hilfsmarken der Kalibrierung: gemessene Strecke(n) und Bezugspunkt. */
@@ -610,7 +742,7 @@ export class LageEditor {
     const a = new THREE.Vector3().fromBufferAttribute(pos, 0);
     const b = new THREE.Vector3().fromBufferAttribute(pos, 1).sub(a);
     const d = new THREE.Vector3().fromBufferAttribute(pos, 3).sub(a);
-    return a.addScaledVector(b, u / this.unterlage.breite).addScaledVector(d, v / this.unterlage.hoehe);
+    return a.add(this.bild.position).addScaledVector(b, u / this.unterlage.breite).addScaledVector(d, v / this.unterlage.hoehe);
   }
 
   /** Bildpixel -> Bildschirm (fuer Pruefungen und Hilfen). */
@@ -628,6 +760,8 @@ export class LageEditor {
     return {
       nadeln: this.nadeln.size,
       ohneLage: this.ohneLage().length,
+      freiePunkte: this.freiePunkte.size,
+      punktModus: this.punktModus,
       unterlage: u ? { art: u.art, kalibriert: !!u.kalibrierung, gesperrt: !!u.kalibrierung?.gesperrt, sichtbar: !!this.bild?.visible } : null,
       radius: this.radiusAuto,
       text: u ? kalibrierungText(u, this.kalibrierung()) : "",

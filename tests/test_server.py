@@ -132,6 +132,32 @@ def test_unterlage_mit_neuer_kalibrierung(client):
     assert client.post(f"/api/projekt/{sig}/unterlage", files={"datei": ("x.pdf", b"kein pdf", "application/pdf")}).status_code == 400
 
 
+def test_plan_ohne_koordinaten_nullpunkt_und_system_vom_plan(client):
+    """Keine Bohrung mit Koordinaten: Nullpunkt und EPSG des Viewers kommen vom kalibrierten Plan."""
+    import pymupdf
+    sig = oeffnen(client, "talheim")
+    pdf = pymupdf.open()
+    pdf.new_page(width=420 * 72 / 25.4, height=297 * 72 / 25.4).insert_text((50, 50), "Lageplan 1:1000")
+    r = client.post(f"/api/projekt/{sig}/unterlage", files={"datei": ("plan.pdf", pdf.tobytes(), "application/pdf")},
+                    data={"art": "plan", "seite": "0"})
+    assert r.status_code == 200 and r.json()["lage_modus"] == "koordinaten" and r.json()["viewer"]["epsg"] is None
+    kal = {"massstab": {"n": 1000}, "bezug": {"u": 100, "v": 100, "x": 512345.0, "y": 5403210.0}, "drehung": 180,
+           "epsg": 25832, "gesperrt": True}
+    z = aendern(client, sig, {"op": "kalibrierung", "wert": kal})["zustand"]
+    assert z["viewer"]["ursprung"] == [512300.0, 5403200.0] and z["viewer"]["epsg"] == 25832
+    erste = z["bohrungen"][0]["id"]
+    z = aendern(client, sig, {"op": "lage", "id": erste, "x": 512400.0, "y": 5403100.0})["zustand"]
+    assert z["viewer"]["ursprung"] == [512300.0, 5403200.0]                 # erste Bohrung: kein Sprung
+    assert next(b for b in z["bohrungen"] if b["id"] == erste)["epsg"] == 25832
+    # Punkte: frei setzen (Stand und Viewer), einer Bohrung zuordnen; ungueltiges bleibt aussen vor
+    z = aendern(client, sig, {"op": "punkt", "x": 512450.0, "y": 5403150.0})["zustand"]
+    assert z["punkte"] == z["viewer"]["punkte"] == [{"id": "P1", "x": 512450.0, "y": 5403150.0}]
+    zweite = z["bohrungen"][1]["id"]
+    z = aendern(client, sig, {"op": "punkt_zuordnen", "punkt": "P1", "bohrung": zweite})["zustand"]
+    assert not z["punkte"] and next(b for b in z["viewer"]["bohrungen"] if b["id"] == zweite)["x"] == 512450.0
+    assert "gibt es nicht" in aendern(client, sig, {"op": "punkt_loeschen", "punkt": "P1"}, status=400)["detail"]
+
+
 def test_pdf_extraktion_als_auftrag_und_quellseite(client):
     r = client.post("/api/beispiel", json={"name": "pdf"}).json()
     aid = r["auftrag"]
@@ -169,6 +195,22 @@ def test_extraktion_als_json_hochladen(client):
             break
         time.sleep(0.05)
     assert a["projekt"] is None and "keine Extraktion" in a["fehler"][0]
+
+
+def test_im_netz_anmeldung_lebenszeichen_und_upload_grenze(tmp_path, monkeypatch):
+    """Online (docs/22): mit Passwort alles hinter HTTP-Basic ausser /gesund; zu grosse Uploads -> 413."""
+    monkeypatch.setattr(pl, "ARBEIT", tmp_path)
+    with TestClient(app_erstellen(tmp_path, passwort="geheim", max_mb=0.001)) as c:
+        assert c.get("/gesund").json()["ok"]
+        r = c.get("/api/info")
+        assert r.status_code == 401 and r.headers["www-authenticate"].startswith("Basic")
+        assert c.get("/api/info", auth=("jemand", "falsch")).status_code == 401
+        info = c.get("/api/info", auth=("jemand", "geheim")).json()
+        assert info["lizenz"] == "AGPL-3.0-or-later" and info["quellcode"].startswith("https://github.com/")
+        assert c.get("/", auth=("jemand", "geheim")).status_code == 200            # Oberflaeche (apps/web/dist)
+        r = c.post("/api/gutachten", auth=("jemand", "geheim"),
+                   files={"dateien": ("a.pdf", b"%PDF-" + b"0" * 5000, "application/pdf")})
+        assert r.status_code == 413 and "höchstens" in r.json()["detail"]
 
 
 def test_unbekanntes(client):
