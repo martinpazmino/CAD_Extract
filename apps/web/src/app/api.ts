@@ -114,7 +114,8 @@ async function anfrage<T>(pfad: string, init?: RequestInit): Promise<T> {
 const json = (daten: unknown): RequestInit => ({ method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(daten) });
 
 export const api = {
-  info: () => anfrage<{ version: string; ocr: boolean; beispiele: { name: string; titel: string }[] }>("/api/info"),
+  info: () => anfrage<{ version: string; ocr: boolean; lizenz: string; quellcode: string;
+                        beispiele: { name: string; titel: string }[] }>("/api/info"),
   projekte: () => anfrage<ProjektKurz[]>("/api/projekte"),
   beispiel: (name: string) => anfrage<{ projekt?: string; auftrag?: string }>("/api/beispiel", json({ name })),
   gutachten(dateien: File[], ocr: boolean) {

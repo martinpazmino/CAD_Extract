@@ -12,6 +12,7 @@
 //   python -m server --port 8511 --kein-browser --arbeit <leerer-ordner>     (in einem zweiten Terminal)
 //   python scripts/testplan.py <plaene>
 //   node scripts/check_app.mjs http://localhost:8511 <plaene> <ausgabe>
+// Server mit Anmeldung (Container, docs/22): GEO_AGENT_PASSWORT (und GEO_AGENT_BENUTZER) wie beim Server setzen.
 import { createRequire } from "node:module";
 import { mkdirSync, readFileSync } from "node:fs";
 
@@ -23,7 +24,10 @@ const wPlan = JSON.parse(readFileSync(`${plaene}/wahrheit_plan.json`, "utf8")).b
 const wSchnitt = JSON.parse(readFileSync(`${plaene}/wahrheit_schnitt.json`, "utf8")).bohrungen;
 
 const browser = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
-const page = await browser.newPage({ viewport: { width: 1600, height: 950 } });
+const anmeldung = process.env.GEO_AGENT_PASSWORT
+  ? { httpCredentials: { username: process.env.GEO_AGENT_BENUTZER || "pruefung", password: process.env.GEO_AGENT_PASSWORT } }
+  : {};
+const page = await browser.newPage({ viewport: { width: 1600, height: 950 }, ...anmeldung });
 const fehler = [];
 const pruefungen = [];
 page.on("pageerror", (e) => fehler.push(String(e.stack || e)));

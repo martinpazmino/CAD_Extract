@@ -28,7 +28,7 @@ equipo; "Verificado" = respaldado por una prueba en este repo.
 | D14 | That Open: **añadir las clases geotécnicas a `importer.classes.elements`** | Por defecto el IfcImporter las descarta | Spike IFC ([arquitectura §8.2](ARQUITECTURA_BAUGRUNDMODELL.md#82-resultados-del-spike-verificado)) | Verificado |
 | D15 | El LLM propone, la geometría decide | Evitar números inventados | [Arquitectura §6.9](ARQUITECTURA_BAUGRUNDMODELL.md#69-dónde-sí-y-dónde-no-usar-un-llm) | Propuesta |
 | D16 | **Corpus de prueba con Gutachten públicos** (B-Pläne, UVP-Verbund, transparencia); en el repo sólo manifest y verdad, nunca los PDFs | No hay Gutachten propios disponibles; publicados hay muchos | 16 candidatos en 8 Länder ([12](12_corpus_publico.md)); descarga bloqueada por la red del entorno | Decidido (2026-10-25) |
-| D17 | **Uso interno primero**; para terceros, decidir entre AGPL / licencia Artifex / pypdfium2 cuando haya caso de negocio | Evitar costes y decisiones prematuras | [14](14_licencias_terceros.md) | Decidido (2026-10-25) |
+| D17 | **Uso interno primero**; para terceros, decidir entre AGPL / licencia Artifex / pypdfium2 cuando haya caso de negocio | Evitar costes y decisiones prematuras | [14](14_licencias_terceros.md) | Sustituida por D79 (2026-10-29) |
 | D18 | **Todo PyMuPDF detrás de una capa de primitivas** propia | Hace barato cambiar a pypdfium2 (BSD/Apache) | pypdfium2 da los mismos 30 paths con estilo ([14 §3](14_licencias_terceros.md#3-prueba-se-puede-sustituir-pymupdf)) | Verificado (sintético) |
 | D19 | **Colaborar con swisstopo** empezando por issues con reproductores sintéticos y un correo; contribuir piezas pequeñas | Beneficio mutuo, bajo riesgo | Borradores en [13](13_colaboracion_swisstopo.md) | Propuesta (envía el equipo) |
 | D20 | **Geometría reducida a segmentos** y columna = par de verticales con trazo | Los PDFs regenerados (Ghostscript/PDF24) no tienen rectángulos ni rellenos | Wachenroth 18/18 sólo así ([15](15_resultados_pdfs_reales.md)) | Verificado (real) |
@@ -90,16 +90,20 @@ equipo; "Verificado" = respaldado por una prueba en este repo.
 | D76 | **Modo Lage con la navegación "Plan" de That Open**: el botón izquierdo desplaza el plano, no gira | En una vista desde arriba un giro accidental pierde el plano | C2 (desplazar sin perder la vista) | Decidido |
 | D77 | **Puntos en el plano**: modo de clic con "siguiente sondeo" (avanza solo), puntos libres ◆ que se asignan después, pasar una posición a otro sondeo, borrar con ✕ o Supr; sólo con el plano calibrado y bloqueado | Petición del usuario: arrastrar no le funcionaba; poner y asignar es más fiable con 20+ sondeos | `test_punkte_setzen_zuordnen_und_loeschen`, `check_app.mjs` C3 | Verificado |
 | D78 | **Rayo ortográfico desde `near`, encuadre ortográfico normalizado y plano a la altura de los sondeos** | BH con GOK real no se arrastraban; encuadre invertido (plano a 180°) al abrir directamente (M34, M35) | C2 con GOK + 300 m; C3 apertura directa; `check.mjs` B | Verificado |
+| D79 | **Licencia AGPL-3.0-or-later** para todo el repositorio (opción A de [14](14_licencias_terceros.md)); enlace *Quellcode* en la app (pie de la primera página y menú ⋯, `/api/info`); terceros en `THIRD_PARTY_LICENSES.md` | PyMuPDF sólo es gratis bajo AGPL; al poner la app en línea para otros rige el § 13 (código de la versión que se ejecuta) | `LICENSE`, `test_im_netz_anmeldung_lebenszeichen_und_upload_grenze` (licencia y enlace en `/api/info`) | Decidido |
+| D80 | **En línea como un contenedor** (`Dockerfile`, blueprint `render.yaml`: Fráncfort, disco en `/data`), **no en Vercel**; contraseña `GEO_AGENT_PASSWORT` (HTTP Basic) para todo salvo `/gesund`, límite de subida, una sola instancia | Vercel: 4,5 MB por petición, sin disco, sin procesos en segundo plano; la app guarda los proyectos en disco y extrae en un hilo ([22](22_despliegue.md)) | Imagen sin OCR: 28/28 `check_app.mjs` contra el contenedor (también con contraseña), 290 MB tras una extracción | Verificado (local; Render sin probar) |
+| D81 | **Versiones fijadas** (`constraints.txt`, Python 3.13) y **CI en cada push** (pytest, compilación de la página, imagen con OCR y contraseña; punta a punta a mano) | Un `pip install` sin versiones puede romper un despliegue; el OCR del contenedor no se puede probar en la sesión (X25) | Workflow `Prüfungen` ([22 §9](22_despliegue.md#9-pruebas-automáticas-ci)) | Decidido |
 
 ## Preguntas abiertas
 
 1. ~~¿Quién aporta muestras?~~ → corpus público ([12](12_corpus_publico.md), D16). 3 recibidos
    ([15](15_resultados_pdfs_reales.md)); faltan 5–7 no vistos (subirlos o permitir los dominios).
-2. ~~¿Uso interno o terceros?~~ → interno primero, terceros más adelante (D17, D18, [14](14_licencias_terceros.md)).
+2. ~~¿Uso interno o terceros?~~ → interno primero (D17, D18, [14](14_licencias_terceros.md)); ahora publicado bajo
+   AGPL-3.0-or-later y desplegable en línea (D79, D80, [22](22_despliegue.md)).
 3. ¿Hay Lageplan, tabla de coordenadas o LandXML del eje en los proyectos? ([07](07_coordenadas.md)) → con
    Lageplan o Längsschnitt en PDF ya se colocan en el visor ([20](20_lage_pruefung_viewer.md), D57).
 4. ¿Quién envía los issues y el correo a swisstopo, y en nombre de qué organización? ([13](13_colaboracion_swisstopo.md))
 
 Up: [Índice](README.md)
 
-Related: [Arquitectura](ARQUITECTURA_BAUGRUNDMODELL.md) · [10 Plan](10_plan_implementacion.md) · [09 Validación](09_validacion_benchmark.md) · [18 Modelador de capas](18_modelador_capas.md) · [20 Lage y Prüfstand](20_lage_pruefung_viewer.md) · [21 App por pasos y normas](21_app_schritte_normen.md)
+Related: [Arquitectura](ARQUITECTURA_BAUGRUNDMODELL.md) · [10 Plan](10_plan_implementacion.md) · [09 Validación](09_validacion_benchmark.md) · [18 Modelador de capas](18_modelador_capas.md) · [20 Lage y Prüfstand](20_lage_pruefung_viewer.md) · [21 App por pasos y normas](21_app_schritte_normen.md) · [22 En línea](22_despliegue.md)

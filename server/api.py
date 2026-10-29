@@ -2,9 +2,16 @@
 apps/web/dist und wird hier mit ausgeliefert: ein Prozess, ein Port, kein Node noetig (docs/21).
 
     python -m server            -> http://127.0.0.1:8500
+
+Im Netz (docs/22): GEO_AGENT_PASSWORT schuetzt alles mit HTTP-Basic-Anmeldung, GEO_AGENT_MAX_MB begrenzt Uploads,
+/gesund antwortet ohne Anmeldung (Health-Check der Plattform). Lizenz AGPL-3.0-or-later (LICENSE).
 """
 from __future__ import annotations
 
+import base64
+import binascii
+import os
+import secrets
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
@@ -18,6 +25,20 @@ from .arbeitsplatz import BEISPIELE, Arbeitsplatz
 
 DIST = Path(__file__).resolve().parents[1] / "apps" / "web" / "dist"
 VERSION = "3.0"
+LIZENZ = "AGPL-3.0-or-later"
+QUELLCODE = "https://github.com/martinpazmino/GeoIM"          # AGPL § 13: Quelltext fuer Nutzer im Netz
+
+
+def anmeldung_ok(kopf: str | None, passwort: str, benutzer: str = "") -> bool:
+    """HTTP-Basic-Anmeldung pruefen (zeitkonstant); ohne festen Benutzer zaehlt nur das Passwort."""
+    if not kopf or not kopf.lower().startswith("basic "):
+        return False
+    try:
+        name, _, wort = base64.b64decode(kopf[6:].strip()).decode("utf-8").partition(":")
+    except (binascii.Error, UnicodeDecodeError):
+        return False
+    name_ok = secrets.compare_digest(name.encode(), benutzer.encode()) if benutzer else True
+    return secrets.compare_digest(wort.encode(), passwort.encode()) and name_ok
 
 
 class Aenderungen(BaseModel):
@@ -38,10 +59,28 @@ class Seite(BaseModel):
     art: str = "plan"
 
 
-def app_erstellen(arbeit: Path | None = None) -> FastAPI:
+def app_erstellen(arbeit: Path | None = None, passwort: str | None = None, max_mb: float | None = None) -> FastAPI:
+    """passwort / max_mb: sonst aus GEO_AGENT_PASSWORT (leer = ohne Anmeldung, nur fuer localhost gedacht) und
+    GEO_AGENT_MAX_MB (Standard 200 MB je Anfrage)."""
     ap = Arbeitsplatz(arbeit)
-    app = FastAPI(title="Geo_Agent Baugrundmodell", version=VERSION)
+    app = FastAPI(title="GeoIM – Baugrundmodell", version=VERSION)
     app.state.arbeitsplatz = ap
+    passwort = os.environ.get("GEO_AGENT_PASSWORT", "") if passwort is None else passwort
+    benutzer = os.environ.get("GEO_AGENT_BENUTZER", "")
+    max_mb = float(os.environ.get("GEO_AGENT_MAX_MB") or 200) if max_mb is None else max_mb
+    quellcode = os.environ.get("GEO_AGENT_QUELLCODE") or QUELLCODE
+
+    @app.middleware("http")
+    async def zugang(request: Request, call_next):
+        """Im Netz: Anmeldung fuer alles ausser der Pruefung /gesund; zu grosse Anfragen gleich abweisen."""
+        if request.url.path != "/gesund":
+            if passwort and not anmeldung_ok(request.headers.get("authorization"), passwort, benutzer):
+                return Response("Anmeldung erforderlich", status_code=401,
+                                headers={"WWW-Authenticate": 'Basic realm="GeoIM", charset="UTF-8"'})
+            laenge = request.headers.get("content-length", "")
+            if laenge.isdigit() and int(laenge) > max_mb * 1024 * 1024:
+                return JSONResponse({"detail": f"Anfrage zu groß (höchstens {max_mb:g} MB)"}, status_code=413)
+        return await call_next(request)
 
     @app.exception_handler(KeyError)
     async def nicht_gefunden(_: Request, err: KeyError):
@@ -52,9 +91,14 @@ def app_erstellen(arbeit: Path | None = None) -> FastAPI:
         return JSONResponse({"detail": str(err)}, status_code=400)
 
     # ------------------------------------------------------------ Start
+    @app.get("/gesund")
+    def gesund():
+        """Lebenszeichen fuer die Plattform (ohne Anmeldung, ohne Daten)."""
+        return {"ok": True, "version": VERSION}
+
     @app.get("/api/info")
     def info():
-        return {"version": VERSION, "ocr": pl.ocr_verfuegbar(),
+        return {"version": VERSION, "ocr": pl.ocr_verfuegbar(), "lizenz": LIZENZ, "quellcode": quellcode,
                 "beispiele": [{"name": k, "titel": t} for k, (t, _) in BEISPIELE.items()]}
 
     @app.get("/api/projekte")

@@ -36,7 +36,7 @@ function kopf() {
     <header class="kopf">
       <div class="marke" @click=${() => gehe("gutachten")} title="Start">
         <span class="logo">⛰</span>
-        <span><b>Geo_Agent</b> · Baugrundmodell</span>
+        <span><b>GeoIM</b> · Baugrundmodell</span>
       </div>
       <nav class="schritte" aria-label="Schritte">
         ${SCHRITTE.map((s) => {
@@ -58,6 +58,7 @@ function kopf() {
               <button @click=${() => gehe("gutachten")}>Anderes Projekt öffnen</button>
               <button @click=${zuruecksetzen}>Alle Korrekturen verwerfen …</button>
               <a href="viewer.html" target="_blank" rel="noopener">Viewer allein öffnen</a>
+              ${S.info ? html`<a href=${S.info.quellcode} target="_blank" rel="noopener">Quellcode (${S.info.lizenz})</a>` : nothing}
             </div>
           </details>` : nothing}
       </div>

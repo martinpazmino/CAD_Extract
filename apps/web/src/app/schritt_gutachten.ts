@@ -116,5 +116,9 @@ export function schrittGutachten() {
             </table>` : html`<p class="leise">Noch keine Projekte. Ein Projekt entsteht beim ersten Auswerten und wird automatisch gesichert.</p>`}
         </section>
       </div>
+      ${S.info ? html`<p class="leise klein impressum">GeoIM ${S.info.version} · freie Software unter
+        <a href=${`${S.info.quellcode}/blob/main/LICENSE`} target="_blank" rel="noopener">${S.info.lizenz}</a> ·
+        <a href=${S.info.quellcode} target="_blank" rel="noopener">Quellcode</a> · die App extrahiert und schlägt vor;
+        die Interpretation und Freigabe bleibt beim Geotechniker.</p>` : nothing}
     </div>`;
 }

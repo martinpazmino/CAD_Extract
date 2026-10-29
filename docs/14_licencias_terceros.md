@@ -7,6 +7,11 @@ aliases: [Licencias, AGPL, Uso por terceros]
 
 # Licencias: uso interno hoy, terceros mañana
 
+> [!NOTE]
+> **Actualización 2026-10-29:** elegida la opción A. El repositorio se publica bajo **AGPL-3.0-or-later**
+> ([`LICENSE`](../LICENSE), [terceros](../THIRD_PARTY_LICENSES.md), D79) y la app enlaza su código fuente (*Quellcode*) para
+> cumplir el § 13 cuando está en línea ([22](22_despliegue.md)). B y C siguen abiertas si un día hace falta código cerrado.
+
 **Conclusión:** para el uso **interno** la licencia AGPL de PyMuPDF (y de swissgeol) no plantea
 problemas prácticos. Para ofrecer Geo_Agent **a terceros** habrá que elegir entre publicar el
 código bajo AGPL, comprar la licencia comercial de PyMuPDF o cambiar la librería PDF. La decisión
@@ -98,4 +103,4 @@ y para tests sin PDF.
 
 Up: [Índice](README.md)
 
-Related: [08 swissgeol](08_swissgeol_reutilizacion.md) · [11 Decisiones](11_decisiones.md) · [12 Corpus](12_corpus_publico.md) · [Arquitectura](ARQUITECTURA_BAUGRUNDMODELL.md)
+Related: [08 swissgeol](08_swissgeol_reutilizacion.md) · [11 Decisiones](11_decisiones.md) · [12 Corpus](12_corpus_publico.md) · [Arquitectura](ARQUITECTURA_BAUGRUNDMODELL.md) · [22 En línea](22_despliegue.md)

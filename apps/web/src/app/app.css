@@ -313,3 +313,5 @@ select.epsg { width: 100%; max-width: 24rem; }
   body[data-schritt="modell"] .buehne { right: 20rem; }
   body[data-schritt="modell"] .schritt { width: 20rem; }
 }
+.impressum { margin-top: 1.5rem; text-align: center; }
+.impressum a { color: #8fc6ff; }

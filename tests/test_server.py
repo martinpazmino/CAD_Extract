@@ -197,6 +197,22 @@ def test_extraktion_als_json_hochladen(client):
     assert a["projekt"] is None and "keine Extraktion" in a["fehler"][0]
 
 
+def test_im_netz_anmeldung_lebenszeichen_und_upload_grenze(tmp_path, monkeypatch):
+    """Online (docs/22): mit Passwort alles hinter HTTP-Basic ausser /gesund; zu grosse Uploads -> 413."""
+    monkeypatch.setattr(pl, "ARBEIT", tmp_path)
+    with TestClient(app_erstellen(tmp_path, passwort="geheim", max_mb=0.001)) as c:
+        assert c.get("/gesund").json()["ok"]
+        r = c.get("/api/info")
+        assert r.status_code == 401 and r.headers["www-authenticate"].startswith("Basic")
+        assert c.get("/api/info", auth=("jemand", "falsch")).status_code == 401
+        info = c.get("/api/info", auth=("jemand", "geheim")).json()
+        assert info["lizenz"] == "AGPL-3.0-or-later" and info["quellcode"].startswith("https://github.com/")
+        assert c.get("/", auth=("jemand", "geheim")).status_code == 200            # Oberflaeche (apps/web/dist)
+        r = c.post("/api/gutachten", auth=("jemand", "geheim"),
+                   files={"dateien": ("a.pdf", b"%PDF-" + b"0" * 5000, "application/pdf")})
+        assert r.status_code == 413 and "höchstens" in r.json()["detail"]
+
+
 def test_unbekanntes(client):
     assert client.get("/api/projekt/abc123/").status_code in (404, 405)
     assert client.get("/api/projekt/000000000000").status_code == 404

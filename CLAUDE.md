@@ -1,19 +1,21 @@
-# Geo_Agent / CAD_Extract — memoria del proyecto
+# GeoIM (Geo_Agent) — memoria del proyecto
 
 ## Objetivo
 Desde un Bodengutachten en PDF construir el **Baugrundmodell**: sondeos validados y trazables →
 Supabase → geometrías IFC 4.3 en That Open Engine. Arquitectura: `docs/ARQUITECTURA_BAUGRUNDMODELL.md`.
 La app actual (`app.py`, `geo_agent/`, Streamlit) es v1: posiciones fijas, 0/58 sondeos en PDFs ajenos.
+Repositorio `github.com/martinpazmino/GeoIM` (antes CAD_Extract, redirige), licencia **AGPL-3.0-or-later** (D79).
 
 ## Leer antes de tocar la extracción
 - `docs/16_lecciones_aprendidas.md`: reglas explícitas (proceso P1–P12, entrada E, geometría G, etiquetas L/T, texto B, agua W, segundas fuentes S, swissgeol R, modelo M, entorno X). Respetarlas.
 - `docs/17_algoritmo_extraccion.md`: especificación del algoritmo (etapas, parámetros, confianza).
 - `docs/15_resultados_pdfs_reales.md`: resultados ciegos y de entrenamiento.
-- `docs/11_decisiones.md`: decisiones D1–D78.
+- `docs/11_decisiones.md`: decisiones D1–D81.
 - `docs/18_modelador_capas.md`: modelo de capas (N3) y visor That Open.
 - `docs/19_app_v2.md`: app Streamlit v2 (historia; sustituida por la 21).
 - `docs/20_lage_pruefung_viewer.md`: visor con controles de TwinBimM, modelos > 5 km, Lage sobre plano, Prüfstand.
 - `docs/21_app_schritte_normen.md`: app por pasos (FastAPI + visor), normas de la descripción, calibración nueva.
+- `docs/22_despliegue.md`: en línea como contenedor (Render), por qué no Vercel, variables, memoria, CI.
 
 ## Reglas de trabajo
 - **Prueba ciega**: con un PDF nuevo, congelar predicciones (`spikes/korpus/blind_test.py freeze`)
@@ -45,9 +47,17 @@ La app actual (`app.py`, `geo_agent/`, Streamlit) es v1: posiciones fijas, 0/58 
   `npm run build` y **subir `apps/web/dist`** (el servidor lo usa sin Node); web-ifc 0.0.77 (X9). Prueba:
   `python scripts/testplan.py <planes>` y en `apps/web` `node scripts/check.mjs <modelo.ifc> <planes> <capturas>` (19).
 - Punta a punta: `python -m server --port <p> --kein-browser --arbeit <vacía>` y `node scripts/check_app.mjs
-  http://localhost:<p> <planes> <capturas>` (28 comprobaciones). `pkill`/`pgrep -f` en un comando aparte (X3, X19).
+  http://localhost:<p> <planes> <capturas>` (28 comprobaciones; con contraseña: `GEO_AGENT_PASSWORT=…`). `pkill`/`pgrep -f`
+  en un comando aparte (X3, X19).
+- En línea (docs/22, D80): `Dockerfile` (python:3.13-slim, OCR con `--build-arg OCR=0` fuera, datos en `/data`, usuario
+  1000) y blueprint `render.yaml`. Variables: `PORT`, `GEO_AGENT_HOST`, `GEO_AGENT_PASSWORT` (HTTP Basic salvo `/gesund`),
+  `GEO_AGENT_BENUTZER`, `GEO_AGENT_MAX_MB`, `GEO_AGENT_ARBEIT`, `GEO_AGENT_QUELLCODE`. El enlace *Quellcode* (AGPL § 13) no
+  se quita. Dependencias: `requirements-server.txt` + versiones exactas en `constraints.txt` (D81; se renuevan con
+  `pip freeze`); CI `.github/workflows/pruefungen.yml`. Terceros: `THIRD_PARTY_LICENSES.md`; reglas: `CONTRIBUTING.md`.
 
 ## Entorno (sesiones en la nube)
 - Webs municipales bloqueadas por la política de red; pypi y GitHub accesibles. Los PDFs los sube el usuario.
 - Dependencias pesadas en venvs del scratchpad: `venv` (pymupdf, opencv, rapidocr), `sgvenv` (swissgeol).
+- Docker (X25): arrancar `dockerd` en segundo plano; apt bloqueado → `--build-arg OCR=0`, `--network host`, proxy y CA
+  de la sesión como secreto. vercel.com, render.com y gnu.org bloqueados (docs de Vercel: MCP de Vercel o búsqueda).
 - Rama de trabajo indicada en la sesión; no crear PR sin que lo pidan.

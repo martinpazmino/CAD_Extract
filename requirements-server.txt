@@ -1,0 +1,11 @@
+# GeoIM im Netz (python -m server, Dockerfile): nur die Baugrundmodell-App, ohne Streamlit / Excel v1.
+# Getestete Versionen fuer das Container-Image: constraints.txt
+fastapi>=0.110
+uvicorn>=0.29
+python-multipart>=0.0.9
+PyMuPDF>=1.24
+numpy>=1.26
+scipy>=1.11
+ifcopenshell>=0.8
+openpyxl>=3.1
+pillow>=10.0

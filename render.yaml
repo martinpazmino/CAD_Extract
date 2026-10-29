@@ -1,0 +1,22 @@
+# Render-Blueprint (https://render.com, docs/22_despliegue.md): im Dashboard "New > Blueprint", dieses Repo waehlen.
+# Ein Webdienst aus dem Dockerfile, Daten auf einer Platte unter /data (bleiben bei Neustart und Deploy erhalten),
+# Anmeldung mit GEO_AGENT_PASSWORT (wird beim Anlegen abgefragt). Jeder Push auf main baut neu.
+services:
+  - type: web
+    name: geoim
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    branch: main
+    region: frankfurt              # EU (Gutachten sind vertraulich, DSGVO)
+    plan: starter                  # 512 MB reichen ohne OCR; mit OCR fuer grosse Scans: standard (2 GB)
+    healthCheckPath: /gesund
+    envVars:
+      - key: GEO_AGENT_PASSWORT
+        sync: false                # im Dashboard eingeben, nicht ins Repo
+      - key: GEO_AGENT_MAX_MB
+        value: "200"
+    disk:
+      name: geoim-daten
+      mountPath: /data
+      sizeGB: 5
