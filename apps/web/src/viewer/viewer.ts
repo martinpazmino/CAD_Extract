@@ -101,6 +101,7 @@ export async function viewerStarten(huelle: HTMLElement, opt: ViewerOptionen = {
   function groesseGeaendert() {
     world.renderer?.resize();
     world.camera.updateAspect();
+    KAMERA.orthoRichten();
     neuZeichnen(4);
   }
 
@@ -807,6 +808,7 @@ export async function viewerStarten(huelle: HTMLElement, opt: ViewerOptionen = {
     for (const m of fragments.list.values()) m.useCamera(world.camera.three);
     postproduction.updateCamera();
     verdeckungKamera();
+    KAMERA.orthoRichten();
     wuerfel.camera = world.camera.three;
     fragments.core.update(true);
     status.kamera = kameraInfo();
@@ -827,7 +829,7 @@ export async function viewerStarten(huelle: HTMLElement, opt: ViewerOptionen = {
     hudBild = 0;
     const r = world.renderer!.three.domElement.getBoundingClientRect();
     const ndc = new THREE.Vector2(((hudMaus.x - r.left) / r.width) * 2 - 1, -((hudMaus.y - r.top) / r.height) * 2 + 1);
-    strahl.setFromCamera(ndc, world.camera.three);
+    KAMERA.strahl(strahl, ndc);
     const ursprung = strahl.ray.origin.clone();
     const eigene = strahl.intersectObjects([editor.gruppe, ...world.scene.three.children.filter((o) => o.name === "Unterlage" && o.visible)], true);
     let p: THREE.Vector3 | null = eigene[0]?.point ?? null;
@@ -893,6 +895,7 @@ export async function viewerStarten(huelle: HTMLElement, opt: ViewerOptionen = {
     const ziel = ev.target as HTMLElement;
     if (ziel?.closest?.("input, select, textarea, bim-text-input, bim-number-input")) return;
     if (!huelle.offsetParent) return;                                // Viewer gerade nicht sichtbar
+    if (ev.code === "Delete" && editor.loeschen()) return;          // Lage-Modus: Punkt bzw. gesetzte Lage
     if (ev.code === "Delete" || ev.code === "Backspace") clipper.delete(world);
     if (ev.key === "Escape") {
       if (editor.escape()) return;
@@ -969,7 +972,7 @@ export async function viewerStarten(huelle: HTMLElement, opt: ViewerOptionen = {
       bezugGesetzt = true;
     }
     editor.markenZeigen = bohrungenAn;
-    editor.setzen(nadeln, a.unterlage ?? null);
+    editor.setzen(nadeln, a.unterlage ?? null, a.punkte ?? []);
     editor.setSichtbar(bohrungenAn && nadelnVonApp);
     status.marken = editor.nadeln.size;
     const url = a.ifc ?? "";

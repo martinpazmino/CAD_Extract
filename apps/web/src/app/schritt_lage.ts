@@ -6,7 +6,7 @@ import { live } from "lit/directives/live.js";
 import { api, type Zustand } from "./api";
 import { hilfe } from "./hilfe";
 import { epsgAuswahl, lagePruefen, systemText } from "./epsg";
-import { S, aendern, melden, neu, versuchen, viewerAktualisieren, zustandUebernehmen } from "./store";
+import { S, aendern, melden, naechsteOhneLage, neu, versuchen, viewerAktualisieren, zustandUebernehmen } from "./store";
 import { kalibrierungText, massstabszahl } from "../viewer/lage";
 import type { Bildpunkt } from "../viewer/lage";
 import type { Kalibrierung, Massstab } from "../viewer/kanal";
@@ -197,7 +197,8 @@ function kalibrierenTeil(z: Zustand) {
         ? html`<br><span class="leise">Vorschau: ${kalibrierungText(u, S.entwurf)} (noch nicht übernommen)</span>` : nothing}
     </p>
     ${gesperrt ? html`
-      <p class="leise klein">Der Plan liegt fest. Bohrungen im Viewer ziehen – ${plan ? "nur in x/y" : "entlang der Station; die Höhe nur ohne GOK aus dem PDF"}.</p>
+      <p class="leise klein">Der Plan liegt fest. ${plan ? "Bohrungen unten mit „Punkte setzen“ in den Plan klicken oder im Viewer ziehen – nur in x/y"
+        : "Bohrungen im Viewer ziehen – entlang der Station; die Höhe nur ohne GOK aus dem PDF"}.</p>
       <button @click=${() => sperre(false)}>🔓 Entsperren (neu kalibrieren)</button>` : html`
       <fieldset class="gruppe">
         <legend>1 · Maßstab ${hilfe("massstab")}</legend>
@@ -303,15 +304,97 @@ function bohrungenTeil(z: Zustand) {
   const frei = !u || !!u.kalibrierung?.gesperrt;
   const ohne = z.viewer.bohrungen.filter((b) => b.x === null);
   const reihe = z.lage_modus === "reihe";
+  const punkte = !reihe && u?.art === "plan" && !!u.kalibrierung?.gesperrt;
   return html`
-    ${!frei ? html`<p class="warnung">Erst kalibrieren und sperren (🔒) – dann die Bohrungen ziehen.</p>` : nothing}
+    ${!frei ? html`<p class="warnung">Erst kalibrieren und sperren (🔒) – dann Punkte setzen oder Bohrungen ziehen.</p>` : nothing}
+    ${punkte ? punkteTeil(z) : nothing}
     ${ohne.length ? html`
-      <p class="klein">Ohne Lage (${ohne.length}) – in den Viewer ziehen ${hilfe("ohne_lage")}</p>
+      <p class="klein">Ohne Lage (${ohne.length}) – ${punkte ? "anklicken = als Nächste setzen, oder" : ""} in den Viewer ziehen
+        ${hilfe("ohne_lage")}</p>
       <div class="parkplatz">
-        ${ohne.map((b) => html`<span class="park ${frei ? "" : "gesperrt"}" title="In den Viewer ziehen"
-          @pointerdown=${(ev: PointerEvent) => S.viewer?.editor.ziehenStart(ev, b.id, true)}>${b.code}</span>`)}
+        ${ohne.map((b) => html`<span class=${`park ${frei ? "" : "gesperrt"} ${S.punktModus && S.naechste === b.id ? "aktiv" : ""}`}
+          title=${punkte ? "Klick: als nächste Bohrung setzen · Ziehen: direkt in den Viewer" : "In den Viewer ziehen"}
+          @pointerdown=${(ev: PointerEvent) => S.viewer?.editor.ziehenStart(ev, b.id, true)}
+          @click=${() => { if (punkte) punktModus(true, b.id); }}>${b.code}</span>`)}
       </div>` : html`<p class="leise klein">Alle Bohrungen im Modell haben eine Lage.</p>`}
+    ${punkte ? punktListe(z) : nothing}
     ${reihe ? reiheTeil(z) : nothing}`;
+}
+
+/** Punktmodus an/aus; mit Bohrung: sie bekommt den naechsten Punkt. */
+function punktModus(an: boolean, naechste?: string) {
+  S.punktModus = an;
+  if (naechste !== undefined) S.naechste = naechste;
+  else if (an && !S.naechste) S.naechste = naechsteOhneLage();
+  S.viewer?.editor.punktModusSetzen(an);
+  neu();
+}
+
+/** Punkte setzen: Modus, welche Bohrung der naechste Klick bekommt (danach automatisch die naechste ohne Lage). */
+function punkteTeil(z: Zustand) {
+  const ohne = z.viewer.bohrungen.filter((b) => b.x === null);
+  const mit = z.viewer.bohrungen.filter((b) => b.x !== null);
+  return html`
+    <div class="zeile">
+      <button class=${S.punktModus ? "primaer" : ""} @click=${() => punktModus(!S.punktModus)}>
+        ${S.punktModus ? "● Punkte setzen – Klick in den Plan" : "＋ Punkte im Plan setzen"}</button>
+      ${S.punktModus ? html`<button class="leise-knopf" @click=${() => punktModus(false)}>Fertig (Esc)</button>` : nothing}
+      ${hilfe("punkte")}
+    </div>
+    ${S.punktModus ? html`
+      <label class="feld breit"><span>Nächster Klick setzt</span>
+        <select class="naechste" @change=${(ev: Event) => { S.naechste = (ev.target as HTMLSelectElement).value; neu(); }}>
+          <option value="" .selected=${!S.naechste}>– freien Punkt (später zuordnen) –</option>
+          ${ohne.length ? html`<optgroup label="Ohne Lage">
+            ${ohne.map((b) => html`<option value=${b.id} .selected=${S.naechste === b.id}>${b.code}</option>`)}</optgroup>` : nothing}
+          ${mit.length ? html`<optgroup label="Mit Lage (neu setzen)">
+            ${mit.map((b) => html`<option value=${b.id} .selected=${S.naechste === b.id}>${b.code}</option>`)}</optgroup>` : nothing}
+        </select></label>
+      <p class="leise klein">Danach ist automatisch die nächste Bohrung ohne Lage dran.</p>` : nothing}`;
+}
+
+/** Gesetzte Punkte: Bohrungen mit Lage vom Plan und freie Punkte; zuordnen, umhaengen, loeschen. */
+function punktListe(z: Zustand) {
+  const vomPlan = z.viewer.bohrungen.filter((b) => b.x !== null && /Plan|Viewer/.test(b.quelle));
+  const alle = z.viewer.bohrungen;
+  const ohne = alle.filter((b) => b.x === null);
+  if (!vomPlan.length && !z.punkte.length) return nothing;
+  const lage = (x: number | null, y: number | null) => html`<span class="leise klein">R ${zahl(x)}<br>H ${zahl(y)}</span>`;
+  return html`
+    <p class="klein">Gesetzte Punkte (${vomPlan.length + z.punkte.length})</p>
+    <table class="tabelle kompakt punkte">
+      <tbody>
+        ${z.punkte.map((pt) => html`
+          <tr class=${`frei ${S.viewer?.editor.punktGewaehlt === pt.id ? "gewaehlt" : ""}`}>
+            <td><button class="link" title="Im Viewer wählen" @click=${() => { S.viewer?.editor.punktWaehlen(pt.id); neu(); }}>◆ ${pt.id}</button></td>
+            <td>${lage(pt.x, pt.y)}</td>
+            <td><select aria-label=${`${pt.id} zuordnen`} @change=${(ev: Event) => {
+                const ziel = (ev.target as HTMLSelectElement).value;
+                if (ziel) void aendern([{ op: "punkt_zuordnen", punkt: pt.id, bohrung: ziel }]);
+              }}>
+              <option value="" selected>– Bohrung zuordnen –</option>
+              ${ohne.length ? html`<optgroup label="Ohne Lage">${ohne.map((b) => html`<option value=${b.id}>${b.code}</option>`)}</optgroup>` : nothing}
+              <optgroup label="Mit Lage (ersetzen)">${alle.filter((b) => b.x !== null).map((b) => html`<option value=${b.id}>${b.code}</option>`)}</optgroup>
+            </select></td>
+            <td><button class="symbol" title="Punkt löschen" @click=${() => aendern([{ op: "punkt_loeschen", punkt: pt.id }])}>✕</button></td>
+          </tr>`)}
+        ${vomPlan.map((b) => html`
+          <tr class=${S.viewer?.editor.ausgewaehlt === b.id ? "gewaehlt" : ""}>
+            <td><button class="link" title="Im Viewer wählen" @click=${() => { void S.viewer?.nadelWaehlen(b.id); neu(); }}>● ${b.code}</button></td>
+            <td>${lage(b.x, b.y)}</td>
+            <td><select aria-label=${`${b.code} umhängen`} @change=${(ev: Event) => {
+                const ziel = (ev.target as HTMLSelectElement).value;
+                if (ziel === "-") void aendern([{ op: "lage_loesen", id: b.id }]);
+                else if (ziel && ziel !== b.id) void aendern([{ op: "lage_umhaengen", id: b.id, nach: ziel }]);
+              }}>
+              <option value=${b.id} selected>${b.code}</option>
+              <option value="-">– Zuordnung lösen (freier Punkt) –</option>
+              ${ohne.length ? html`<optgroup label="Andere Bohrung (ohne Lage)">${ohne.map((o) => html`<option value=${o.id}>${o.code}</option>`)}</optgroup>` : nothing}
+            </select></td>
+            <td><button class="symbol" title="Lage entfernen (Bohrung wieder ohne Lage)" @click=${() => aendern([{ op: "lage_entfernen", id: b.id }])}>✕</button></td>
+          </tr>`)}
+      </tbody>
+    </table>`;
 }
 
 function reiheTeil(z: Zustand) {
@@ -354,10 +437,21 @@ function hilfsmarkenNachziehen(z: Zustand) {
                               bezug: e.bezug });
 }
 
+let escGebunden = false;
+
 export function schrittLage() {
   const z = S.z!;
   entwurf(z);
   hilfsmarkenNachziehen(z);
+  const planGesperrt = z.lage_modus !== "reihe" && z.unterlage?.art === "plan" && !!z.unterlage.kalibrierung?.gesperrt;
+  if (S.punktModus && !planGesperrt) S.punktModus = false;
+  S.viewer?.editor.punktModusSetzen(S.punktModus);
+  if (!escGebunden) {
+    escGebunden = true;
+    window.addEventListener("keydown", (ev) => {
+      if (ev.key === "Escape" && S.schritt === "lage" && S.punktModus) punktModus(false);
+    });
+  }
   return html`
     <div class="app-panel links">
       ${abschnitt(html`Lage der Bohrungen ${hilfe("lage_art")}`, html`

@@ -149,6 +149,13 @@ def test_plan_ohne_koordinaten_nullpunkt_und_system_vom_plan(client):
     z = aendern(client, sig, {"op": "lage", "id": erste, "x": 512400.0, "y": 5403100.0})["zustand"]
     assert z["viewer"]["ursprung"] == [512300.0, 5403200.0]                 # erste Bohrung: kein Sprung
     assert next(b for b in z["bohrungen"] if b["id"] == erste)["epsg"] == 25832
+    # Punkte: frei setzen (Stand und Viewer), einer Bohrung zuordnen; ungueltiges bleibt aussen vor
+    z = aendern(client, sig, {"op": "punkt", "x": 512450.0, "y": 5403150.0})["zustand"]
+    assert z["punkte"] == z["viewer"]["punkte"] == [{"id": "P1", "x": 512450.0, "y": 5403150.0}]
+    zweite = z["bohrungen"][1]["id"]
+    z = aendern(client, sig, {"op": "punkt_zuordnen", "punkt": "P1", "bohrung": zweite})["zustand"]
+    assert not z["punkte"] and next(b for b in z["viewer"]["bohrungen"] if b["id"] == zweite)["x"] == 512450.0
+    assert "gibt es nicht" in aendern(client, sig, {"op": "punkt_loeschen", "punkt": "P1"}, status=400)["detail"]
 
 
 def test_pdf_extraktion_als_auftrag_und_quellseite(client):

@@ -166,6 +166,8 @@ dudoso quede **marcado**, nunca escondido.
 | M31 | Coordenadas de 6–7 cifras en la escena: el **origen** debe estar cerca de lo que se ve. Sin sondeos con posición, el origen sale del punto de referencia del plano calibrado; si el origen cambia, la cámara (y la vista guardada) se desplaza lo mismo; si el plano salta lejos al escribir su coordenada, la cámara lo sigue; los vértices del plano van relativos a su esquina (Float32) | El primer sondeo soltado movía el origen y todo desaparecía; vista previa vacía |
 | M32 | Un "elige un punto" pendiente bloqueaba **todo** arrastre sin aviso. Al bloquear el plano, al empezar a arrastrar desde la lista o con el plano bloqueado, cancelar la elección pendiente | `check_app.mjs` C2 |
 | M33 | EPSG nunca como número libre: **lista** (DE/AT/CH, códigos y nombres verificados con pyproj) y **rango de plausibilidad** por sistema (cifras, prefijo de zona); un código desconocido del PDF se muestra marcado, no se esconde | "EPSG 52" en el HUD; R 74.848,90 → "no encaja en ningún sistema" |
+| M34 | Vista ortográfica con `near` negativo: `Raycaster.setFromCamera` empieza el rayo **en el plano de la cámara**; lo que está entre `near` y la cámara (p. ej. la GOK sobreelevada de un sondeo) nunca se corta. Adelantar el origen a `near` en todos los rayos propios; y dibujar el plano a la altura de los sondeos, no a una cota fija | BH con GOK no se arrastraban, GWM sin GOK sí |
+| M35 | That Open `setOrthoCamera` deriva el encuadre ortográfico de la cámara perspectiva (profundidad hasta el objetivo) y `setOrthoPerspCameraAspect` lo escala con el tamaño anterior del visor: sin cámara colocada o con el visor aún sin tamaño sale **negativo o enorme** (imagen girada 180°, zoom clavado en `minZoom`). Normalizar tras cada cambio de proyección y de tamaño | Calibración con «Drehung 180»; plano invisible al abrir directamente |
 
 ## X. Entorno de trabajo
 
@@ -194,6 +196,7 @@ dudoso quede **marcado**, nunca escondido.
 | X21 | Playwright: el valor de un `<input>` no forma parte del texto de su fila (`hasText` no lo encuentra): buscar el índice por `value` con `evaluate` | Prueba de *Einheiten* |
 | X22 | Un error de render que sólo aparece en la GPU del usuario (negro, parpadeo) no se ve en SwiftShader: medir la **secuencia de fotogramas** (envolver `postproduction.update` y `three.render`) en vez de mirar capturas, y reproducir el caso exacto (aquí: ningún sondeo con coordenadas) | Reproducción de la captura del usuario |
 | X23 | Un `console.log` de Node se pierde si `timeout` mata el proceso con la salida en una tubería: escribir a un archivo (`> log 2>&1`) | Scripts de reproducción sin salida |
+| X24 | Datos de prueba **realistas**: cotas de cientos de m NHN, sondeos sin GOK y la app abierta también directamente por URL. Con 38 m NHN y siempre el mismo camino por los pasos, dos errores de cámara pasaron todas las pruebas | `testplan.py` (GOK + 300 m), `check_app.mjs` C2/C3 |
 
 Up: [Índice](README.md)
 

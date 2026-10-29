@@ -122,7 +122,11 @@ try {
          JSON.stringify(s.lage));
   await knopf("Lage bearbeiten").click();
   await ruhe(2500);
-  pruefe("Lage-Modus: Draufsicht orthografisch", (await page.evaluate(() => window.viewer.world.camera.projection.current)) === "Orthographic");
+  const ortho = await page.evaluate(() => {
+    const o = window.viewer.world.camera.threeOrtho;
+    return { art: window.viewer.world.camera.projection.current, richtig: o.right > o.left && o.top > o.bottom };
+  });
+  pruefe("Lage-Modus: Draufsicht orthografisch, Rahmen richtig herum", ortho.art === "Orthographic" && ortho.richtig, JSON.stringify(ortho));
   // Flackern (docs/16 X22): im Lage-Modus nie ein Bild mit Postproduktion, auch wenn "Kanten und Schatten" an ist;
   // die Umgebungsverdeckung rechnet orthografisch (PERSPECTIVE_CAMERA folgt der Kamera)
   const takt = await page.evaluate(async () => {

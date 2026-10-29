@@ -237,6 +237,39 @@ El mismo guion contra la versión anterior (`3005cb9`) y la nueva:
 Además, en *Lage* el botón izquierdo **desplaza** el plano (navegación *Plan* de That Open) en vez de girar la vista
 (D76).
 
+Segundo informe: *"pude arrastrar ciertos GWM pero no BH"*. Los datos de prueba tenían cotas de ~38 m NHN y lo
+ocultaban; con cotas reales (`plan_ohne_lage_extraktion.json` ahora con GOK + 300 m y los BS sin GOK, como GWM) y la
+app abierta directamente en `#/<proyecto>/lage` aparecieron tres causas (D78):
+
+| Síntoma | Causa | Arreglo |
+|---|---|---|
+| BH con GOK no se arrastran; GWM sin GOK sí | En la vista ortográfica three.js empieza el rayo del ratón en el plano de la cámara. Sin sondeos colocados el plano se dibujaba a 10 m NHN y la cámara 200 m encima; con la sobreelevación ×5 la GOK de un BH (≈ 340 m NHN → +1700 m en la escena) quedaba **sobre** la cámara y el rayo nunca la cortaba; un GWM sin GOK (0 m) quedaba debajo | Rayo desde el borde `near` ([`kamera.strahl`](../apps/web/src/viewer/kamera.ts), M34); el plano se dibuja sobre la GOK más alta conocida |
+| Plano girado 180° (calibración con «Drehung 180»), clics que no aciertan | Al pasar a ortográfica con la cámara aún sin colocar, That Open calcula ancho/alto **negativos** (y los escala con el primer tamaño del visor): encuadre invertido y zoom clavado en el mínimo | Encuadre siempre positivo en el aspecto del visor (`orthoRichten`, M35); zoom mínimo 1e-4 |
+
+Con la versión anterior (`a6c1511`) y esos datos el plano ni siquiera se veía tras subirlo (encuadre invertido y
+diminuto) y los clics de calibración fallaban. Con el arreglo, en la prueba de punta a punta: B 1 y B 7 (GOK 338 m)
+y BS 10 (sin GOK) arrastrados a 0,29–0,36 m.
+
+### 4.3 Puntos: poner, asignar a un sondeo y borrar
+
+Además de arrastrar, ahora se pueden **poner puntos** (petición del usuario), sólo con el Lageplan calibrado y
+bloqueado:
+
+1. **＋ Punkte im Plan setzen** activa el modo (cursor en cruz; Esc o *Fertig* lo terminan).
+2. *Nächster Klick setzt*: el sondeo que recibe el siguiente clic. Por defecto el primero sin posición; tras cada
+   clic pasa al siguiente sin posición. Un clic en un chip de *Ohne Lage* lo elige.
+3. Con *– freien Punkt –* el clic deja un **punto libre ◆ P1, P2 …** (amarillo) que luego se asigna en la lista.
+4. **Gesetzte Punkte**: cada sondeo colocado en el plano y cada punto libre, con sus coordenadas, un desplegable
+   (asignar el punto libre; pasar la posición a otro sondeo o *Zuordnung lösen*, que la deja como punto libre) y
+   **✕** (borrar el punto; en un sondeo, quitar su posición: vuelve a *Ohne Lage* o a las coordenadas del PDF).
+5. En el visor: clic en una marca y **Supr** hace lo mismo que ✕. Desplazar el plano no pone puntos (umbral de 5 px).
+
+Operaciones del servidor ([`ui/projekt.py`](../ui/projekt.py)): `punkt` (con o sin `bohrung`), `punkt_zuordnen`,
+`punkt_loeschen`, `lage_entfernen`, `lage_loesen`, `lage_umhaengen`. Los puntos libres se guardan con el proyecto
+(`punkte`); una posición asignada es la del sondeo (`Plan (kalibriert)`, con el EPSG del plano).
+
+![Punkte setzen: B 2 y B 3 por clic, un punto libre asignado a B 4, B 5 por su chip; lista con desplegable y ✕](img/21_lage_punkte.jpg)
+
 ![Lageplan sin ninguna coordenada: calibrado (EPSG 25832), bloqueado; B 1, B 7 y BS 10 arrastrados desde la lista](img/21_lage_ohne_koordinaten.jpg)
 
 ### 4.2 Sistema de coordenadas (EPSG)
@@ -310,9 +343,9 @@ Los textos largos van como `IfcText` (`IfcLabel` es para nombres cortos). El IFC
 | Prueba | Resultado |
 |---|---|
 | Modelador (`cd services/modeler && python -m pytest tests`) | 57 (19 de normas, 1 IFC de Bodenansprache/diámetro) |
-| App y API (`python -m pytest tests`) | 23 de lógica del proyecto + 9 de API (TestClient) |
-| Visor (`node scripts/check.mjs <trasse.ifc> <planes>`) | 19/19: trasse 6 km; *Lage* sin posproducción (0 de 14 fotogramas) y GTAO ortográfico; plano no arrastrable sin bloquear, escala por distancia, 1:500 · 10,0°, B 6/BS 9 a 0,3 m; sección 1:500/1:100, estaciones exactas, GOK del PDF fija, sin GOK se mueve en altura |
-| App de punta a punta (`node scripts/check_app.mjs <url> <planes> <capturas>`) | 24/24 y ningún error de página: avisos, ↓/N/G, clasificar, eliminar/restaurar, todo revisado, propuesta por norma, calibración por UI del plano y de la sección, **plano sin ninguna coordenada** (aviso EPSG, vista previa a la vista, elección pendiente + bloqueo, origen = referencia, 0 de 31 fotogramas con posproducción, B 1/B 7/BS 10 a 0,35–0,45 m y el plano siempre a la vista), Einheit renombrada, modelo, einchecken, IFC con Bodenansprache, PDF con progreso y la capa marcada en la página |
+| App y API (`python -m pytest tests`) | 24 de lógica del proyecto (puntos incluidos) + 9 de API (TestClient) |
+| Visor (`node scripts/check.mjs <trasse.ifc> <planes>`) | 19/19: trasse 6 km; *Lage* con encuadre ortográfico correcto, sin posproducción (0 de 14 fotogramas) y GTAO ortográfico; plano no arrastrable sin bloquear, escala por distancia, 1:500 · 10,0°, B 6/BS 9 a 0,3 m; sección 1:500/1:100, estaciones exactas, GOK del PDF fija, sin GOK se mueve en altura |
+| App de punta a punta (`node scripts/check_app.mjs <url> <planes> <capturas>`) | 28/28 y ningún error de página: avisos, ↓/N/G, clasificar, eliminar/restaurar, todo revisado, propuesta por norma, calibración por UI del plano y de la sección, **plano sin ninguna coordenada y con cotas reales** (aviso EPSG, vista previa a la vista, elección pendiente + bloqueo, origen = referencia, 0 fotogramas con posproducción, B 1/B 7 con GOK 338 m y BS 10 sin GOK a 0,29–0,36 m), **puntos** (B 2/B 3 por clic a 0,04–0,16 m, punto libre asignado a B 4, chip, ✕, Supr, desplazar sin punto), **apertura directa** con encuadre correcto, Einheit renombrada, modelo, einchecken, IFC con Bodenansprache, PDF con progreso y la capa marcada en la página |
 
 ## 9. Supuestos y límites (marcados)
 

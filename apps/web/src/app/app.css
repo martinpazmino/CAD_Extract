@@ -267,6 +267,11 @@ select.epsg { width: 100%; max-width: 24rem; }
   background: var(--flaeche-2); border: 1px dashed #6b737e;
 }
 .park.gesperrt { opacity: 0.45; cursor: not-allowed; }
+.park.aktiv { background: var(--gruen); border-color: var(--gruen); color: #10210a; font-weight: 600; }
+.tabelle.punkte td { vertical-align: middle; }
+.tabelle.punkte select { max-width: 9.5rem; }
+.tabelle.punkte tr.frei button.link { color: #ffd23f; }
+.tabelle.punkte tr.gewaehlt td { background: #1b2a3c; }
 .reihe input.kurz { width: 5.2rem; }
 .hinweisliste { padding: 0.5rem 0.1rem; color: var(--leise); }
 

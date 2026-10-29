@@ -46,6 +46,35 @@ function rasterAnpassen() {
   raster.three.position.y = kiste.min.y - Math.max(0.5, r * 0.002);
 }
 
+/** Strahl aus der Kamera durch einen Bildpunkt (NDC). Orthografisch beginnt three.js den Strahl in der Ebene der
+ *  Kamera; mit negativem near (unten) liegt alles zwischen near und Kamera dahinter und wird nie getroffen - etwa
+ *  die Ziehebene einer Bohrung, deren GOK ueberhoeht ueber der Kamera liegt. Hier beginnt er am near-Rand. */
+export function strahl(r: THREE.Raycaster, ndc: THREE.Vector2) {
+  const kam = welt.camera.three;
+  r.setFromCamera(ndc, kam);
+  if (kam instanceof THREE.OrthographicCamera && kam.near < 0) r.ray.origin.addScaledVector(r.ray.direction, kam.near);
+  return r;
+}
+
+/** That Open setzt den orthografischen Rahmen beim Wechsel aus der Perspektivkamera (Tiefe bis zum Ziel) und
+ *  skaliert ihn beim Groessenwechsel mit. Ist die Kamera dabei noch nicht gestellt, wird er verkehrt (links > rechts,
+ *  oben < unten: das Bild steht um 180 Grad gedreht, Einpassen klemmt den Zoom); hier immer positiv im
+ *  Seitenverhaeltnis der Flaeche, die Groesse bleibt. */
+export function orthoRichten() {
+  if (!welt) return;
+  const o = welt.camera.threeOrtho;
+  const el = welt.renderer!.three.domElement;
+  const seiten = (el.clientWidth || 1) / (el.clientHeight || 1);
+  let h = Math.abs(o.top - o.bottom);
+  if (!Number.isFinite(h) || h < 1e-3 || h > 1e7) h = 100;
+  const w = h * seiten;
+  o.left = -w / 2;
+  o.right = w / 2;
+  o.top = h / 2;
+  o.bottom = -h / 2;
+  o.updateProjectionMatrix();
+}
+
 /** near/far aus Abstand zum Ziel und Szenengroesse: Tiefenaufloesung nah, nichts abgeschnitten fern. */
 export function grenzenAnpassen() {
   if (!welt) return;
@@ -95,6 +124,7 @@ function kameraEndlich() {
 function nachholen() {
   if (!bereit()) return;
   welt.camera.updateAspect();
+  orthoRichten();
   if (!kameraEndlich()) {                               // kaputte Kamera (NaN): neu ausrichten
     welt.camera.controls.reset(false);
     ausstehend ??= () => ansicht("iso", false);
@@ -113,6 +143,7 @@ export function einrichten(w: Welt, r: OBC.SimpleGrid | undefined) {
   const controls = w.camera.controls;
   controls.addEventListener("update", grenzenAnpassen);
   controls.maxDistance = 200000;
+  controls.minZoom = 1e-4;                              // orthografisch: auch Trassen ueber 10 km einpassen
   controls.dollySpeed = 1.2;
   w.camera.projection.onChanged.add(() => {
     if (raster) raster.fade = w.camera.projection.current === "Perspective";
@@ -166,6 +197,7 @@ export async function einpassen(k?: THREE.Sphere, sanft = true) {
     ausstehend = () => einpassen(k, false);
     return;
   }
+  orthoRichten();
   const s = (k ?? kugel).clone();
   s.radius = Math.max(s.radius, 2);
   const breite = welt.renderer!.three.domElement.clientWidth || 1;

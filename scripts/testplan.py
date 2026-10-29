@@ -5,7 +5,7 @@ Kreise mit Code. Zwei Bohrungen verlieren ihre Koordinaten (muessen im Viewer ge
 Laengsschnitt: sechs Bohrungen in einer Reihe mit Stationen 0/10/25/45/60/80 m, Laenge 1:500, Hoehe 1:100.
 Ausgabe je Fall: <name>.pdf, <name>.png (ueber ui.pipeline.unterlage_rendern wie in der App), args_<name>.json
 (Viewer-Argumente wie aus der App), <name>_extraktion.json (zum Hochladen in die App) und wahrheit_<name>.json;
-dazu plan_ohne_lage_extraktion.json (gleicher Plan, keine Bohrung mit Koordinaten).
+dazu plan_ohne_lage_extraktion.json (gleicher Plan, keine Bohrung mit Koordinaten, GOK + 300 m bzw. ohne GOK).
 
     python scripts/testplan.py <ausgabeordner> [--ifc-plan modelle/demo.ifc]
 """
@@ -73,10 +73,13 @@ def lageplan(aus: Path) -> None:
             b["coord_source"] = None
     (aus / "plan_extraktion.json").write_text(json.dumps(doc, ensure_ascii=False), encoding="utf-8")   # fuer die App
     # Gleicher Plan, aber keine Bohrung mit Koordinaten (Gutachten mit RKS ohne Lage): alles wird aus der Liste gezogen
+    # oder per Punkt gesetzt. Echte Hoehen (GOK + 300 m) und Bohrungen ohne GOK (BS ..., wie GWM): ueberhoeht liegt die
+    # Ziehebene der einen weit ueber, die der anderen unter der Kamera (docs/16 M34)
     ohne = copy.deepcopy(doc)
     ohne["document"]["file"] = "synthetisch_ohne_lage.pdf"
     for b in ohne["boreholes"]:
         b["x"] = b["y"] = b["crs_epsg"] = b["coord_source"] = None
+        b["gok_nhn"] = None if b["code"].startswith("BS") else round(b["gok_nhn"] + 300.0, 2)
     (aus / "plan_ohne_lage_extraktion.json").write_text(json.dumps(ohne, ensure_ascii=False), encoding="utf-8")
     args = viewer_args(doc, "plan", bild, "plan.png", "Lageplan.pdf", "koordinaten")
     (aus / "args_plan.json").write_text(json.dumps(args, ensure_ascii=False), encoding="utf-8")

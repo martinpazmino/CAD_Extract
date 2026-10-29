@@ -9,7 +9,7 @@ La app actual (`app.py`, `geo_agent/`, Streamlit) es v1: posiciones fijas, 0/58 
 - `docs/16_lecciones_aprendidas.md`: reglas explícitas (proceso P1–P12, entrada E, geometría G, etiquetas L/T, texto B, agua W, segundas fuentes S, swissgeol R, modelo M, entorno X). Respetarlas.
 - `docs/17_algoritmo_extraccion.md`: especificación del algoritmo (etapas, parámetros, confianza).
 - `docs/15_resultados_pdfs_reales.md`: resultados ciegos y de entrenamiento.
-- `docs/11_decisiones.md`: decisiones D1–D76.
+- `docs/11_decisiones.md`: decisiones D1–D78.
 - `docs/18_modelador_capas.md`: modelo de capas (N3) y visor That Open.
 - `docs/19_app_v2.md`: app Streamlit v2 (historia; sustituida por la 21).
 - `docs/20_lage_pruefung_viewer.md`: visor con controles de TwinBimM, modelos > 5 km, Lage sobre plano, Prüfstand.
@@ -33,7 +33,8 @@ La app actual (`app.py`, `geo_agent/`, Streamlit) es v1: posiciones fijas, 0/58 
   `apps/web/dist` (lit + visor). Streamlit (`app.py`, `start_excel.bat`) sólo para Excel v1.
 - Reglas del proyecto en `ui/projekt.py` (`aendern(op)`): avisos = capas **unklassifiziert** (no confianza), todo
   revisado, quitar/restaurar, Ø de columnas, calibración (escala por distancia o 1:n + punto de referencia + giro /
-  escala vertical + candado), arrastre sólo con candado (plano x/y; sección: altura sólo sin GOK del PDF).
+  escala vertical + candado), arrastre sólo con candado (plano x/y; sección: altura sólo sin GOK del PDF), puntos
+  en el plano bloqueado (poner, asignar a un sondeo, borrar).
   Extracción/modelo en `ui/pipeline.py`; la extracción se usa desde `spikes/extraktion_v2/prototyp_v4.py` sin tocarla.
 - Normas (DIN 4023 / EN ISO 14688-1 / DIN 18196): `services/modeler/baugrundmodell/normen.json` + `normen.py`, con
   evidencia por dato; leer, nunca aplicar en silencio (propuesta con clic). IFC: `CPset_Bodenansprache` por capa.
@@ -44,7 +45,7 @@ La app actual (`app.py`, `geo_agent/`, Streamlit) es v1: posiciones fijas, 0/58 
   `npm run build` y **subir `apps/web/dist`** (el servidor lo usa sin Node); web-ifc 0.0.77 (X9). Prueba:
   `python scripts/testplan.py <planes>` y en `apps/web` `node scripts/check.mjs <modelo.ifc> <planes> <capturas>` (19).
 - Punta a punta: `python -m server --port <p> --kein-browser --arbeit <vacía>` y `node scripts/check_app.mjs
-  http://localhost:<p> <planes> <capturas>` (24 comprobaciones). `pkill`/`pgrep -f` en un comando aparte (X3, X19).
+  http://localhost:<p> <planes> <capturas>` (28 comprobaciones). `pkill`/`pgrep -f` en un comando aparte (X3, X19).
 
 ## Entorno (sesiones en la nube)
 - Webs municipales bloqueadas por la política de red; pypi y GitHub accesibles. Los PDFs los sube el usuario.

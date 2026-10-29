@@ -233,8 +233,10 @@ class Arbeitsplatz:
                 "modell": {"schluessel": schluessel, "aktuell": gecacht is not None,
                            "ifc": f"/dateien/modelle/{self._ifc_name(schluessel, docs, p)}"
                            if gecacht and (self.web / "modelle" / self._ifc_name(schluessel, docs, p)).exists() else None},
+                "punkte": p.punkte,
                 "viewer": {"bohrungen": pj.viewer_bohrungen(docs, p, vorb, bericht), "ursprung": list(ursprung),
-                           "epsg": epsgs.most_common(1)[0][0] if epsgs else kal_epsg, "modus": p.lage_modus},
+                           "epsg": epsgs.most_common(1)[0][0] if epsgs else kal_epsg, "modus": p.lage_modus,
+                           "punkte": p.punkte},
             }
 
     def bohrung(self, sig: str, bid: str) -> dict:

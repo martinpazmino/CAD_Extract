@@ -3,8 +3,8 @@
 //      Schicht klassifizieren, Bohrung entfernen und wiederherstellen, alle Bohrungen geprueft
 //   B  Berlin: Vorschlag nach Norm fuer eine unklassifizierte Schicht uebernehmen
 //   C  Lageplan (scripts/testplan.py): Strecke messen -> Massstab, Bezugspunkt, Drehung, sperren, Bohrungen ohne Lage
-//      aus der Liste auf ihren Kreis ziehen; C2 dasselbe ohne eine einzige Koordinate (Vorschau im Bild, EPSG-Liste,
-//      offene Punktwahl, Nullpunkt, kein Flackern)
+//      aus der Liste auf ihren Kreis ziehen; C2 dasselbe ohne eine einzige Koordinate und mit echten Hoehen (Vorschau im
+//      Bild, EPSG-Liste, offene Punktwahl, Nullpunkt, kein Flackern); C3 Punkte setzen, zuordnen, loeschen, Direktaufruf
 //   D  Laengsschnitt: 1:500/1:100, Bezugspunkt (Station/Hoehe), sperren, Bohrungen auf ihre Saeule ziehen (GOK aus dem
 //      PDF bleibt), Einheit umbenennen, Modell im Viewer, einchecken, IFC mit Bodenansprache
 //   E  PDF-Beispiel: Extraktion mit Fortschritt, Quelle der Schicht im PDF
@@ -277,6 +277,71 @@ try {
   pruefe("ohne Koordinaten: aus der Liste auf den Plan gezogen, Plan bleibt im Bild (Fehler ≤ 0,5 m)",
     sichtbar && Math.max(...fehlerOhne) <= 0.5, fehlerOhne.map((f) => f.toFixed(2)).join(" / ") + " m");
   await page.screenshot({ path: `${aus}/C2_ohne_lage.png` });
+
+  // ---------------------------------------------------------------- C3: Punkte setzen, zuordnen, loeschen
+  const klickAuf = async (code) => {
+    const p = await schirm(wPlan[code].px);
+    await page.mouse.click(p.x, p.y);
+    await ruhe(1500);
+  };
+  const abwPlan = async (code) => { const b = await bohrung(code); return b.x === null ? Infinity : Math.hypot(b.x - wPlan[code].x, b.y - wPlan[code].y); };
+  const freie = async () => (await stand()).z.punkte.length;
+  await page.getByRole("button", { name: /Punkte im Plan setzen/ }).click();
+  await ruhe(400);
+  const p1Code = await page.locator("select.naechste option:checked").textContent();
+  await klickAuf(p1Code.trim());
+  const p2Code = await page.locator("select.naechste option:checked").textContent();
+  await klickAuf(p2Code.trim());
+  const abwKlick = [await abwPlan(p1Code.trim()), await abwPlan(p2Code.trim())];
+  pruefe("Punkte setzen: je Klick eine Bohrung, danach die nächste ohne Lage (≤ 0,5 m)",
+    Math.max(...abwKlick) <= 0.5 && p1Code.trim() !== p2Code.trim(), `${p1Code.trim()} ${abwKlick[0].toFixed(2)} m, ${p2Code.trim()} ${abwKlick[1].toFixed(2)} m`);
+  await page.locator("select.naechste").selectOption("");                    // freier Punkt
+  await klickAuf("B 4");
+  const vorZuordnen = await freie();
+  const sichtbarFrei = await page.locator(".punktmarke:not([hidden])").count();
+  await page.locator("table.punkte tr.frei select").first().selectOption((await bohrung("B 4")).id);
+  await warte((c) => window.app.z.bohrungen.find((b) => b.code === c)?.x !== null, "B 4", 30000);
+  await ruhe(800);
+  pruefe("Freier Punkt ◆ gesetzt und einer Bohrung zugeordnet", vorZuordnen === 1 && sichtbarFrei === 1 && (await freie()) === 0 &&
+    (await abwPlan("B 4")) <= 0.5, `B 4 ${(await abwPlan("B 4")).toFixed(2)} m`);
+  await page.locator(".park", { hasText: /^B 5$/ }).click();                // Chip = naechste Bohrung
+  await ruhe(300);
+  await klickAuf("B 5");
+  await page.locator("table.punkte tr").filter({ has: page.locator("button.link", { hasText: new RegExp(`^● ${p1Code.trim()}$`) }) })
+    .locator("button.symbol").click();
+  await warte((c) => window.app.z.bohrungen.find((b) => b.code === c)?.x === null, p1Code.trim(), 30000);
+  await page.locator("select.naechste").selectOption("");
+  await klickAuf("B 8");
+  const mb = await page.locator(".punktmarke").first().boundingBox();
+  await page.mouse.click(mb.x + 6, mb.y + mb.height / 2);
+  await ruhe(300);
+  await page.keyboard.press("Delete");
+  await ruhe(1500);
+  const vorSchieben = await freie();
+  const fl = await page.evaluate(() => { const r = window.viewer.world.renderer.three.domElement.getBoundingClientRect(); return { x: r.left + r.width * 0.7, y: r.top + r.height * 0.8 }; });
+  await page.mouse.move(fl.x, fl.y);
+  await page.mouse.down();
+  await page.mouse.move(fl.x - 80, fl.y - 30, { steps: 8 });
+  await page.mouse.up();
+  await ruhe(1200);
+  pruefe("Chip als nächste, ✕ in der Liste und Entf im Viewer löschen; Verschieben setzt keinen Punkt",
+    (await abwPlan("B 5")) <= 0.5 && (await bohrung(p1Code.trim())).x === null && vorSchieben === 0 && (await freie()) === 0);
+  await page.screenshot({ path: `${aus}/C3_punkte.png` });
+  await page.keyboard.press("Escape");
+  // direkt geoeffnet (#/<projekt>/lage): der orthografische Rahmen stand verkehrt (Bild um 180 Grad gedreht)
+  const sigOhne = (await stand()).z.signatur;
+  await page.goto("about:blank");                                            // neu laden, nicht nur die Adresse aendern
+  await page.goto(`${url}/#/${sigOhne}/lage`);
+  await warte(() => window.baugrund?.lage?.unterlage?.sichtbar && window.viewer?.editor?.aktiv);
+  await ruhe(2500);
+  const direkt = await page.evaluate(() => {
+    const o = window.viewer.world.camera.threeOrtho;
+    const r = window.viewer.world.renderer.three.domElement.getBoundingClientRect();
+    const p = window.viewer.editor.bildZuSchirm(2000, 1500);
+    return { rechts: o.right > o.left, oben: o.top > o.bottom, imBild: !!p && p.x > r.left && p.x < r.right && p.y > r.top && p.y < r.bottom };
+  });
+  pruefe("Direkt geöffnet: orthografischer Rahmen richtig herum, Plan im Bild", direkt.rechts && direkt.oben && direkt.imBild,
+    JSON.stringify(direkt));
 
   // ---------------------------------------------------------------- D: Laengsschnitt
   await hochladen(`${plaene}/schnitt_extraktion.json`);

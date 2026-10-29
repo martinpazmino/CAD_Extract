@@ -222,8 +222,24 @@ bim-toolbar.kompakt .faktor { position: relative; }
 body.lage-aktiv .nadel { cursor: move; margin: -0.525rem 0 0 -0.525rem; }
 body.lage-aktiv .nadel i { width: 1.05rem; height: 1.05rem; }
 body.zieht, body.zieht * { cursor: grabbing !important; }
-body.waehlt #viewer canvas { cursor: crosshair; }
-body.waehlt .nadel { pointer-events: none; }   /* Bildpunkt unter einer Marke anklickbar */
+body.waehlt #viewer canvas, body.punkte #viewer canvas { cursor: crosshair; }
+body.waehlt .nadel, body.waehlt .punktmarke { pointer-events: none; }   /* Bildpunkt unter einer Marke anklickbar */
+/* freier Punkt (noch keiner Bohrung zugeordnet): Raute */
+.punktmarke {
+  position: absolute; left: 0; top: 0; pointer-events: auto; cursor: pointer;
+  display: flex; align-items: center; gap: 0.3rem; white-space: nowrap;
+  margin: -0.45rem 0 0 -0.45rem; font-size: 0.72rem; user-select: none;
+}
+.punktmarke i {
+  width: 0.9rem; height: 0.9rem; flex: none; transform: rotate(45deg) scale(0.8);
+  background: #ffd23f; border: 2px solid #1a1d23; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.6);
+}
+.punktmarke span {
+  padding: 0.05rem 0.35rem; border-radius: 3px; background: rgba(26, 29, 35, 0.82); color: #ffd23f;
+  border: 1px dashed rgba(255, 210, 63, 0.6);
+}
+.punktmarke.gewaehlt i { box-shadow: 0 0 0 3px var(--wf-green); }
+.punktmarke.gewaehlt span { border: 1px solid var(--wf-green); }
 
 .passpunkt {
   position: absolute; left: 0; top: 0; z-index: 31; pointer-events: none;
