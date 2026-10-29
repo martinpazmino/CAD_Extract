@@ -1,5 +1,10 @@
 node_modules/
-dist/
 public/vendor/
 public/modelle/*.ifc
 public/modelle/*.json
+# dist/ ist eingecheckt (die Streamlit-App laeuft damit ohne Node); erzeugte Modelle nicht
+dist/modelle/*.ifc
+src/icons.gen.json
+dist/modelle/*.png
+dist/modelle/*.json
+public/modelle/*.png

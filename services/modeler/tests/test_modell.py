@@ -44,7 +44,8 @@ def test_invarianten(name, methode):
     assert np.all(m.flaechen >= m.basis - 1e-9)
     for k in m.koerper:
         assert k["pruefung"]["geschlossen"], k["name"]
-        assert k["pruefung"]["volumen"] == pytest.approx(k["volumen_m3"], rel=1e-6, abs=1e-6)
+        # Knoten auf mm gerundet: hoechstens 1 mm x Grundflaeche Unterschied
+        assert k["pruefung"]["volumen"] == pytest.approx(k["volumen_m3"], abs=1e-3 * m.parameter["flaeche_m2"])
         assert k["volumen_m3"] >= 0
 
 
@@ -182,8 +183,17 @@ def test_unter_endteufe_unbekannt_nicht_fehlend():
     kurz = Bohrung("K", 10, 0, 40, [Abschnitt("Sand", 40, 35, [])], "x")
     einheiten, zuordnung, _ = korrelieren([a, kurz])
     assert [op for op, _, _ in zuordnung["K"]] == ["M", "T"]
-    _, ops = ausrichten(kurz, einheiten, [(40, 30), (30, 20)])
+    _, ops = ausrichten(kurz, einheiten, [(40, 30, 0, 10), (30, 20, 10, 20)])
     assert ops[-1][0] == "T"
+
+
+def test_gelaendefolgende_schichten_bei_starkem_gefaelle():
+    """Auffuellung 1 m unter Gelaende in Bohrungen mit 20 m GOK-Unterschied: eine Einheit (nach Tiefe), nicht drei."""
+    def bohr(code, x, gok):
+        return Bohrung(code, x, 0, gok, [Abschnitt("Auffuellung", gok, gok - 1, []), Abschnitt("Schluff", gok - 1, gok - 4, []),
+                                         Abschnitt("Fels", gok - 4, gok - 8, [])], "x")
+    einheiten, _, _ = korrelieren([bohr("A", 0, 770), bohr("B", 40, 760), bohr("C", 80, 750)])
+    assert [e.name for e in einheiten] == ["Auffuellung", "Schluff", "Fels"]
 
 
 def test_interpolatoren_exakt():
@@ -214,9 +224,79 @@ def test_ifc_valide(tmp_path):
     assert len(gm) == 1 and len(f.by_type("IfcBorehole")) == len(m.bohrungen)
     einheiten = [s for s in f.by_type("IfcGeotechnicalStratum") if (s.Description or "").startswith("Modelleinheit")]
     assert [s.Name for s in einheiten] == namen(m)
-    assert all(fs.Closed for fs in f.by_type("IfcPolygonalFaceSet"))
+    assert all(fs.Closed for fs in f.by_type("IfcTriangulatedFaceSet"))
+    # Laengeneinheit Meter: Koordinaten, Tiefen und Georeferenz sind in m geschrieben
+    import ifcopenshell.util.unit
+    assert ifcopenshell.util.unit.calculate_unit_scale(f) == 1.0
+    mc = f.by_type("IfcMapConversion")[0]
+    assert (mc.Eastings, mc.Northings) == tuple(m.ursprung)
     b = bericht(m)
     assert b["pruefungen"]["alle_koerper_geschlossen"] and b["vorlage_einheiten"][0]["name"] == "Auffuellung"
+
+
+def test_lokales_system_und_herkunft(tmp_path):
+    """Lage ohne EPSG (manuell/schematisch) ist ein lokales System; Herkunft von Lage und Hoehe bleibt sichtbar."""
+    import ifcopenshell
+    doc = syn.dokument(syn.geneigt())
+    for b in doc["boreholes"]:
+        b["crs_epsg"] = None
+        b["coord_source"] = "schematisch"
+    doc["boreholes"][0]["gok_source"] = "relativ"
+    m = bauen([doc])
+    assert m.epsg is None and len(m.bohrungen) == 9
+    assert any("ohne Georeferenz" in h for h in m.hinweise)
+    assert any("schematische Lage" in h for h in m.hinweise) and any("relative Hoehen" in h for h in m.hinweise)
+    ifc_schreiben(m, tmp_path / "lokal.ifc", [doc])
+    f = ifcopenshell.open(str(tmp_path / "lokal.ifc"))
+    assert not f.by_type("IfcMapConversion")
+    werte = {p.Name: p.NominalValue.wrappedValue for p in f.by_type("IfcPropertySingleValue") if p.Name in ("Lage", "Hoehe")}
+    assert werte["Lage"] == "schematisch"
+
+
+def test_mehrheit_bestimmt_das_system():
+    doc = syn.dokument(syn.geneigt())
+    doc["boreholes"][0]["crs_epsg"] = None                     # eine Bohrung lokal, acht georeferenziert
+    m = bauen([doc])
+    assert m.epsg == syn.EPSG and len(m.bohrungen) == 8
+    assert m.ausgeschlossen[0]["grund"].startswith("anderes Koordinatensystem (lokal")
+
+
+def test_trasse_ueber_5_km():
+    """Grosse Modelle: Knotenzahl begrenzt, Puffer waechst mit dem Bohrabstand, Laufzeit und IFC klein genug."""
+    import time
+    from baugrundmodell.modell import MAX_KNOTEN
+    t = time.time()
+    m, docs = modell(syn.trasse())
+    assert time.time() - t < 20
+    xy = m.punkte
+    assert np.ptp(xy[:, 0]) > 5000 and len(xy) <= 1.1 * MAX_KNOTEN
+    assert 30 <= m.parameter["puffer_m"] <= 100
+    assert m.max_abweichung < 1e-6 and all(k["pruefung"]["geschlossen"] for k in m.koerper)
+
+
+def test_grosse_modellgrenze_von_hand():
+    """Puffer 500 m und Raster 0.5 m von Hand: das Raster wird vergroebert (Knotenbudget), mit Hinweis."""
+    from baugrundmodell.modell import MAX_KNOTEN
+    m = bauen([syn.dokument(syn.demo())], raster=0.5, puffer=500.0)
+    assert m.parameter["puffer_m"] == 500.0 and m.parameter["raster_m"] > 0.5
+    assert len(m.punkte) <= 1.1 * MAX_KNOTEN and any("vergroebert" in h for h in m.hinweise)
+    assert all(k["pruefung"]["geschlossen"] for k in m.koerper)
+
+
+def test_fester_ursprung_und_pruefstand(tmp_path):
+    import ifcopenshell
+    doc = syn.dokument(syn.geneigt())
+    doc["boreholes"][0]["geprueft"] = True
+    doc["boreholes"][0]["layers"][0].update(geprueft=True, korrigiert=True, konfidenz_extraktion=0.4)
+    m = bauen([doc], ursprung=(565000.0, 5933000.0))
+    assert m.ursprung == (565000.0, 5933000.0)
+    ifc_schreiben(m, tmp_path / "p.ifc", [doc], pruefstand="v1 · 9/9 Bohrungen geprueft")
+    f = ifcopenshell.open(str(tmp_path / "p.ifc"))
+    werte = {}
+    for pv in f.by_type("IfcPropertySingleValue"):
+        werte.setdefault(pv.Name, []).append(pv.NominalValue.wrappedValue if pv.NominalValue else None)
+    assert werte["Pruefstand"] == ["v1 · 9/9 Bohrungen geprueft"] and werte["Ursprung_Rechtswert"] == [565000.0]
+    assert werte["Geprueft"].count(True) == 2 and werte["Korrigiert"] == [True]
 
 
 def test_ausschluss_ohne_koordinaten():
@@ -227,3 +307,51 @@ def test_ausschluss_ohne_koordinaten():
     assert bohrungen == [] and epsg is None and len(aus) == 9
     with pytest.raises(ValueError):
         bauen([doc])
+
+
+def test_bodenansprache_beschreibungen_und_durchmesser(tmp_path):
+    """Jede Schicht traegt ihre Beschreibung und die Deutung nach Norm; jede Einheit die Beschreibungen ihrer
+    Schichten; Bohrsaeulen mit Durchmesser von Hand (je Bohrung) oder automatisch nach Modellgroesse."""
+    import ifcopenshell
+    import ifcopenshell.util.element
+    import ifcopenshell.validate
+    doc = syn.dokument(syn.demo())
+    b0 = doc["boreholes"][0]
+    b0["layers"][0]["description_raw"] = "Anschüttung, Schluff, stark tonig, kiesig, weich-steif"
+    b0["layers"][1]["description_raw"] = "mS, fs', u, mitteldicht"
+    m = bauen([doc])
+    pfad = tmp_path / "ansprache.ifc"
+    ifc_schreiben(m, pfad, [doc], durchmesser_je={b0["code"]: 0.3})
+    f = ifcopenshell.open(str(pfad))
+    log = ifcopenshell.validate.json_logger()
+    ifcopenshell.validate.validate(f, log)
+    assert log.statements == []
+    bohrung = next(b for b in f.by_type("IfcBorehole") if b.Name == b0["code"])
+    ps = ifcopenshell.util.element.get_psets(bohrung)
+    assert ps["CPset_Darstellung"]["Durchmesser_m"] == 0.3
+    assert ps["CPset_Darstellung"]["Durchmesser_Quelle"] == "manuell (Bohrung)"
+    andere = next(b for b in f.by_type("IfcBorehole") if b.Name != b0["code"])
+    assert ifcopenshell.util.element.get_psets(andere)["CPset_Darstellung"]["Durchmesser_m"] == \
+        m.parameter["durchmesser_auto_m"]
+    schichten = ifcopenshell.util.element.get_decomposition(bohrung)
+    oben = next(s for s in schichten if " 0.00-" in s.Name)
+    ps = ifcopenshell.util.element.get_psets(oben)
+    assert ps["CPset_Schichtenverzeichnis"]["Beschreibung"].startswith("Anschüttung, Schluff")
+    assert ps["CPset_Bodenansprache"]["Kurzzeichen_DIN4023"] == "A (U, t̅, g)"
+    assert ps["CPset_Bodenansprache"]["Konsistenz"] == "weich bis steif"
+    assert ps["CPset_Bodenansprache"]["Farbname_DIN4023"] == "grau"
+    # Beschreibung als IfcText (Freitext), Kurzzeichen als IfcLabel
+    beschreibung = [p for p in f.by_type("IfcPropertySingleValue") if p.Name == "Beschreibung"]
+    assert beschreibung and all(p.NominalValue.is_a("IfcText") for p in beschreibung)
+    # Kanten der Saeule: Radius 0.15 m um die Achse
+    rep = oben.Representation.Representations[0].Items[0]
+    xy = np.array(rep.Coordinates.CoordList)[:, :2]
+    assert np.allclose(np.hypot(*(xy - xy.mean(axis=0)).T), 0.15, atol=1e-6)
+    # Einheiten: Beschreibungen ihrer Schichten und Benennungen nach Norm
+    einheit = next(s for s in f.by_type("IfcGeotechnicalStratum") if s.Name == "Sand 1" or s.Name == "Sand")
+    me = ifcopenshell.util.element.get_psets(einheit)["CPset_Modelleinheit"]
+    assert "mS, fs', u" in me["Beschreibungen"] and "Mittelsand" in me["Benennungen"]
+    assert me["Farbname_DIN4023"] == "orange"
+    b = bericht(m)
+    sand = next(e for e in b["einheiten"] if e["name"] in ("Sand", "Sand 1"))
+    assert any(s["beschreibung"] == "mS, fs', u, mitteldicht" and s["bohrung"] == b0["code"] for s in sand["schichten"])

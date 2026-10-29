@@ -5,3 +5,6 @@ __pycache__/
 # Projektdaten (reale Baugrunddaten / Ergebnisse) - nicht öffentlich versionieren
 data/*.pdf
 data/Geo_Daten.xlsx
+
+# lokale Umgebung (start.bat)
+.venv/

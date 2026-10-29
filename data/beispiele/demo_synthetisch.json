@@ -1,0 +1,1328 @@
+{
+ "document": {
+  "file": "synthetisch_demo.pdf",
+  "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "parser_version": "synthetisch",
+  "pages": 1
+ },
+ "boreholes": [
+  {
+   "code": "B 1",
+   "kind": "Bohrung",
+   "gok_nhn": 38.0,
+   "end_depth": 15.0,
+   "x": 565000.0,
+   "y": 5933000.0,
+   "crs_epsg": 25832,
+   "coord_source": "synthetisch",
+   "layers": [
+    {
+     "top_depth": 0.0,
+     "bottom_depth": 0.8,
+     "description_raw": "Auffuellung",
+     "soil_class": "Auffuellung",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 0.8,
+     "bottom_depth": 4.0,
+     "description_raw": "Sand",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 4.0,
+     "bottom_depth": 6.0,
+     "description_raw": "Sand",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 6.0,
+     "bottom_depth": 7.8,
+     "description_raw": "Torf",
+     "soil_class": "Torf",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 7.8,
+     "bottom_depth": 13.0,
+     "description_raw": "Geschiebemergel",
+     "soil_class": "Geschiebemergel",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 13.0,
+     "bottom_depth": 15.0,
+     "description_raw": "Ton",
+     "soil_class": "Ton",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    }
+   ],
+   "groundwater": [],
+   "groundwater_status": null,
+   "checks": {
+    "label_support": 1.0,
+    "scale": null,
+    "mode": "synthetisch",
+    "schichtenverzeichnis": null,
+    "duplicates": []
+   },
+   "issues": [],
+   "provenance": [
+    {
+     "page": 0,
+     "method": "synthetisch",
+     "bbox": null
+    }
+   ]
+  },
+  {
+   "code": "B 2",
+   "kind": "Bohrung",
+   "gok_nhn": 39.14,
+   "end_depth": 15.0,
+   "x": 565045.0,
+   "y": 5933010.0,
+   "crs_epsg": 25832,
+   "coord_source": "synthetisch",
+   "layers": [
+    {
+     "top_depth": 0.0,
+     "bottom_depth": 0.96,
+     "description_raw": "Auffuellung",
+     "soil_class": "Auffuellung",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 0.96,
+     "bottom_depth": 5.59,
+     "description_raw": "Sand",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 5.59,
+     "bottom_depth": 5.85,
+     "description_raw": "Kies",
+     "soil_class": "Kies",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 5.85,
+     "bottom_depth": 8.06,
+     "description_raw": "Sand",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 8.06,
+     "bottom_depth": 8.66,
+     "description_raw": "Torf",
+     "soil_class": "Torf",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 8.66,
+     "bottom_depth": 14.44,
+     "description_raw": "Geschiebemergel",
+     "soil_class": "Geschiebemergel",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 14.44,
+     "bottom_depth": 15.0,
+     "description_raw": "Ton",
+     "soil_class": "Ton",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    }
+   ],
+   "groundwater": [],
+   "groundwater_status": null,
+   "checks": {
+    "label_support": 1.0,
+    "scale": null,
+    "mode": "synthetisch",
+    "schichtenverzeichnis": null,
+    "duplicates": []
+   },
+   "issues": [],
+   "provenance": [
+    {
+     "page": 0,
+     "method": "synthetisch",
+     "bbox": null
+    }
+   ]
+  },
+  {
+   "code": "B 3",
+   "kind": "Bohrung",
+   "gok_nhn": 39.88,
+   "end_depth": 15.0,
+   "x": 565095.0,
+   "y": 5932995.0,
+   "crs_epsg": 25832,
+   "coord_source": "synthetisch",
+   "layers": [
+    {
+     "top_depth": 0.0,
+     "bottom_depth": 0.72,
+     "description_raw": "Auffuellung",
+     "soil_class": "Auffuellung",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 0.72,
+     "bottom_depth": 6.83,
+     "description_raw": "Sand",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 6.83,
+     "bottom_depth": 9.79,
+     "description_raw": "Sand",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 9.79,
+     "bottom_depth": 15.0,
+     "description_raw": "Geschiebemergel",
+     "soil_class": "Geschiebemergel",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    }
+   ],
+   "groundwater": [],
+   "groundwater_status": null,
+   "checks": {
+    "label_support": 1.0,
+    "scale": null,
+    "mode": "synthetisch",
+    "schichtenverzeichnis": null,
+    "duplicates": []
+   },
+   "issues": [],
+   "provenance": [
+    {
+     "page": 0,
+     "method": "synthetisch",
+     "bbox": null
+    }
+   ]
+  },
+  {
+   "code": "B 4",
+   "kind": "Bohrung",
+   "gok_nhn": 39.77,
+   "end_depth": 20.0,
+   "x": 565140.0,
+   "y": 5933015.0,
+   "crs_epsg": 25832,
+   "coord_source": "synthetisch",
+   "layers": [
+    {
+     "top_depth": 0.0,
+     "bottom_depth": 1.03,
+     "description_raw": "Auffuellung",
+     "soil_class": "Auffuellung",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 1.03,
+     "bottom_depth": 7.17,
+     "description_raw": "Sand",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 7.17,
+     "bottom_depth": 10.61,
+     "description_raw": "Sand",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 10.61,
+     "bottom_depth": 15.94,
+     "description_raw": "Geschiebemergel",
+     "soil_class": "Geschiebemergel",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 15.94,
+     "bottom_depth": 20.0,
+     "description_raw": "Ton",
+     "soil_class": "Ton",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    }
+   ],
+   "groundwater": [],
+   "groundwater_status": null,
+   "checks": {
+    "label_support": 1.0,
+    "scale": null,
+    "mode": "synthetisch",
+    "schichtenverzeichnis": null,
+    "duplicates": []
+   },
+   "issues": [],
+   "provenance": [
+    {
+     "page": 0,
+     "method": "synthetisch",
+     "bbox": null
+    }
+   ]
+  },
+  {
+   "code": "B 5",
+   "kind": "Bohrung",
+   "gok_nhn": 38.11,
+   "end_depth": 15.0,
+   "x": 565020.0,
+   "y": 5933060.0,
+   "crs_epsg": 25832,
+   "coord_source": "synthetisch",
+   "layers": [
+    {
+     "top_depth": 0.0,
+     "bottom_depth": 1.07,
+     "description_raw": "Auffuellung",
+     "soil_class": "Auffuellung",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 1.07,
+     "bottom_depth": 4.31,
+     "description_raw": "Sand",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 4.31,
+     "bottom_depth": 7.08,
+     "description_raw": "Sand",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 7.08,
+     "bottom_depth": 7.93,
+     "description_raw": "Torf",
+     "soil_class": "Torf",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 7.93,
+     "bottom_depth": 12.41,
+     "description_raw": "Geschiebemergel",
+     "soil_class": "Geschiebemergel",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 12.41,
+     "bottom_depth": 15.0,
+     "description_raw": "Ton",
+     "soil_class": "Ton",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    }
+   ],
+   "groundwater": [],
+   "groundwater_status": null,
+   "checks": {
+    "label_support": 1.0,
+    "scale": null,
+    "mode": "synthetisch",
+    "schichtenverzeichnis": null,
+    "duplicates": []
+   },
+   "issues": [],
+   "provenance": [
+    {
+     "page": 0,
+     "method": "synthetisch",
+     "bbox": null
+    }
+   ]
+  },
+  {
+   "code": "B 6",
+   "kind": "Bohrung",
+   "gok_nhn": 39.32,
+   "end_depth": 20.0,
+   "x": 565070.0,
+   "y": 5933040.0,
+   "crs_epsg": 25832,
+   "coord_source": "synthetisch",
+   "layers": [
+    {
+     "top_depth": 0.0,
+     "bottom_depth": 1.2,
+     "description_raw": "Auffuellung",
+     "soil_class": "Auffuellung",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 1.2,
+     "bottom_depth": 6.02,
+     "description_raw": "Sand",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 6.02,
+     "bottom_depth": 8.02,
+     "description_raw": "Kies",
+     "soil_class": "Kies",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 8.02,
+     "bottom_depth": 9.01,
+     "description_raw": "Sand",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 9.01,
+     "bottom_depth": 14.42,
+     "description_raw": "Geschiebemergel",
+     "soil_class": "Geschiebemergel",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 14.42,
+     "bottom_depth": 20.0,
+     "description_raw": "Ton",
+     "soil_class": "Ton",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    }
+   ],
+   "groundwater": [],
+   "groundwater_status": null,
+   "checks": {
+    "label_support": 1.0,
+    "scale": null,
+    "mode": "synthetisch",
+    "schichtenverzeichnis": null,
+    "duplicates": []
+   },
+   "issues": [],
+   "provenance": [
+    {
+     "page": 0,
+     "method": "synthetisch",
+     "bbox": null
+    }
+   ]
+  },
+  {
+   "code": "B 7",
+   "kind": "Bohrung",
+   "gok_nhn": 39.32,
+   "end_depth": 15.0,
+   "x": 565120.0,
+   "y": 5933070.0,
+   "crs_epsg": 25832,
+   "coord_source": "synthetisch",
+   "layers": [
+    {
+     "top_depth": 0.0,
+     "bottom_depth": 0.93,
+     "description_raw": "Auffuellung",
+     "soil_class": "Auffuellung",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 0.93,
+     "bottom_depth": 6.52,
+     "description_raw": "Sand",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 6.52,
+     "bottom_depth": 10.43,
+     "description_raw": "Sand",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 10.43,
+     "bottom_depth": 14.47,
+     "description_raw": "Geschiebemergel",
+     "soil_class": "Geschiebemergel",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 14.47,
+     "bottom_depth": 15.0,
+     "description_raw": "Ton",
+     "soil_class": "Ton",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    }
+   ],
+   "groundwater": [],
+   "groundwater_status": null,
+   "checks": {
+    "label_support": 1.0,
+    "scale": null,
+    "mode": "synthetisch",
+    "schichtenverzeichnis": null,
+    "duplicates": []
+   },
+   "issues": [],
+   "provenance": [
+    {
+     "page": 0,
+     "method": "synthetisch",
+     "bbox": null
+    }
+   ]
+  },
+  {
+   "code": "B 8",
+   "kind": "Bohrung",
+   "gok_nhn": 37.27,
+   "end_depth": 15.0,
+   "x": 565005.0,
+   "y": 5933110.0,
+   "crs_epsg": 25832,
+   "coord_source": "synthetisch",
+   "layers": [
+    {
+     "top_depth": 0.0,
+     "bottom_depth": 0.42,
+     "description_raw": "Auffuellung",
+     "soil_class": "Auffuellung",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 0.42,
+     "bottom_depth": 3.32,
+     "description_raw": "Sand",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 3.32,
+     "bottom_depth": 6.37,
+     "description_raw": "Sand",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 6.37,
+     "bottom_depth": 7.22,
+     "description_raw": "Torf",
+     "soil_class": "Torf",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 7.22,
+     "bottom_depth": 10.67,
+     "description_raw": "Geschiebemergel",
+     "soil_class": "Geschiebemergel",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 10.67,
+     "bottom_depth": 15.0,
+     "description_raw": "Ton",
+     "soil_class": "Ton",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    }
+   ],
+   "groundwater": [],
+   "groundwater_status": null,
+   "checks": {
+    "label_support": 1.0,
+    "scale": null,
+    "mode": "synthetisch",
+    "schichtenverzeichnis": null,
+    "duplicates": []
+   },
+   "issues": [],
+   "provenance": [
+    {
+     "page": 0,
+     "method": "synthetisch",
+     "bbox": null
+    }
+   ]
+  },
+  {
+   "code": "BS 9",
+   "kind": "Bohrung",
+   "gok_nhn": 38.74,
+   "end_depth": 6.0,
+   "x": 565060.0,
+   "y": 5933095.0,
+   "crs_epsg": 25832,
+   "coord_source": "synthetisch",
+   "layers": [
+    {
+     "top_depth": 0.0,
+     "bottom_depth": 0.56,
+     "description_raw": "Auffuellung",
+     "soil_class": "Auffuellung",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 0.56,
+     "bottom_depth": 5.34,
+     "description_raw": "Sand",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 5.34,
+     "bottom_depth": 6.0,
+     "description_raw": "Sand",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    }
+   ],
+   "groundwater": [],
+   "groundwater_status": null,
+   "checks": {
+    "label_support": 1.0,
+    "scale": null,
+    "mode": "synthetisch",
+    "schichtenverzeichnis": null,
+    "duplicates": []
+   },
+   "issues": [],
+   "provenance": [
+    {
+     "page": 0,
+     "method": "synthetisch",
+     "bbox": null
+    }
+   ]
+  },
+  {
+   "code": "BS 10",
+   "kind": "Bohrung",
+   "gok_nhn": 38.92,
+   "end_depth": 6.0,
+   "x": 565110.0,
+   "y": 5933120.0,
+   "crs_epsg": 25832,
+   "coord_source": "synthetisch",
+   "layers": [
+    {
+     "top_depth": 0.0,
+     "bottom_depth": 0.4,
+     "description_raw": "Auffuellung",
+     "soil_class": "Auffuellung",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 0.4,
+     "bottom_depth": 6.0,
+     "description_raw": "Sand",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    }
+   ],
+   "groundwater": [],
+   "groundwater_status": null,
+   "checks": {
+    "label_support": 1.0,
+    "scale": null,
+    "mode": "synthetisch",
+    "schichtenverzeichnis": null,
+    "duplicates": []
+   },
+   "issues": [],
+   "provenance": [
+    {
+     "page": 0,
+     "method": "synthetisch",
+     "bbox": null
+    }
+   ]
+  },
+  {
+   "code": "B 11",
+   "kind": "Bohrung",
+   "gok_nhn": 39.19,
+   "end_depth": 20.0,
+   "x": 565150.0,
+   "y": 5933090.0,
+   "crs_epsg": 25832,
+   "coord_source": "synthetisch",
+   "layers": [
+    {
+     "top_depth": 0.0,
+     "bottom_depth": 0.62,
+     "description_raw": "Auffuellung",
+     "soil_class": "Auffuellung",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 0.62,
+     "bottom_depth": 6.69,
+     "description_raw": "Sand",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 6.69,
+     "bottom_depth": 11.11,
+     "description_raw": "Sand",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 11.11,
+     "bottom_depth": 14.34,
+     "description_raw": "Geschiebemergel",
+     "soil_class": "Geschiebemergel",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 14.34,
+     "bottom_depth": 20.0,
+     "description_raw": "Ton",
+     "soil_class": "Ton",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    }
+   ],
+   "groundwater": [],
+   "groundwater_status": null,
+   "checks": {
+    "label_support": 1.0,
+    "scale": null,
+    "mode": "synthetisch",
+    "schichtenverzeichnis": null,
+    "duplicates": []
+   },
+   "issues": [],
+   "provenance": [
+    {
+     "page": 0,
+     "method": "synthetisch",
+     "bbox": null
+    }
+   ]
+  },
+  {
+   "code": "BS 12",
+   "kind": "Bohrung",
+   "gok_nhn": 38.71,
+   "end_depth": 5.0,
+   "x": 565035.0,
+   "y": 5933035.0,
+   "crs_epsg": 25832,
+   "coord_source": "synthetisch",
+   "layers": [
+    {
+     "top_depth": 0.0,
+     "bottom_depth": 1.19,
+     "description_raw": "Auffuellung",
+     "soil_class": "Auffuellung",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    },
+    {
+     "top_depth": 1.19,
+     "bottom_depth": 5.0,
+     "description_raw": "Sand",
+     "soil_class": "Sand",
+     "hatch_class": null,
+     "confidence": 1.0,
+     "label_confirmed": true,
+     "issues": [],
+     "provenance": [
+      {
+       "page": 0,
+       "method": "synthetisch",
+       "bbox": null
+      }
+     ]
+    }
+   ],
+   "groundwater": [],
+   "groundwater_status": null,
+   "checks": {
+    "label_support": 1.0,
+    "scale": null,
+    "mode": "synthetisch",
+    "schichtenverzeichnis": null,
+    "duplicates": []
+   },
+   "issues": [],
+   "provenance": [
+    {
+     "page": 0,
+     "method": "synthetisch",
+     "bbox": null
+    }
+   ]
+  }
+ ],
+ "soundings": []
+}

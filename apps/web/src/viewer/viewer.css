@@ -1,0 +1,248 @@
+/* Baugrundmodell-Viewer: dunkles BUI-Design mit W&F-Farben wie im TwinBimM-Viewer. */
+:root {
+  --wf-blue: #003f77;
+  --wf-green: #a2c513;
+  --wf-warmgray: #b1aa9f;
+  --wf-lightblue: #d7dfe4;
+  --warn: #f0a33a;
+  --raus: #8a8f98;
+
+  --bim-ui_gray-0: hsl(220, 20%, 8%);
+  --bim-ui_gray-1: hsl(220, 15%, 12%);
+  --bim-ui_gray-2: hsl(220, 10%, 20%);
+  --bim-ui_gray-4: hsl(220, 5%, 30%);
+  --bim-ui_gray-6: hsl(220, 3%, 60%);
+  --bim-ui_gray-8: hsl(220, 2%, 60%);
+  --bim-ui_gray-9: hsl(220, 1%, 70%);
+  --bim-ui_gray-10: hsl(220, 0%, 80%);
+}
+
+html.bim-ui-dark {
+  --bim-ui_bg-base: var(--bim-ui_gray-0);
+  --bim-ui_bg-contrast-10: var(--bim-ui_gray-1);
+  --bim-ui_bg-contrast-20: var(--bim-ui_gray-2);
+  --bim-ui_bg-contrast-40: var(--bim-ui_gray-4);
+  --bim-ui_bg-contrast-60: var(--bim-ui_gray-6);
+  --bim-ui_bg-contrast-80: var(--bim-ui_gray-8);
+  --bim-ui_bg-contrast-100: var(--bim-ui_gray-10);
+  --bim-ui_main-base: var(--wf-blue);
+  --bim-ui_accent-base: var(--wf-green);
+  --bim-ui_main-contrast: #ffffff;
+  --bim-ui_accent-contrast: var(--wf-blue);
+}
+
+* { margin: 0; box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+html { font-family: system-ui, "Segoe UI", sans-serif; font-size: 15px; }
+body {
+  background: #1a1d23;
+  color: var(--bim-ui_bg-contrast-100);
+  overflow: hidden;
+}
+body.allein #app { height: 100vh; }
+
+/* ---------------------------------------------------------------- Rahmen: Seitenleiste | Viewport */
+.viewer-rahmen {
+  display: grid;
+  grid-template-columns: 19rem 1fr;
+  height: 100%;
+  min-height: 0;
+}
+.viewer-rahmen.zu { grid-template-columns: 0 1fr; }
+.viewer-rahmen.zu #seitenleiste { display: none; }
+/* feste Spalten: ist die Seitenleiste ausgeblendet, bleibt der Viewer in Spalte 2 (nicht in der 0-px-Spalte) */
+#seitenleiste { grid-column: 1; }
+#viewer { grid-column: 2; }
+#seitenleiste {
+  overflow: auto;
+  background: var(--bim-ui_bg-contrast-10);
+  border-right: 1px solid var(--bim-ui_bg-contrast-40);
+}
+#seitenleiste bim-panel { min-height: 100%; border-radius: 0; }
+
+bim-panel { outline: 1px solid var(--bim-ui_bg-contrast-40); border-radius: 0.25rem; }
+bim-panel-section { --bim-panel-section_hc: var(--bim-ui_accent-base); }
+bim-context-menu { background-color: var(--bim-ui_bg-base); outline: 1px solid var(--bim-ui_bg-contrast-40); }
+bim-context-menu bim-button { background-color: transparent; }
+bim-context-menu bim-button:hover { background-color: var(--bim-ui_main-base) !important; }
+bim-toolbar { outline: 1px solid var(--bim-ui_bg-contrast-40); }
+
+#viewer { position: relative; overflow: hidden; min-width: 0; }
+
+/* ---------------------------------------------------------------- Ueberlagerungen */
+.ecke {
+  position: absolute; top: 0.5rem; left: 0.5rem; z-index: 60;
+  width: 2rem; height: 2rem; border-radius: 4px; cursor: pointer;
+  background: rgba(26, 29, 35, 0.85); color: var(--bim-ui_bg-contrast-100);
+  border: 1px solid var(--bim-ui_bg-contrast-40);
+}
+.ecke:hover { background: var(--bim-ui_bg-contrast-20); }
+
+.oben-rechts {
+  position: absolute; top: 0.5rem; right: 0.5rem; z-index: 60;
+  display: flex; gap: 0.35rem; align-items: center;
+}
+.oben-rechts bim-button { background-color: rgba(26, 29, 35, 0.85); --bim-icon--fz: 1.05rem; }
+.einstellungen { width: 17rem; padding: 0.35rem 0.25rem; }
+.einstellung-hilfe { padding: 0 0.5rem 0.45rem 1.9rem; font-size: 0.72rem; white-space: normal; }
+.wuerfel { position: absolute; top: 3rem; right: 0.6rem; z-index: 40; width: 6.5rem; height: 6.5rem; }
+
+/* Werkzeugleiste: nur Icons (Name im Tooltip), klein, passt auch in schmale Fenster */
+.leiste-unten {
+  position: absolute; bottom: 0.6rem; left: 50%; transform: translateX(-50%);
+  z-index: 50; max-width: calc(100% - 1rem);
+}
+bim-toolbar.kompakt {
+  --bim-toolbar-section--p: 2px;
+  --bim-toolbar-section--gap: 2px;
+  --bim-icon--fz: 1rem;
+  --bim-button--bgc: transparent;
+}
+bim-toolbar.kompakt bim-button { min-width: 1.85rem; min-height: 1.85rem; }
+.leisten-gruppe { display: flex; gap: 2px; padding: 2px; align-items: center; }
+.leisten-gruppe:not(:last-child) { border-right: 1px solid var(--bim-ui_bg-contrast-20); }
+bim-toolbar.kompakt .faktor { position: relative; }
+.faktor-text {
+  position: absolute; right: 0.05rem; bottom: -0.05rem; font-size: 0.55rem; font-weight: 700;
+  color: var(--wf-green); pointer-events: none;
+}
+.einfaerben { display: flex; gap: 0.5rem; align-items: center; width: 11rem; padding: 0.25rem; }
+.einfaerben input[type="color"] { width: 2.5rem; height: 2rem; border: none; background: none; }
+
+.hud {
+  position: absolute; bottom: 3.6rem; left: 0.75rem; z-index: 50;
+  padding: 0.4rem 0.625rem; border-radius: 4px; pointer-events: none; white-space: nowrap;
+  background: rgba(26, 29, 35, 0.85); backdrop-filter: blur(8px);
+  border: 1px solid var(--bim-ui_bg-contrast-40);
+  font: 0.75rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.leer {
+  position: absolute; inset: 0; display: grid; place-content: center; gap: 0.4rem; text-align: center;
+  color: var(--bim-ui_bg-contrast-80); pointer-events: none; z-index: 5;
+}
+.leer strong { font-size: 1.15rem; color: var(--bim-ui_bg-contrast-100); }
+
+.laden {
+  position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 0.75rem;
+  background: rgba(26, 29, 35, 0.55); z-index: 80;
+}
+.kreisel {
+  width: 2.2rem; height: 2.2rem; border-radius: 50%;
+  border: 3px solid var(--bim-ui_bg-contrast-40); border-top-color: var(--wf-green);
+  animation: drehen 0.9s linear infinite;
+}
+@keyframes drehen { to { transform: rotate(360deg); } }
+
+#meldung {
+  position: absolute; top: 0.6rem; left: 50%; transform: translateX(-50%); z-index: 90;
+  max-width: min(42rem, calc(100% - 9rem)); padding: 0.5rem 0.85rem; border-radius: 4px;
+  background: rgba(0, 63, 119, 0.95); color: #fff; font-size: 0.85rem; pointer-events: none;
+}
+
+/* ---------------------------------------------------------------- Eigenschaften (rechts) */
+#eigenschaften {
+  position: absolute; right: 0.75rem; top: 10rem; bottom: 3.6rem; z-index: 55;
+  width: min(24rem, calc(100% - 1.5rem)); display: flex; flex-direction: column;
+  background: var(--bim-ui_bg-base); border: 1px solid var(--bim-ui_bg-contrast-40); border-radius: 4px;
+}
+#eigenschaften[hidden] { display: none; }
+#eigenschaften header {
+  display: flex; align-items: center; gap: 0.5rem; padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--bim-ui_bg-contrast-40);
+}
+#eigenschaften h2 { flex: 1; font-size: 0.95rem; color: var(--wf-green); }
+#eigenschaften header button {
+  background: none; border: none; color: var(--bim-ui_bg-contrast-100); font-size: 1.3rem; cursor: pointer;
+}
+#auswahl-knoepfe { display: flex; gap: 0.4rem; padding: 0.4rem 0.75rem 0; flex-wrap: wrap; }
+#auswahl-knoepfe:empty { display: none; }
+#auswahl-inhalt { overflow: auto; padding: 0.5rem 0.75rem 0.75rem; font-size: 0.8rem; }
+#auswahl-inhalt h3 { font-size: 0.8rem; margin: 0.8rem 0 0.25rem; color: var(--wf-green); }
+#auswahl-inhalt table { width: 100%; border-collapse: collapse; }
+#auswahl-inhalt td { padding: 0.2rem 0.3rem; border-bottom: 1px solid var(--bim-ui_bg-contrast-20); vertical-align: top; }
+#auswahl-inhalt td:first-child { color: var(--bim-ui_bg-contrast-80); width: 42%; }
+#auswahl-inhalt .farbe { display: inline-block; width: 0.7rem; height: 0.7rem; border-radius: 2px; margin-right: 0.35rem; }
+
+/* ---------------------------------------------------------------- Seitenleiste */
+.leise { color: var(--bim-ui_bg-contrast-80); font-size: 0.8rem; }
+.modellname { font-weight: 600; }
+.liste { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 2px; font-size: 0.82rem; }
+.liste li {
+  display: grid; grid-template-columns: auto auto 1fr auto auto; align-items: center; gap: 0.45rem;
+  padding: 0.28rem 0.4rem; border-radius: 3px; cursor: pointer;
+}
+.liste li:hover { background: var(--bim-ui_bg-contrast-20); }
+.liste li.aktiv { background: var(--wf-blue); }
+.liste li.aus { opacity: 0.45; }
+.liste .farbe { width: 0.9rem; height: 0.9rem; border-radius: 2px; border: 1px solid rgba(255, 255, 255, 0.2); }
+.liste .wert { color: var(--bim-ui_bg-contrast-80); font-variant-numeric: tabular-nums; }
+.liste .nur { background: none; border: none; color: var(--bim-ui_bg-contrast-80); cursor: pointer; font-size: 0.95rem; }
+.liste .nur[aria-pressed="true"] { color: var(--wf-green); }
+.bohrliste li { grid-template-columns: 1.2rem 1fr auto; }
+.zustand { text-align: center; font-weight: 700; }
+.zustand.ok { color: var(--wf-green); }
+.zustand.warn { color: var(--warn); }
+.zustand.raus { color: var(--raus); }
+.datei { display: block; cursor: pointer; }
+.datei input { display: none; }
+.datei span {
+  display: block; padding: 0.45rem; text-align: center; border-radius: 4px; font-size: 0.82rem;
+  border: 1px dashed var(--bim-ui_bg-contrast-40);
+}
+.viewer-rahmen.ziehen #viewer { outline: 3px dashed var(--wf-green); outline-offset: -6px; }
+
+/* ---------------------------------------------------------------- Bohrungsmarken und Lage-Editor */
+.marken { position: absolute; inset: 0; pointer-events: none; z-index: 30; overflow: hidden; }
+.hilfslinien { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+.hilfslinien line { stroke-width: 2; stroke-dasharray: 6 4; }
+.hilfslinien line.strecke { stroke: #ff3d7f; }
+.hilfslinien line.hoehe { stroke: #3db8ff; }
+.nadel {
+  position: absolute; left: 0; top: 0; pointer-events: auto; cursor: pointer;
+  display: flex; align-items: center; gap: 0.3rem; white-space: nowrap;
+  margin: -0.45rem 0 0 -0.45rem; font-size: 0.72rem; user-select: none;
+}
+.nadel i {
+  width: 0.9rem; height: 0.9rem; border-radius: 50%; flex: none;
+  background: #e8eaed; border: 2px solid #1a1d23; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5);
+}
+.nadel span {
+  padding: 0.05rem 0.35rem; border-radius: 3px; background: rgba(26, 29, 35, 0.82); color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+.nadel.ohne-text span { display: none; }
+.nadel.geprueft i { background: var(--wf-green); }
+.nadel.offen i { background: var(--warn); }
+.nadel.raus i { background: var(--raus); border-style: dashed; }
+.nadel.raus span { color: #c5c8ce; font-style: italic; }
+.nadel.gewaehlt i { box-shadow: 0 0 0 3px var(--wf-green); }
+.nadel.gewaehlt span { border-color: var(--wf-green); }
+body.lage-aktiv .nadel { cursor: move; margin: -0.525rem 0 0 -0.525rem; }
+body.lage-aktiv .nadel i { width: 1.05rem; height: 1.05rem; }
+body.zieht, body.zieht * { cursor: grabbing !important; }
+body.waehlt #viewer canvas { cursor: crosshair; }
+body.waehlt .nadel { pointer-events: none; }   /* Bildpunkt unter einer Marke anklickbar */
+
+.passpunkt {
+  position: absolute; left: 0; top: 0; z-index: 31; pointer-events: none;
+  min-width: 1.4rem; height: 1.4rem; margin: -0.7rem 0 0 -0.7rem; padding: 0 0.15rem; border-radius: 0.7rem;
+  border: 2px solid #ff3d7f; color: #ff3d7f; font: 700 0.68rem/1.05rem system-ui; text-align: center;
+  background: rgba(255, 255, 255, 0.9);
+}
+.passpunkt.hoehe { border-color: #3db8ff; color: #1b6fa1; }
+.passpunkt.bezug { border-color: var(--wf-green); color: #4d6400; border-radius: 2px; }
+
+/* Mehrzeilige Texte als <p>: bim-label kuerzt auf eine Zeile */
+.text { font-size: 0.8rem; line-height: 1.35; color: var(--bim-ui_bg-contrast-100); }
+.text.leise { color: var(--bim-ui_bg-contrast-80); }
+.text.ok { color: var(--wf-green); }
+.text.warn { color: var(--warn); }
+
+@media (max-width: 760px) {
+  .viewer-rahmen { grid-template-columns: 0 1fr; }
+  #seitenleiste { display: none; }
+  .viewer-rahmen.seite-auf { grid-template-columns: 16rem 1fr; }
+  .viewer-rahmen.seite-auf #seitenleiste { display: block; }
+}

@@ -1,0 +1,3 @@
+# Optional: OCR fuer Scans und PDFs mit SHX-Text (bringt OpenCV und onnxruntime mit, ca. 150 MB).
+# Ohne diese Pakete laeuft alles, nur Seiten ohne Textlage bleiben stumm (und werden gemeldet).
+rapidocr-onnxruntime>=1.2.3

@@ -163,7 +163,34 @@ def demo() -> Fall:
         [(f"BS {k + 1}" if e < 10 else f"B {k + 1}", float(x), float(y), float(e)) for k, (x, y, e) in enumerate(punkte)])
 
 
-FAELLE = {f.__name__: f for f in (geneigt, auskeilen, linse, zensiert, stoerungen, demo)}
+def trasse() -> Fall:
+    """Lange Trasse wie ein Tunnel- oder Leitungsprojekt: ~6 km, 51 Bohrungen im Abstand von 120 m entlang
+    einer leicht gekruemmten Achse (+-15 m seitlich versetzt), Tal in der Mitte, Kieslinse bei km 1,5-2,2.
+    Prueft Raster-/Puffergrenzen, Laufzeit und IFC-Groesse fuer Modelle ueber 5 km."""
+    def gok(x, y):
+        return 45.0 + 0.002 * x - 8.0 * math.exp(-((x - 3000.0) / 600.0) ** 2)
+
+    def kies(x, y):
+        return max(0.0, 2.0 * (1 - abs(x - 1850.0) / 350.0))
+
+    def sand_uk(x, y):
+        return 30.0 - 0.001 * x
+
+    bohrungen = []
+    for k in range(51):
+        t = 120.0 * k
+        x, y = t, 300.0 * math.sin(t / 2000.0) + (15.0 if k % 2 else -15.0)
+        bohrungen.append((f"BK {k + 1}", x, y, 15.0 + 10.0 * (k % 3 == 0)))
+    return Fall("trasse", gok, [
+        ("Auffuellung", lambda x, y: gok(x, y) - 1.0),
+        ("Sand", lambda x, y: sand_uk(x, y) + 1.0),
+        ("Kies", lambda x, y: sand_uk(x, y) + 1.0 - kies(x, y)),
+        ("Sand", sand_uk),
+        ("Geschiebemergel", lambda x, y: 20.0 - 0.0015 * x + 2.0 * math.sin(x / 700.0)),
+        ("Ton", lambda x, y: -200.0)], bohrungen)
+
+
+FAELLE = {f.__name__: f for f in (geneigt, auskeilen, linse, zensiert, stoerungen, demo, trasse)}
 
 
 if __name__ == "__main__":

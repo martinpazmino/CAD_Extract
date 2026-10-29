@@ -815,7 +815,7 @@ npm install && npm run spike
 ### 8.3 Integración en el frontend (esbozo, API v3.6)
 
 > [!NOTE]
-> Implementación real: [`apps/web/src/main.ts`](../apps/web/src/main.ts) (WASM y worker locales,
+> Implementación real: [`apps/web/src/main.ts`](../apps/web/src/viewer/viewer.ts) (WASM y worker locales,
 > web-ifc 0.0.77, ver [18 §5](18_modelador_capas.md#5-visor-appsweb)).
 
 ```ts

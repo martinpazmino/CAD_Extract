@@ -31,7 +31,11 @@ def main(argv: list[str] | None = None) -> int:
     a = ap.parse_args(argv)
     docs = [json.loads(p.read_text()) for p in a.jsons]
     vorgabe = einheiten_aus_vorgabe(json.loads(a.einheiten.read_text())) if a.einheiten else None
-    m = bauen(docs, vorgabe, a.methode, a.raster, a.puffer, a.basis)
+    try:
+        m = bauen(docs, vorgabe, a.methode, a.raster, a.puffer, a.basis)
+    except ValueError as err:
+        print(f"Kein Modell: {err}. Lage und GOK ergaenzen (App: Tabelle 'Bohrungen'; JSON: x, y, gok_nhn).")
+        return 2
     ifc_schreiben(m, a.ifc, docs, bohrsaeulen=not a.ohne_bohrsaeulen)
     b = bericht(m)
     if a.bericht:
